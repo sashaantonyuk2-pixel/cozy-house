@@ -1,5 +1,7 @@
 # CozyHouseVibe
 
+### 🌐 [Open the store → sashaantonyuk2-pixel.github.io/cozy-house](https://sashaantonyuk2-pixel.github.io/cozy-house/)
+
 Online store for cozy home goods: ceramics, textiles, lighting and décor.
 
 - `index.html` — the live storefront (English). Served by GitHub Pages.
