@@ -270,6 +270,15 @@ body.locked{overflow:hidden}
 .qr{display:flex;justify-content:center;margin:6px 0 10px}.qr img{width:200px;height:200px;border:1px solid var(--line);border-radius:12px;padding:8px;background:#fff}
 .secret{display:block;margin-top:8px;padding:10px;background:#f4f6f1;border-radius:8px;word-break:break-all;font-size:13px}
 @media (max-width:600px){.hide-sm{display:none}.sellerright .syncpill{font-size:11px;padding:5px 8px}}
+.shiprow td{background:#f4f6f1}.shipform{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.shipform .field{width:auto;min-width:120px}.shipform input.field{min-width:220px}.shipform .help{flex-basis:100%;margin:0}
+.btn.primary.sm{color:#fff}
+#printArea{display:none}
+body.printing #printArea{display:block;position:fixed;inset:0;z-index:200;background:rgba(29,42,34,.5);overflow:auto;padding:24px}
+.slipwrap{max-width:760px;margin:0 auto}.slipbar{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px 12px 0 0;padding:12px 16px;border-bottom:1px solid var(--line)}
+.slip{background:#fff;padding:34px 38px;border-radius:0 0 12px 12px;color:#111}.sliphead{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #111;padding-bottom:14px;margin-bottom:18px}.sliplogo{font-family:Georgia,serif;font-size:24px}
+.slipcols{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;line-height:1.5}.sliptable{width:100%;border-collapse:collapse;margin-bottom:12px}.sliptable th,.sliptable td{border-bottom:1px solid #ccc;padding:9px 6px;text-align:left}.sliptable th{font-size:12px;text-transform:uppercase;color:#555}
+.slipthanks{margin-top:26px;font-family:Georgia,serif;font-size:16px}
+@media print{body.printing>*:not(#printArea){display:none!important}body.printing #printArea{position:static;padding:0;background:none}.noprint{display:none!important}.slip{padding:0}@page{margin:16mm}}
 .fav-inline.on svg{fill:var(--terra);stroke:var(--terra)}
 </style></head>
 <body><header class="header"><div class="shell headinner"><a class="brand" href="#/admin"><img src="data:image/jpeg;base64,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" alt=""><span><strong>CozyHouseVibe</strong><small>Seller Central</small></span></a><div class="sellerright" id="sellerRight"></div></div></header>
@@ -438,8 +447,18 @@ categories(){return `<div class="ahead"><h1>Категорії</h1></div>
  <td><div class="acts"><button class="btn sm" data-act="a:catmv" data-i="${i}" data-d="-1" title="Вище">↑</button><button class="btn sm" data-act="a:catmv" data-i="${i}" data-d="1" title="Нижче">↓</button><label class="btn sm">Фото<input type="file" accept="image/*" hidden data-up="${c.id}"></label>${c.image?`<button class="btn sm" data-act="a:catimgdel" data-id="${c.id}">Скинути фото</button>`:""}<button class="btn sm danger" data-act="a:catdel" data-id="${c.id}">✕</button></div></td></tr>`).join("")}
  </tbody></table></div><p class="help">Якщо фото категорії не задано, береться фото першого товару з неї. Порядок тут = порядок на сайті.</p>`},
 /* ---- settings ---- */
+tgPanel(){setTimeout(()=>this.tgStatus(),0);return `<div class="panel" id="tgPanel"><h2>🔔 Сповіщення про нові замовлення в Telegram</h2><div id="tgState" class="muted">Перевірка…</div>
+ <ol class="steps" style="margin-top:14px">
+ <li>У Telegram відкрийте <b>@BotFather</b> → надішліть <code>/newbot</code> → придумайте назву (напр. «CozyHouseVibe Orders») і username, що закінчується на <code>bot</code>. BotFather надішле <b>токен</b> — довгий рядок вигляду <code>123456789:AA…</code>.</li>
+ <li>Вставте токен сюди й збережіть. Він зберігається зашифрованим у базі й більше ніде не показується.
+ <form data-form="tgToken" style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap" autocomplete="off"><input class="field" name="token" type="password" placeholder="123456789:AA…" style="flex:1;min-width:220px" autocomplete="off"><button class="btn">Зберегти токен</button></form></li>
+ <li>Відкрийте свого нового бота в Telegram і надішліть йому будь-яке повідомлення, напр. <code>/start</code>.</li>
+ <li>Натисніть <button class="btn sm primary" data-act="a:tgLink">Підключити</button> — бот надішле вам тестове повідомлення.</li></ol></div>`},
+async tgStatus(){const el=$("#tgState");if(!el)return;const{data,error}=await sb.rpc("seller_telegram_status");if(!$("#tgState"))return;
+ if(error){el.innerHTML=`<span class="note">${esc(error.message)}</span>`;return}
+ el.innerHTML=data.enabled?`<span class="okbox" style="display:inline-block">✅ Підключено${data.chat?` — чат <b>${esc(data.chat)}</b>`:""}. Кожне нове замовлення приходитиме в Telegram.</span> <button class="btn sm" data-act="a:tgOff">Вимкнути</button>`:data.token_set?`Токен збережено. Залишились кроки 3 і 4.`:`Не підключено.`},
 settings(){const s=S.settings;const f=(k,l,o={})=>`<div class="${o.full?"full":""}"><label>${l}</label>${o.area?`<textarea class="field" name="${k}" style="min-height:${o.h||110}px">${esc(s[k])}</textarea>`:`<input class="field" name="${k}" type="${o.type||"text"}" value="${esc(s[k])}" placeholder="${esc(o.ph||"")}">`}${o.help?`<div class="help">${o.help}</div>`:""}</div>`;
- return `<div class="ahead"><h1>Налаштування</h1></div><form data-form="settings" class="stack">
+ return `<div class="ahead"><h1>Налаштування</h1></div>${this.tgPanel()}<div style="height:20px"></div><form data-form="settings" class="stack">
  <div class="panel"><h2>Магазин</h2><div class="form">${f("name","Назва магазину")}${f("tagline","Підзаголовок")}${f("currency","Символ валюти",{ph:"₴ або $"})}
  <div><label>Позиція валюти</label><select class="field" name="currencyPos"><option value="after" ${s.currencyPos!=="before"?"selected":""}>Після суми: 890 ₴</option><option value="before" ${s.currencyPos==="before"?"selected":""}>Перед сумою: $890</option></select></div>
 </div>
@@ -455,23 +474,48 @@ settings(){const s=S.settings;const f=(k,l,o={})=>`<div class="${o.full?"full":"
 backup(){return `<div class="ahead"><h1>Резервні копії</h1></div>
  <div class="panel" style="margin-bottom:20px"><h2>💾 Зберегти копію</h2><p>Усі товари, категорії й налаштування в одному файлі (.json). Корисно мати копію перед великими змінами.</p><button class="btn" data-act="a:export">⬇ Завантажити копію (.json)</button></div>
  <div class="panel"><h2>⬆ Відновити з копії</h2><p class="muted">Замінить поточні товари, категорії й налаштування даними з файлу. Замовлення не зачіпаються.</p><label class="btn">Вибрати файл…<input type="file" id="importFile" accept=".json,application/json" hidden></label></div>`},
-orders(q){const st=q.get("status")||"";const S_=Admin.ST;
+orders(q){const st=q.get("status")||"ship";
+ const chips=[["ship","📦 Потребують відправлення"],["","Усі"],...Object.entries(Admin.ST)];
  setTimeout(()=>this.fillOrders(st),0);
  return `<div class="ahead"><h1>Замовлення</h1><button class="btn sm" data-act="a:reloadOrders">↻ Оновити</button></div>
- <div class="chips"><a class="chip ${!st?"on":""}" href="#/admin/orders">Усі</a>${Object.entries(S_).map(([k,v])=>`<a class="chip ${st===k?"on":""}" href="#/admin/orders?status=${k}">${v}</a>`).join("")}</div>
+ <div class="chips">${chips.map(([k,v])=>`<a class="chip ${st===k?"on":""}" href="#/admin/orders${k===""?"?status=all":k==="ship"?"":"?status="+k}">${v}</a>`).join("")}</div>
+ <div class="shopbar"><label class="search">${ICON.search}<input id="ordSearch" placeholder="Пошук: номер, ім’я, телефон або email" autocomplete="off"></label></div>
  <div id="ordList"><p class="muted">Завантаження…</p></div>`},
 ST:{new:"Нове",confirmed:"Підтверджене",shipped:"Відправлене",completed:"Виконане",cancelled:"Скасоване"},
+CARRIERS:["USPS","UPS","FedEx","DHL","Інший"],
+ordersData:[],
 async fillOrders(st){const box=$("#ordList");if(!box)return;
- let qq=sb.from("orders").select("id,order_no,status,customer,items,total,currency,created_at,user_id").order("created_at",{ascending:false}).limit(200);if(st)qq=qq.eq("status",st);
+ let qq=sb.from("orders").select("id,order_no,status,customer,items,total,currency,created_at,user_id,carrier,tracking_number,shipped_at").order("created_at",{ascending:false}).limit(500);
+ if(st==="ship")qq=qq.in("status",["new","confirmed"]);else if(st&&st!=="all")qq=qq.eq("status",st);
  const{data,error}=await qq;if(error){box.innerHTML=`<div class="note">Не вдалося завантажити: ${esc(error.message)}</div>`;return}
- if(!data.length){box.innerHTML=`<div class="empty"><b>Замовлень поки немає</b>Нові замовлення з’являться тут.</div>`;return}
- box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th>Номер</th><th>Дата</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};return `<tr>
- <td><b>${esc(o.order_no)}</b>${o.user_id?'<br><small class="muted">з акаунтом</small>':'<br><small class="muted">гість</small>'}</td>
- <td>${new Date(o.created_at).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td>
+ this.ordersData=data;this.renderOrders();
+ const inp=$("#ordSearch");if(inp&&!inp.dataset.ready){inp.dataset.ready=1;inp.addEventListener("input",()=>this.renderOrders())}},
+renderOrders(){const box=$("#ordList");if(!box)return;
+ const term=(($("#ordSearch")||{}).value||"").trim().toLowerCase();
+ const data=this.ordersData.filter(o=>{if(!term)return true;const c=o.customer||{};return [o.order_no,c.name,c.phone,c.email,String(c.phone||"").replace(/\D/g,"")].some(v=>String(v||"").toLowerCase().includes(term))});
+ if(!data.length){box.innerHTML=`<div class="empty"><b>${term?"Нічого не знайдено":"Тут порожньо"}</b>${term?"Спробуйте інший запит.":"Немає замовлень із таким статусом."}</div>`;return}
+ box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th>Номер</th><th>Дата</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th></th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="new"||o.status==="confirmed";return `<tr>
+ <td><b>${esc(o.order_no)}</b><br><small class="muted">${o.user_id?"з акаунтом":"гість"}</small></td>
+ <td class="small">${new Date(o.created_at).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td>
  <td><details><summary><b>${esc(c.name||"—")}</b></summary><div class="small" style="margin-top:6px;line-height:1.6">${c.phone?`📞 <a href="tel:${esc(String(c.phone).replace(/[^+\d]/g,""))}">${esc(c.phone)}</a><br>`:""}${c.email?`✉️ ${esc(c.email)}<br>`:""}🚚 ${esc(c.delivery||"")}<br>📍 ${esc([c.address,c.city,c.state,c.zip].filter(Boolean).join(", "))}<br>💳 ${esc(c.payment||"")}${c.comment?`<br>💬 ${esc(c.comment)}`:""}</div></details></td>
  <td class="small">${(o.items||[]).map(i=>`${esc(i.name)} × ${+i.qty||0}`).join("<br>")}</td>
  <td><b>${money(o.total)}</b></td>
- <td><select class="field" style="min-width:150px" data-ach="ostatus" data-id="${o.id}">${Object.entries(Admin.ST).map(([k,v])=>`<option value="${k}" ${o.status===k?"selected":""}>${v}</option>`).join("")}</select></td></tr>`}).join("")}</tbody></table></div><p class="help">Натисніть на ім’я покупця, щоб побачити контакти й адресу.</p>`},
+ <td><select class="field" style="min-width:140px" data-ach="ostatus" data-id="${o.id}">${Object.entries(Admin.ST).map(([k,v])=>`<option value="${k}" ${o.status===k?"selected":""}>${v}</option>`).join("")}</select>${o.tracking_number?`<div class="small" style="margin-top:4px">${esc(o.carrier||"")} · ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)}</a>`:esc(o.tracking_number)}</div>`:""}</td>
+ <td><div class="acts">${canShip?`<button class="btn sm primary" data-act="a:shipForm" data-id="${o.id}">📦 Відправити</button>`:""}<button class="btn sm" data-act="a:slip" data-id="${o.id}" title="Пакувальний лист">🖨</button></div></td></tr>
+ <tr class="shiprow" id="ship-${o.id}" hidden><td colspan="7"><form class="shipform" data-form="ship" data-id="${o.id}"><b>Відправлення ${esc(o.order_no)}</b>
+ <select class="field" name="carrier">${Admin.CARRIERS.map(x=>`<option ${o.carrier===x?"selected":""}>${x}</option>`).join("")}</select>
+ <input class="field" name="tracking" placeholder="Трек-номер" value="${esc(o.tracking_number||"")}" maxlength="80" autocomplete="off">
+ <button class="btn primary sm">Позначити відправленим</button><button type="button" class="btn sm ghost" data-act="a:shipCancel" data-id="${o.id}">Скасувати</button>
+ <span class="help">Покупець побачить трек-номер і посилання для відстеження у своєму кабінеті.</span></form></td></tr>`}).join("")}</tbody></table></div><p class="help">Натисніть на ім’я покупця, щоб побачити контакти й адресу. 🖨 — пакувальний лист.</p>`},
+slip(id){const o=this.ordersData.find(x=>x.id===+id);if(!o)return;const c=o.customer||{},st=S.settings;
+ let el=$("#printArea");if(!el){el=document.createElement("div");el.id="printArea";document.body.appendChild(el)}
+ el.innerHTML=`<div class="slipwrap"><div class="slipbar noprint"><b>Пакувальний лист</b><span><button class="btn primary sm" data-act="a:print">🖨 Друкувати</button> <button class="btn sm" data-act="a:slipClose">Закрити</button></span></div>
+ <div class="slip"><div class="sliphead"><div><div class="sliplogo">${esc(st.name)}</div><div class="muted small">${esc(st.tagline||"")}</div></div><div style="text-align:right"><b>Packing slip</b><br>Order ${esc(o.order_no)}<br><span class="small">${new Date(o.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})}</span></div></div>
+ <div class="slipcols"><div><div class="small muted">SHIP TO</div><b>${esc(c.name||"")}</b><br>${esc(c.address||"")}<br>${esc([c.city,c.state,c.zip].filter(Boolean).join(", "))}<br>${esc(c.phone||"")}</div><div><div class="small muted">SHIPPING</div>${esc(c.delivery||"")}${o.tracking_number?`<br>${esc(o.carrier||"")} ${esc(o.tracking_number)}`:""}</div></div>
+ <table class="sliptable"><thead><tr><th>Item</th><th>SKU</th><th style="text-align:right">Qty</th><th style="text-align:center">✓</th></tr></thead><tbody>${(o.items||[]).map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.sku||"")}</td><td style="text-align:right"><b>${+i.qty||0}</b></td><td style="text-align:center">☐</td></tr>`).join("")}</tbody></table>
+ <p class="small">Items: ${(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0)}${c.comment?` · Note: ${esc(c.comment)}`:""}</p>
+ <p class="slipthanks">Thank you for shopping with ${esc(st.name)}!${st.email?` Questions? ${esc(st.email)}`:""}</p></div></div>`;
+ document.body.classList.add("printing")},
 log(){setTimeout(()=>this.fillLog(),0);return `<div class="ahead"><h1>Журнал дій</h1></div><p class="muted">Кожна зміна товарів, категорій, налаштувань і статусів замовлень: хто, коли й що змінив. Журнал не можна змінити чи видалити.</p><div id="logList"><p class="muted">Завантаження…</p></div>`},
 async fillLog(){const box=$("#logList");if(!box)return;const{data,error}=await sb.from("audit_log").select("*").order("at",{ascending:false}).limit(150);
  if(error){box.innerHTML=`<div class="note">${esc(error.message)}</div>`;return}
@@ -484,7 +528,7 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
  else if(k==="sel"){el.checked?this.sel.add(id):this.sel.delete(id);$("#selN").textContent="Вибрано: "+this.sel.size}
  else if(k==="selall"){document.querySelectorAll('[data-ach="sel"]').forEach(c=>{c.checked=el.checked;el.checked?this.sel.add(c.dataset.id):this.sel.delete(c.dataset.id)});$("#selN").textContent="Вибрано: "+this.sel.size}
  else if(k==="filtercat"){const f=el.form;const n=new URLSearchParams();const fd=new FormData(f);fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));location.hash="#/admin/products"+(n.toString()?"?"+n:"")}
- else if(k==="ostatus"){const v=el.value;el.disabled=true;sb.from("orders").update({status:v}).eq("id",+id).then(({error})=>{el.disabled=false;toast(error?"⚠️ "+error.message:"Статус: "+Admin.ST[v])})}
+ else if(k==="ostatus"){const v=el.value;el.disabled=true;sb.from("orders").update({status:v}).eq("id",+id).then(({error})=>{el.disabled=false;toast(error?"⚠️ "+error.message:"Статус: "+Admin.ST[v]+(v==="cancelled"?" · товари повернено на склад":""));if(!error){const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.status=v;refreshAdminCatalog()}})}
  else if(k==="catname"){const c=catOf(id);if(c&&el.value.trim()){c.name=el.value.trim();save();chrome();toast("Збережено ✓")}}},
 click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("Спочатку виберіть товари галочками");return false}return true};
  const H={
@@ -504,9 +548,21 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  herodel:()=>{S.settings.heroImage="";save();render()},
  export:()=>{download(`cozyhousevibe-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(S),"application/json");toast("Копію збережено")},
  signout:()=>{e.preventDefault();Seller.signOut()},
- reloadOrders:()=>{const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"";this.fillOrders(st)},
+ tgLink:async()=>{el.disabled=true;const{data,error}=await sb.rpc("seller_link_telegram");el.disabled=false;
+  if(error)return toast(/NO_MESSAGE/.test(error.message)?"⚠️ Бот ще не отримав повідомлення. Надішліть йому /start і спробуйте знову.":/NO_TOKEN/.test(error.message)?"⚠️ Спочатку збережіть токен (крок 2).":/TELEGRAM_ERROR:401/.test(error.message)?"⚠️ Telegram не прийняв токен. Перевірте його в @BotFather.":"⚠️ "+error.message);
+  toast("Підключено! Перевірте Telegram — там тестове повідомлення.");this.tgStatus()},
+ tgOff:async()=>{await sb.rpc("seller_disable_telegram");toast("Сповіщення вимкнено");this.tgStatus()},
+ shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=tracking]").focus()}},
+ shipCancel:()=>{const r=$("#ship-"+id);if(r)r.hidden=true},
+ slip:()=>this.slip(id),
+ print:()=>window.print(),
+ slipClose:()=>{document.body.classList.remove("printing");const p=$("#printArea");if(p)p.innerHTML=""},
+ reloadOrders:()=>{const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"ship";this.fillOrders(st)},
  };H[a]&&H[a]()},
 submit(k,f){
+ if(k==="ship"){const id=+f.dataset.id,carrier=f.carrier.value,tracking=f.tracking.value.trim();const b=f.querySelector("button.primary");b.disabled=true;
+  sb.from("orders").update({status:"shipped",carrier,tracking_number:tracking||null}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Позначено відправленим"+(tracking?" · трек "+tracking:""));const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"ship";this.fillOrders(st)});return}
+ if(k==="tgToken"){const tok=f.token.value.trim();const b=f.querySelector("button");b.disabled=true;sb.rpc("seller_set_telegram_token",{token:tok}).then(({error})=>{b.disabled=false;if(error)return toast(/BAD_TOKEN/.test(error.message)?"⚠️ Це не схоже на токен бота. Скопіюйте його з @BotFather повністю.":"⚠️ "+error.message);f.reset();toast("Токен збережено. Тепер крок 3.");Admin.tgStatus()});return}
  if(k==="aprodfilter"){const fd=new FormData(f),n=new URLSearchParams();fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));location.hash="#/admin/products"+(n.toString()?"?"+n:"");return}
  if(k==="catadd"){const n=f.name.value.trim();if(!n)return;let id=translit(n)||uid();if(catOf(id))id+="-"+uid().slice(0,3);S.categories.push({id,name:n,image:""});save();chrome();render();toast("Категорію додано");return}
  if(k==="settings"){const fd=new FormData(f);for(const[key,v]of fd.entries())S.settings[key]=key==="freeFrom"?Number(v)||0:String(v);save();chrome();toast("Налаштування збережено ✓");return}
@@ -590,10 +646,10 @@ async function fillProfile(){const box=$("#acMain");if(!box)return;const p=await
   ${f("address_line","Street address",{full:true,ac:"street-address",max:200})}${f("city","City",{ac:"address-level2"})}${f("state","State",{ac:"address-level1",max:60})}${f("zip","ZIP code",{ac:"postal-code",max:20})}</div>
   <p class="help">We’ll fill these in for you at checkout.</p><div id="acMsg"></div><button class="btn primary" style="margin-top:8px">Save details</button></form>`}
 async function fillOrders(){const box=$("#acMain");if(!box)return;
- const{data,error}=await sb.from("orders").select("order_no,status,items,total,created_at").order("created_at",{ascending:false}).limit(50);
+ const{data,error}=await sb.from("orders").select("order_no,status,items,total,created_at,carrier,tracking_number,shipped_at").order("created_at",{ascending:false}).limit(50);
  if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
  const st={new:"Received",confirmed:"Confirmed",shipped:"Shipped",completed:"Delivered",cancelled:"Cancelled"};
- box.innerHTML=`<div class="panel"><h2>My orders</h2>${data.length?data.map(o=>`<div class="orow"><div><b>${esc(o.order_no)}</b><span class="muted small">${new Date(o.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})} · ${o.items.reduce((s,i)=>s+(+i.qty||0),0)} items</span><span class="small">${o.items.slice(0,3).map(i=>esc(i.name)).join(", ")}${o.items.length>3?"…":""}</span></div><div class="oright"><span class="ostat s-${esc(o.status)}">${st[o.status]||esc(o.status)}</span><b>${money(o.total)}</b></div></div>`).join(""):`<div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div>`}</div>`}
+ box.innerHTML=`<div class="panel"><h2>My orders</h2>${data.length?data.map(o=>`<div class="orow"><div><b>${esc(o.order_no)}</b><span class="muted small">${new Date(o.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})} · ${o.items.reduce((s,i)=>s+(+i.qty||0),0)} items</span><span class="small">${o.items.slice(0,3).map(i=>esc(i.name)).join(", ")}${o.items.length>3?"…":""}</span>${o.tracking_number?`<span class="small">${esc(o.carrier||"Tracking")}: ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)} — track package ↗</a>`:esc(o.tracking_number)}</span>`:""}</div><div class="oright"><span class="ostat s-${esc(o.status)}">${st[o.status]||esc(o.status)}</span><b>${money(o.total)}</b></div></div>`).join(""):`<div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div>`}</div>`}
 function acMsg(html,ok){const m=$("#acMsg");if(m)m.innerHTML=`<div class="${ok?"okbox":"note"}" style="margin-bottom:4px">${html}</div>`}
 async function acSubmit(k,f){
  const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button.primary");const busy=b=>{btn.disabled=b};
@@ -618,16 +674,22 @@ async function acSubmit(k,f){
   const{data,error}=await sb.from("profiles").upsert(row).select().maybeSingle();busy(false);if(error)return acMsg(esc(authErr(error)));profile=data;
   if(row.full_name)sb.auth.updateUser({data:{full_name:row.full_name}}).catch(()=>{});const n=$("#acName");if(n)n.textContent=row.full_name||"";acMsg("Saved ✓",true);return}
  }catch(e){busy(false);acMsg(esc(authErr(e)))}}
+function trackUrl(c,n){n=encodeURIComponent(String(n||"").trim());if(!n)return"";c=String(c||"").toLowerCase();
+ if(c.includes("usps"))return"https://tools.usps.com/go/TrackConfirmAction?tLabels="+n;if(c.includes("ups"))return"https://www.ups.com/track?tracknum="+n;
+ if(c.includes("fedex"))return"https://www.fedex.com/fedextrack/?trknbr="+n;if(c.includes("dhl"))return"https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id="+n;return""}
 async function saveOrderToDb(o){
- if(!sb)return false;const c=o.c;
+ if(!sb)return{ok:false};const c=o.c;
  const customer={name:c.name,phone:c.phone,email:c.email||null,delivery:c.delivery,city:c.city,state:c.state||null,zip:c.zip||null,address:c.address||null,payment:c.payment,comment:c.comment||null};
  for(let i=0;i<3;i++){
   const row={order_no:o.no,customer,items:o.lines.map(l=>({id:l.id,name:l.name,sku:l.sku||null,price:l.price,qty:l.qty})),total:o.total,currency:"USD",user_id:user?user.id:null};
   const{error}=await sb.from("orders").insert(row);
-  if(!error)return true;
-  if(/duplicate|unique/i.test(error.message)){o.no=o.no.slice(0,-4)+Math.floor(1000+Math.random()*9000);continue}
-  console.warn("order save failed",error.message);return false}
- return false}
+  if(!error)return{ok:true};
+  const m=error.message||"";
+  if(/duplicate|unique/i.test(m)){o.no=o.no.slice(0,-4)+Math.floor(1000+Math.random()*9000);continue}
+  let r=m.match(/OUT_OF_STOCK:(.+):(\d+)/);if(r)return{ok:false,stock:true,msg:+r[2]>0?`Only ${r[2]} left of “${r[1]}”. Please update the quantity in your cart.`:`“${r[1]}” just sold out. Please remove it from your cart.`};
+  r=m.match(/UNAVAILABLE:(.+)/);if(r)return{ok:false,stock:true,msg:`“${r[1]}” is no longer available. Please remove it from your cart.`};
+  console.warn("order save failed",m);return{ok:false}}
+ return{ok:false}}
 
 /* ===== Seller Central: sign-in with 2FA + database sync ===== */
 const IDLE_MIN=30;
@@ -661,7 +723,7 @@ chrome(){
 render(parts,q){
  if(this.state!=="ready")return this.render0();
  if(parts[0]!=="admin"){location.hash="#/admin";return}
- const html=Admin.view(parts,q);if(html)app.innerHTML=html;Admin.after(parts);window.scrollTo(0,0)},
+ const html=Admin.view(parts,q);if(html)app.innerHTML=html;Admin.after(parts);window.scrollTo(0,0);if(!parts[1]||parts[1]==="products")this.refresh()},
 box(title,sub,body){return `<div class="shell section"><div class="authbox"><div class="authhead"><span class="authicon">🔒</span><h1>${title}</h1>${sub?`<p class="muted">${sub}</p>`:""}</div>${body}</div></div>`},
 render0(){this.chrome();let h="";
  if(this.state==="loading")h=this.box("Seller Central","",`<p class="muted" style="text-align:center">Перевірка…</p>`);
@@ -724,8 +786,12 @@ async flush(){
   const cats=S.categories.map((c,i)=>({id:c.id,name:c.name,image:c.image||null,position:i}));
   const cUp=cats.filter(c=>this.synced.c[c.id]!==JSON.stringify(c));
   if(cUp.length){const{error}=await sb.from("categories").upsert(cUp);if(error)throw error}
-  const rows=S.products.map(toRow);const pUp=rows.filter(r=>this.synced.p[r.id]!==JSON.stringify(r));
-  if(pUp.length){const{error}=await sb.from("products").upsert(pUp);if(error)throw error}
+  const rows=S.products.map(toRow);
+  const pNew=rows.filter(r=>!this.synced.p[r.id]);
+  if(pNew.length){const{error}=await sb.from("products").insert(pNew);if(error)throw error}
+  for(const r of rows){const prev=this.synced.p[r.id];if(!prev||prev===JSON.stringify(r))continue;
+   const was=JSON.parse(prev),ch={};for(const k in r)if(JSON.stringify(r[k])!==JSON.stringify(was[k]))ch[k]=r[k];
+   if(Object.keys(ch).length){const{error}=await sb.from("products").update(ch).eq("id",r.id);if(error)throw error}}
   const pDel=Object.keys(this.synced.p).filter(id=>!S.products.some(p=>p.id===id));
   if(pDel.length){const{error}=await sb.from("products").delete().in("id",pDel);if(error)throw error}
   const cDel=Object.keys(this.synced.c).filter(id=>!S.categories.some(c=>c.id===id));
@@ -737,7 +803,14 @@ async flush(){
   clearTimeout(this.tm);this.tm=setTimeout(()=>this.flush(),5000)}
  finally{this.syncing=false;if(this.again){this.again=false;this.flush()}}}
 };
+Seller.refresh=async function(){
+ if(this.state!=="ready"||this.dirty||this.syncing)return;
+ try{const st=await fetchCatalog();if(this.dirty||this.syncing)return;const changed=JSON.stringify(st)!==JSON.stringify(S);S=st;this.snapshot();
+  if(changed&&/^#\/admin(\/products|\/categories)?\/?(\?.*)?$/.test(location.hash)&&!document.activeElement.matches("input,textarea,select"))render()}catch(e){}};
 window.Seller=Seller;
+function refreshAdminCatalog(){setTimeout(()=>Seller.refresh(),400)}
+setInterval(()=>{if(document.visibilityState==="visible")Seller.refresh()},60000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")Seller.refresh()});
 
 /* ===== core ===== */
 const EMBED=JSON.parse(document.getElementById("store-data").textContent||"null");
@@ -1015,7 +1088,9 @@ async function placeOrder(f){
  const d=new Date(),no="CHV-"+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+Math.floor(1000+Math.random()*9000);
  const o={no,date:d.toISOString(),lines:cartLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty})),total:cartTotal(),c:fd,sent:false};
  LS.set("buyer",{name:fd.name,phone:fd.phone,email:fd.email,city:fd.city,address:fd.address,state:fd.state,zip:fd.zip});
- try{o.sent=await saveOrderToDb(o);o.db=o.sent;o.mine=!!(o.sent&&user)}catch(e){o.sent=false}
+ let res={ok:false};try{res=await saveOrderToDb(o)}catch(e){}
+ if(res.stock){$("#coErr").innerHTML=`<div class="note">${esc(res.msg)} <a class="textlink" href="#/cart">Go to cart →</a></div>`;btn.disabled=false;refreshCatalog();return}
+ o.sent=res.ok;o.db=res.ok;o.mine=!!(res.ok&&user);if(res.ok)setTimeout(refreshCatalog,800);
  const ep=(S.settings.formEndpoint||"").trim();
  if(ep&&!o.sent){try{const r=await fetch(ep,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({order:o.no,total:o.total,message:orderText(o),email:fd.email||undefined,_subject:"New order "+o.no})});o.sent=r.ok}catch(e){o.sent=false}}
  LS.set("lastOrder",o);setCart([]);location.hash="#/order";}
