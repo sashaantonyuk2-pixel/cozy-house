@@ -145,7 +145,7 @@ function chrome(){
  $("#footer").innerHTML=`<div class="shell foot"><div><a class="footlogo" href="#/">${logo?`<img src="${esc(logo)}" alt="" width="48" height="48">`:""}<span>${esc(c.name)}</span></a><p>${esc(c.tagline)}</p>${c.hours?`<p>${esc(c.hours)}</p>`:""}</div>
  <div><h4>${t("shop")}</h4><a href="#/shop">${t("allCats")}</a>${S.categories.slice(0,6).map(x=>`<a href="#/shop?cat=${x.id}">${esc(x.name)}</a>`).join("")}</div>
  <div><h4>${t("contacts")}</h4>${c.phone?`<a href="tel:${esc(c.phone.replace(/[^+\d]/g,""))}">${esc(c.phone)}</a>`:""}${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:""}${c.telegram?`<a href="https://t.me/${esc(c.telegram.replace(/^@/,""))}" target="_blank" rel="noopener">Telegram</a>`:""}${c.instagram?`<a href="https://instagram.com/${esc(c.instagram.replace(/^@/,""))}" target="_blank" rel="noopener">Instagram</a>`:""}<a href="#/contacts">Contact us</a></div>
- <div><h4>Help</h4><a href="#/delivery">${t("delivery")}</a><a href="#/returns">Returns &amp; refunds</a><a href="#/privacy">Privacy policy</a><a href="#/terms">Terms of service</a><a href="#/about">Our story</a></div></div>
+ <div><h4>Help</h4><a href="#/track">Track your order</a><a href="#/delivery">${t("delivery")}</a><a href="#/returns">Returns &amp; refunds</a><a href="#/privacy">Privacy policy</a><a href="#/terms">Terms of service</a><a href="#/about">Our story</a></div></div>
  <div class="shell copy"><span>© ${new Date().getFullYear()} ${esc(c.name)}. ${t("rights")}.</span></div>`;
  hsSetup();badges();acctBadge();
 }
@@ -280,25 +280,40 @@ function viewCheckout(){
  if(user&&profile)d={...d,name:profile.full_name||d.name,phone:profile.phone||d.phone,email:user.email,city:profile.city||d.city,address:profile.address_line||d.address,state:profile.state||d.state,zip:profile.zip||d.zip};
  return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/cart">${t("cart")}</a> / ${t("checkout")}</div><h1>${t("checkoutT")}</h1></div></div>
  <div class="shell cartgrid"><form class="stack" data-form="checkout" novalidate>${sb&&!user?`<div class="signhint">Have an account? <a class="textlink" href="#/account" data-act="cologin">Sign in</a> for faster checkout — or continue as a guest.</div>`:""}<div class="panel"><h2>${t("contactsT")}</h2><div class="form">
- <div class="full"><label>${t("name")} <span class="req">*</span></label><input class="field" name="name" autocomplete="name" value="${esc(d.name)}" required></div>
- <div><label>${t("phone")} <span class="req">*</span></label><input class="field" name="phone" type="tel" autocomplete="tel" value="${esc(d.phone)}" required></div>
- <div><label>${t("email")}</label><input class="field" name="email" type="email" autocomplete="email" value="${esc(d.email)}"></div></div></div>
+ <div class="full"><label>Full name <span class="req">*</span></label><input class="field" name="name" autocomplete="name" maxlength="120" value="${esc(d.name)}" required></div>
+ <div><label>${t("email")} <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" maxlength="200" value="${esc(d.email)}" required><div class="ferr" data-for="email"></div></div>
+ <div><label>${t("phone")} <span class="req">*</span></label><input class="field" name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(d.phone)}" placeholder="(555) 123-4567" required><div class="ferr" data-for="phone"></div></div>
+ <p class="full help" style="margin:0">We’ll email your order confirmation and tracking number. Your phone is only used by the carrier for delivery.</p></div></div>
  <div class="panel"><h2>${t("deliveryM")}</h2><div class="radio">${o(S.settings.deliveryOptions).map((x,i)=>`<label><input type="radio" name="delivery" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>
- <div class="form" style="margin-top:14px"><div><label>${t("city")} <span class="req">*</span></label><input class="field" name="city" value="${esc(d.city)}" required></div><div><label>${t("address")}</label><input class="field" name="address" autocomplete="street-address" value="${esc(d.address)}"></div><div><label>State</label><input class="field" name="state" autocomplete="address-level1" value="${esc(d.state)}"></div><div><label>ZIP code</label><input class="field" name="zip" autocomplete="postal-code" inputmode="numeric" value="${esc(d.zip)}"></div></div></div>
+ <h3 style="margin:20px 0 4px;font-size:16px">Shipping address</h3><div class="form" style="margin-top:10px"><div class="full"><label>${t("address")} <span class="req">*</span></label><input class="field" name="address" autocomplete="address-line1" maxlength="150" value="${esc(d.address)}" placeholder="123 Main St" required></div>
+ <div class="full"><label>Apartment, suite, etc. <span class="muted small">(optional)</span></label><input class="field" name="address2" autocomplete="address-line2" maxlength="60" value="${esc(d.address2||"")}"></div>
+ <div><label>${t("city")} <span class="req">*</span></label><input class="field" name="city" autocomplete="address-level2" maxlength="100" value="${esc(d.city)}" required></div>
+ <div><label>State <span class="req">*</span></label><select class="field" name="state" autocomplete="address-level1" required><option value="">Select state</option>${US_STATES.map(([c,n])=>`<option value="${c}" ${stateCode(d.state)===c?"selected":""}>${n}</option>`).join("")}</select></div>
+ <div><label>ZIP code <span class="req">*</span></label><input class="field" name="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" value="${esc(d.zip)}" placeholder="12345" required><div class="ferr" data-for="zip"></div></div>
+ <div><label>Country</label><input class="field" value="United States" disabled></div></div></div>
  <div class="panel"><h2>${t("paymentM")}</h2><div class="radio">${o(S.settings.paymentOptions).map((x,i)=>`<label><input type="radio" name="payment" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>
  <div style="margin-top:14px"><label class="lbl">${t("comment")}</label><textarea class="field" name="comment"></textarea></div></div>
  <div id="coErr"></div><p class="small muted" style="margin:0">By placing your order, you agree to our <a class="textlink" href="#/terms" target="_blank">Terms of Service</a> and <a class="textlink" href="#/privacy" target="_blank">Privacy Policy</a>.</p><button class="btn primary block" style="padding:15px">${t("placeOrder")} →</button></form>${summary(false)}</div>`}
 function orderText(o){
  const L=o.lines.map(l=>`• ${l.name}${l.opt?" — "+optStr(l.opt,prod(l.id)):""}${l.sku?" ("+l.sku+")":""} × ${l.qty} = ${money(l.price*l.qty)}`).join("\n");
  return `${lang==="en"?"New order":"Нове замовлення"} ${o.no}\n\n${L}\n\n${t("total")}: ${money(o.total)}\n\n${t("name")}: ${o.c.name}\n${t("phone")}: ${o.c.phone}${o.c.email?"\n"+t("email")+": "+o.c.email:""}\n${t("deliveryM")}: ${o.c.delivery}\n${t("city")}: ${o.c.city}${o.c.address?", "+o.c.address:""}\n${t("paymentM")}: ${o.c.payment}${o.c.comment?"\n"+t("comment")+": "+o.c.comment:""}`}
+function checkoutErrors(fd){
+ const e={};["name","email","phone","address","city","state","zip"].forEach(k=>{if(!String(fd[k]||"").trim())e[k]="Required"});
+ if(!e.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(fd.email).trim()))e.email="Please enter a valid email, e.g. name@example.com";
+ if(!e.phone&&String(fd.phone).replace(/\D/g,"").length<10)e.phone="Please enter a 10-digit phone number";
+ if(!e.zip&&!/^\d{5}(-\d{4})?$/.test(String(fd.zip).trim()))e.zip="ZIP code must be 5 digits";
+ return e}
 async function placeOrder(f){
- const fd=Object.fromEntries(new FormData(f));const bad=["name","phone","city"].filter(k=>!String(fd[k]||"").trim());
- f.querySelectorAll(".field").forEach(i=>i.style.borderColor=bad.includes(i.name)?"#c0563a":"");
- if(bad.length||String(fd.phone).replace(/\D/g,"").length<9){$("#coErr").innerHTML=`<div class="note">${t("required")}</div>`;return}
+ const fd=Object.fromEntries(new FormData(f));["name","email","phone","address","address2","city","zip"].forEach(k=>fd[k]=String(fd[k]||"").trim());
+ const errs=checkoutErrors(fd),bad=Object.keys(errs);
+ f.querySelectorAll(".field").forEach(i=>i.classList.toggle("bad",bad.includes(i.name)));
+ f.querySelectorAll(".ferr").forEach(x=>{const m=errs[x.dataset.for];x.textContent=m&&m!=="Required"?m:""});
+ if(bad.length){$("#coErr").innerHTML=`<div class="note">${t("required")}</div>`;const first=f.querySelector(".field.bad");first&&first.focus();return}
+ $("#coErr").innerHTML="";fd.address=fd.address+(fd.address2?", "+fd.address2:"");
  const btn=f.querySelector("button:last-child");btn.disabled=true;
  const d=new Date(),no="CHV-"+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+Math.floor(1000+Math.random()*9000);
  const o={no,date:d.toISOString(),lines:cartLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),total:cartTotal(),c:fd,sent:false};
- LS.set("buyer",{name:fd.name,phone:fd.phone,email:fd.email,city:fd.city,address:fd.address,state:fd.state,zip:fd.zip});
+ LS.set("buyer",{name:fd.name,phone:fd.phone,email:fd.email,city:fd.city,address:fd.address.replace(", "+fd.address2,"").replace(/, $/,""),address2:fd.address2,state:fd.state,zip:fd.zip});
  let res={ok:false};try{res=await saveOrderToDb(o)}catch(e){}
  if(res.stock){$("#coErr").innerHTML=`<div class="note">${esc(res.msg)} <a class="textlink" href="#/cart">Go to cart →</a></div>`;btn.disabled=false;refreshCatalog();return}
  o.sent=res.ok;o.db=res.ok;o.mine=!!(res.ok&&user);if(res.ok)setTimeout(refreshCatalog,800);
@@ -311,7 +326,7 @@ function viewOrder(){
  return `<div class="shell section" style="max-width:760px"><div class="panel"><span class="eyebrow">${t("orderNo")}: ${esc(o.no)}</span><h1 style="font-size:36px;margin:8px 0 14px">${t("orderT")}</h1>
  ${o.sent?`<div class="okbox">${t("orderSent")}</div>${o.mine?`<p style="margin-top:14px"><a class="textlink" href="#/account/orders">View your orders →</a></p>`:""}`:`<p>${t("orderSend")}</p><textarea class="field" id="otext" readonly style="min-height:220px;font-size:13px">${esc(txt)}</textarea>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${tg?`<button class="btn primary" data-act="tg" data-u="${esc(tg)}">${t("sendTg")}</button>`:""}${st.email?`<a class="btn ${tg?"":"primary"}" href="mailto:${esc(st.email)}?subject=${encodeURIComponent((lang==="en"?"Order ":"Замовлення ")+o.no)}&body=${encodeURIComponent(txt)}">${t("sendEmail")}</a>`:""}${vb?`<a class="btn" href="viber://chat?number=${encodeURIComponent(vb)}" data-act="copyorder">${t("sendViber")}</a>`:""}<button class="btn" data-act="copyorder">${t("copy")}</button>${st.phone?`<a class="btn ghost" href="tel:${esc(st.phone.replace(/[^+\d]/g,""))}">${t("call")} ${esc(st.phone)}</a>`:""}</div>`}
- <br><a class="textlink" href="#/">← ${t("backHome")}</a></div></div>`}
+ <p style="margin-top:16px"><a class="btn" href="#/track?no=${encodeURIComponent(o.no)}">📦 Track your order</a></p><br><a class="textlink" href="#/">← ${t("backHome")}</a></div></div>`}
 function viewFavs(){const L=favs.map(prod).filter(p=>p&&p.active);return `<div class="page-head"><div class="shell"><h1>${t("favorites")}</h1></div></div><div class="shell section">${L.length?`<div class="grid">${L.map(card).join("")}</div>`:`<div class="empty"><b>${t("favEmpty")}</b>${t("favEmptyS")}</div>`}</div>`}
 function viewText(title,text){return `<div class="page-head"><div class="shell"><h1>${esc(title)}</h1></div></div><div class="shell section"><div class="prose">${esc(text)}</div></div>`}
 function viewContacts(){const c=S.settings;const r=(l,v,h)=>v?`<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><span class="muted">${l}</span>${h?`<a class="textlink" href="${h}">${esc(v)}</a>`:`<b>${esc(v)}</b>`}</div>`:"";
@@ -320,6 +335,33 @@ function viewContacts(){const c=S.settings;const r=(l,v,h)=>v?`<div class="row" 
  <div class="panel"><h2>Contact us</h2><form class="stack" data-form="contact" novalidate><div class="form"><div><label>Name <span class="req">*</span></label><input class="field" name="name" autocomplete="name" maxlength="120" value="${esc(nm)}" required></div><div><label>Email <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" maxlength="200" value="${esc(em)}" required></div><div class="full"><label>Order number (optional)</label><input class="field" name="order_no" maxlength="40" placeholder="CHV-…"></div><div class="full"><label>Message <span class="req">*</span></label><textarea class="field" name="body" maxlength="5000" required style="min-height:140px"></textarea></div></div><input type="text" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true"><div id="ctMsg"></div><button class="btn primary">Send message</button></form></div>
  <div class="panel"><h2>Other ways to reach us</h2>${r(t("phone"),c.phone,"tel:"+(c.phone||"").replace(/[^+\d]/g,""))}${r(t("email"),c.email,"mailto:"+c.email)}${r("Instagram",c.instagram,"https://instagram.com/"+(c.instagram||"").replace(/^@/,""))}${r(t("hours"),c.hours)}</div></div>`}
 
+
+/* ===== checkout helpers ===== */
+const US_STATES=[["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],["DC","District of Columbia"],["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"],["PR","Puerto Rico"]];
+function stateCode(v){v=String(v||"").trim();if(!v)return"";const u=v.toUpperCase();const f=US_STATES.find(([c,n])=>c===u||n.toUpperCase()===u);return f?f[0]:""}
+
+/* ===== order tracking ===== */
+function orderTracker(o){
+ if(o.status==="cancelled"||o.status==="returned")return `<div class="otrk-off">${o.status==="cancelled"?"This order was cancelled.":"This order was returned."}${o.status==="returned"?" Your refund is being processed.":""}</div>`;
+ const steps=[["new","Order placed"],["confirmed","Confirmed"],["shipped","Shipped"],["completed","Delivered"]],idx=Math.max(0,steps.findIndex(s=>s[0]===o.status));
+ const tu=o.tracking_number?trackUrl(o.carrier,o.tracking_number):"";
+ return `<ol class="otrk" aria-label="Order progress">${steps.map(([k,l],i)=>`<li class="${i<idx?"done":i===idx?"cur":""}"${i===idx?' aria-current="step"':""}><span class="dot" aria-hidden="true">${i<idx||(i===idx&&k==="completed")?"✓":""}</span><b>${l}</b>${k==="new"&&o.created_at?`<small>${fmtDate(o.created_at)}</small>`:k==="shipped"&&o.shipped_at?`<small>${fmtDate(o.shipped_at)}</small>`:""}</li>`).join("")}</ol>
+ ${o.tracking_number?`<div class="otrk-num">${esc(o.carrier||"Tracking number")}: <b>${esc(o.tracking_number)}</b>${tu?` <a class="btn sm" href="${esc(tu)}" target="_blank" rel="noopener">Track package ↗</a>`:""}</div>`:idx<2?`<p class="small muted" style="margin:8px 0 0">We’ll add a tracking number here as soon as your order ships (usually within 1–2 business days).</p>`:""}`}
+function viewTrack(q){
+ const lo=LS.get("lastOrder",null),no=q.get("no")||"",em=(lo&&lo.no===no&&lo.c&&lo.c.email)||(user&&user.email)||"";
+ if(no&&em)setTimeout(()=>{const f=$('[data-form="track"]');f&&f.requestSubmit()},0);
+ return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/">${t("home")}</a> / Track your order</div><h1>Track your order</h1><p>Enter your order number and the email you used at checkout.</p></div></div>
+ <div class="shell section" style="max-width:760px"><form class="panel stack" data-form="track" novalidate><div class="form"><div><label>Order number <span class="req">*</span></label><input class="field" name="no" placeholder="CHV-261124-1234" value="${esc(no)}" autocomplete="off" required></div><div><label>${t("email")} <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" value="${esc(em)}" required></div></div>
+ <button class="btn primary">Find my order</button>${user?`<p class="small muted" style="margin:0">Signed in? All your orders are in <a class="textlink" href="#/account/orders">My orders</a>.</p>`:""}</form><div id="trackRes"></div></div>`}
+async function trackSubmit(f){
+ const no=String(f.no.value||"").trim(),email=String(f.email.value||"").trim(),box=$("#trackRes");
+ if(!no||!email){box.innerHTML=`<div class="note" style="margin-top:14px">Please enter your order number and email.</div>`;return}
+ if(!sb){box.innerHTML=`<div class="note" style="margin-top:14px">Tracking is unavailable right now. Please contact us.</div>`;return}
+ const b=f.querySelector("button.primary");b.disabled=true;const{data,error}=await sb.rpc("track_order",{p_no:no,p_email:email});b.disabled=false;
+ if(error||!data){box.innerHTML=`<div class="note" style="margin-top:14px">We couldn’t find an order with that number and email. Please check both — the order number is in your confirmation and starts with CHV-.</div>`;return}
+ box.innerHTML=`<div class="panel" style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="eyebrow">Order ${esc(data.order_no)}</span><div class="muted small">Placed ${fmtDate(data.created_at)}${data.delivery?" · "+esc(data.delivery):""}</div></div><b>${money(data.total)}</b></div>
+ ${orderTracker(data)}<div class="otrk-items">${(data.items||[]).map(i=>`<div class="row small"><span>${esc(i.name)}${i.opt?` <span class="muted">(${esc(optStr(i.opt,prod(i.id)))})</span>`:""} × ${+i.qty||0}</span><span>${money((+i.price||0)*(+i.qty||0))}</span></div>`).join("")}</div>
+ <p class="small muted" style="margin:12px 0 0">Questions about this order? <a class="textlink" href="#/contacts">Contact us</a> and include your order number.</p></div>`}
 /* ===== reviews on the product page ===== */
 function reviewsHtml(p){
  const R=revsOf(p.id).slice().sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)),r=rating(p.id);
@@ -371,7 +413,7 @@ function render(){
  const h=location.hash.slice(1)||"/";const[path,qs]=h.split("?");const q=new URLSearchParams(qs||"");const parts=path.split("/").filter(Boolean);
  if(SELLER){Seller.render(parts,q,path);return}
  markNav(path);hsClose();hsSync(path,q);let html;
- html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:viewOrder,favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
+ html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:viewOrder,favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
  if(path!==lastPath)window.scrollTo(0,0);lastPath=path;
 }
@@ -423,7 +465,7 @@ document.addEventListener("change",e=>{
  else if(el.dataset.ach&&typeof Admin!=="undefined")Admin.change(el);
 });
 document.addEventListener("submit",e=>{const f=e.target;const k=f.dataset.form;if(!k)return;e.preventDefault();
- if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k.startsWith("ac"))acSubmit(k,f);else if(k.startsWith("s:")&&window.Seller)Seller.submit(k.slice(2),f);else if(typeof Admin!=="undefined")Admin.submit(k,f)});
+ if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k.startsWith("ac"))acSubmit(k,f);else if(k.startsWith("s:")&&window.Seller)Seller.submit(k.slice(2),f);else if(typeof Admin!=="undefined")Admin.submit(k,f)});
 function go(f){const cur=new URLSearchParams((location.hash.split("?")[1])||"");const n=new URLSearchParams();if(cur.get("cat"))n.set("cat",cur.get("cat"));const fd=new FormData(f);if(fd.get("q"))n.set("q",fd.get("q"));const sv=fd.get("sort"),def=fd.get("q")?"rel":"pop";if(sv&&sv!==def)n.set("sort",sv);if(fd.get("stock"))n.set("stock","1");location.hash="#/shop"+(n.toString()?"?"+n:"")}
 function copy(s){(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(()=>toast(t("copied"))).catch(()=>{const tmp=document.createElement("textarea");tmp.value=s;document.body.appendChild(tmp);tmp.select();try{document.execCommand("copy");toast(t("copied"))}catch(_){}tmp.remove()})}
 window.addEventListener("hashchange",()=>{if(!SELLER){closeLayers(true);closeAcct()}render()});

@@ -377,3 +377,17 @@ body.locked .chatbtn,body.locked .chatpanel{display:none}
 .chatreply{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}.chatreply textarea{flex:1;min-height:60px;resize:vertical}
 @media (max-width:860px){.chatadm{grid-template-columns:1fr}.chatlistadm{max-height:260px}}
 .crate.none{color:#8a918b}.crate.none .s-bg{color:#d6d1c6}
+/* checkout validation & order tracker */
+.field.bad{border-color:#c0563a!important;background:#fff8f6}.ferr{color:#b0442c;font-size:12.5px;margin-top:4px}.ferr:empty{display:none}
+.otrk{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);margin:18px 0 6px;padding:0;position:relative}
+.otrk li{position:relative;text-align:center;font-size:13px;color:var(--muted);padding-top:34px}
+.otrk li::before{content:"";position:absolute;top:13px;left:-50%;right:50%;height:3px;background:#e4e2dc}.otrk li:first-child::before{display:none}
+.otrk li.done::before,.otrk li.cur::before{background:var(--forest)}
+.otrk .dot{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid #e4e2dc;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;z-index:1}
+.otrk li.done .dot{background:var(--forest);border-color:var(--forest)}.otrk li.cur .dot{border-color:var(--forest);box-shadow:0 0 0 4px var(--sage2)}.otrk li.cur:last-child .dot{background:var(--forest)}
+.otrk li b{display:block;color:var(--ink);font-size:13px}.otrk li:not(.done):not(.cur) b{color:var(--muted);font-weight:600}.otrk small{display:block;font-size:11.5px}
+.otrk-num{background:var(--sage2);border-radius:12px;padding:10px 14px;font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+.otrk-off{background:#f6efe9;border-radius:12px;padding:12px 14px;margin:14px 0 6px;font-size:14px}
+.oblock{border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}.ohead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.oitems{margin-top:10px;font-size:14px}.oitems summary{cursor:pointer;color:var(--forest);font-weight:600}.oitems .row{margin:6px 0}.otrk-items{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+@media (max-width:480px){.otrk li{font-size:12px}.otrk li b{font-size:11.5px}}
