@@ -426,7 +426,7 @@ async function submitReview(f){
  f.outerHTML=`<div class="okbox">Thank you, ${esc(name.split(" ")[0])}! Your review was sent and will appear here after a quick check.</div>`}
 
 /* ===== legal pages & brand story ===== */
-function fillTokens(txt){const s=S.settings;return String(txt||"").replace(/\{store\}/g,s.name||"").replace(/\{email\}/g,s.email||"").replace(/\{site\}/g,(typeof SITE_URL!=="undefined"?SITE_URL:location.origin))}
+function fillTokens(txt){const s=S.settings;return String(txt||"").replace(/\{store\}/g,s.name||"").replace(/\{email\}/g,s.email||"").replace(/\{address\}/g,String(s.address||"[Business address]").replace(/\s*\n\s*/g,", ")).replace(/\{site\}/g,(typeof SITE_URL!=="undefined"?SITE_URL:location.origin))}
 function richText(txt){
  const blocks=fillTokens(txt).replace(/\r/g,"").split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean);
  const inline=x=>esc(x).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/([\w.+-]+@[\w-]+\.[\w.]+)/g,'<a class="textlink" href="mailto:$1">$1</a>');
