@@ -24,7 +24,7 @@ _d=json.loads(snap)
 for p in _d['products']: p['images']=['photo:'+_inv[u] if u in _inv else u for u in p['images']]
 snap=json.dumps(_d).replace('<','\\u003c')
 body=open('body.html').read().replace('<script id="store-data" type="application/json">null</script>','<script id="store-data" type="application/json">'+snap+'</script>')
-store=open('head.html').read()+'\n'+css+body+js(['i18n.js','photos.js','demo.js','account.js','app.js'])+'</script>\n</body></html>'
+store=open('head.html').read()+'\n'+css+body+js(['i18n.js','photos.js','demo.js','account.js','chat.js','app.js'])+'</script>\n</body></html>'
 open('store.html','w').write(store)
 seller=open('seller_head.html').read()+'\n'+css+open('seller_body.html').read()+js(['i18n.js','photos.js','demo.js','admin.js','account.js','seller.js','app.js'])+'</script>\n</body></html>'
 open('seller.html','w').write(seller)
