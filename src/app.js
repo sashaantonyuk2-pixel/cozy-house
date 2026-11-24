@@ -226,9 +226,10 @@ function viewHome(){
  let feat=vis.filter(p=>p.featured);if(feat.length<4)feat=feat.concat(vis.filter(p=>!p.featured)).slice(0,4);
  const shown=new Set(feat.slice(0,4).map(p=>p.id));let fresh=[...vis].sort((a,b)=>(b.created||0)-(a.created||0));fresh=fresh.filter(p=>!shown.has(p.id)).concat(fresh.filter(p=>shown.has(p.id))).slice(0,4);
  const heroImg=st.heroImage||PHOTO.hero;
- return `<section class="hero"><div class="shell hero-grid"><div><span class="eyebrow">${esc(st.heroEyebrow)}</span><h1>${esc(st.heroTitle)}</h1><p>${esc(st.heroText)}</p>
- <div class="hero-cta"><a class="btn primary" href="#/shop">${t("shopNow")} →</a><a class="btn" href="#/about">${t("learnMore")}</a></div></div>
- <div class="hero-art"><img src="${esc(heroImg)}" alt="">${st.freeFrom?`<div class="hero-note"><b>${t("freeOk").replace(" ✓","")}</b>${lang==="en"?"on orders over":"від"} ${money(st.freeFrom)}</div>`:""}</div></div></section>
+ const heroMob=st.heroImageMobile||heroImg,pos=st.heroFocus||"center",link=st.heroBtnLink||"#/shop";
+ return `<section class="hero2" aria-label="${esc(st.heroTitle||st.name)}"><picture>${st.heroImageMobile?`<source media="(max-width:700px)" srcset="${esc(heroMob)}">`:""}<img src="${esc(heroImg)}" alt="" fetchpriority="high" style="object-position:${esc(pos)}"></picture>
+ <div class="shell hero2-in"><div class="hero2-box">${st.heroEyebrow?`<span class="eyebrow">${esc(st.heroEyebrow)}</span>`:""}<h1>${esc(st.heroTitle)}</h1>${st.heroText?`<p>${esc(st.heroText)}</p>`:""}
+ <div class="hero-cta"><a class="btn hero-btn" href="${esc(link)}">${esc(st.heroBtnText||t("shopNow"))} →</a><a class="btn hero-btn2" href="#/about">Our story</a></div></div></div></section>
  <div class="shell perks">${[["🚚","perk1"],["💳","perk2"],["↺","perk3"],["💬","perk4"]].map(([i,k])=>`<div class="perk"><i>${i}</i><span><b>${t(k)}</b>${t(k+"s")}</span></div>`).join("")}</div>
  <section class="section" style="padding-top:20px"><div class="shell"><div class="section-head"><div><span class="eyebrow">${t("categories")}</span><h2>${lang==="en"?"Shop by category":"Оберіть категорію"}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div>
  <div class="grid cats">${S.categories.map(c=>`<a class="cat" href="#/shop?cat=${c.id}"><div class="ph"><img src="${esc(catImg(c))}" alt="" loading="lazy"></div><b>${esc(c.name)}</b><small>${nItems(vis.filter(p=>p.cat===c.id).length)}</small></a>`).join("")}</div></div></section>

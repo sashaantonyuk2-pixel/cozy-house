@@ -425,3 +425,17 @@ body.locked .chatbtn,body.locked .chatpanel{display:none}
 @media (hover:hover){.card:hover .nphotos{opacity:0}}
 .btn.buynow{margin-top:10px;background:var(--terra);border-color:var(--terra);color:#fff;font-weight:800;padding:13px}.btn.buynow:hover{background:#a0604a;border-color:#a0604a}
 .buynowbar{background:#fbeee7;border-color:#f1d5c7}
+/* ===== hero banner (variant A: full-width photo) ===== */
+.hero2{position:relative;min-height:clamp(440px,62vh,620px);display:flex;align-items:center;overflow:hidden;background:#d9d3c8;isolation:isolate}
+.hero2 picture,.hero2 picture img{position:absolute;inset:0;width:100%;height:100%}.hero2 picture img{object-fit:cover;z-index:-2}
+.hero2::before{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(24,33,27,.74) 0%,rgba(24,33,27,.45) 38%,rgba(24,33,27,.08) 68%,rgba(24,33,27,0) 100%)}
+.hero2-in{width:100%;padding-top:48px;padding-bottom:48px}.hero2-box{max-width:600px;color:#fff}
+.hero2 .eyebrow{color:#f3d2c2}.hero2 h1{color:#fff;font-size:clamp(40px,5.4vw,70px);line-height:1.03;margin:14px 0 16px;text-shadow:0 2px 18px rgba(0,0,0,.18)}
+.hero2 p{font-size:18px;line-height:1.55;color:#eef2ee;max-width:520px;white-space:pre-line;margin:0}
+.hero-btn{background:#fff;border-color:#fff;color:var(--ink);padding:14px 24px;font-size:15px}.hero-btn:hover{background:#f3f1ea}
+.hero-btn2{background:transparent;border-color:rgba(255,255,255,.75);color:#fff;padding:14px 22px;font-size:15px}.hero-btn2:hover{background:rgba(255,255,255,.12)}
+@media (max-width:700px){.hero2{min-height:auto;align-items:flex-end}.hero2-in{padding-top:190px;padding-bottom:28px}
+ .hero2::before{background:linear-gradient(0deg,rgba(24,33,27,.82) 0%,rgba(24,33,27,.5) 45%,rgba(24,33,27,.05) 80%)}
+ .hero2 h1{font-size:38px}.hero2 p{font-size:16px}.hero-cta .btn{flex:1}}
+.hero2 h1{max-width:480px}
+@media (max-width:700px){.hero2 h1{max-width:none}.hero2-in{padding-top:250px}}

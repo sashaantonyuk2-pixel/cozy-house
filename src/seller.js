@@ -90,6 +90,7 @@ async flush(){
   for(const p of S.products)for(let i=0;i<(p.images||[]).length;i++)if(String(p.images[i]).startsWith("data:"))p.images[i]=await this.upload(p.images[i],"products/"+p.id);
   for(const c of S.categories)if(String(c.image||"").startsWith("data:"))c.image=await this.upload(c.image,"categories");
   if(String(S.settings.heroImage||"").startsWith("data:"))S.settings.heroImage=await this.upload(S.settings.heroImage,"site");
+  if(String(S.settings.heroImageMobile||"").startsWith("data:"))S.settings.heroImageMobile=await this.upload(S.settings.heroImageMobile,"site");
   const cats=S.categories.map((c,i)=>({id:c.id,name:c.name,image:c.image||null,position:i}));
   const cUp=cats.filter(c=>this.synced.c[c.id]!==JSON.stringify(c));
   if(cUp.length){const{error}=await sb.from("categories").upsert(cUp);if(error)throw error}
