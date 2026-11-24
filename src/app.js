@@ -170,7 +170,7 @@ function openCart(){renderMini();openLayer("cartDrawer")}
 function quickView(id){
  const p=prod(id);if(!p)return;const c=catOf(p.cat),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  $("#qv").innerHTML=`<div class="box"><button class="iconbtn qvx" data-act="closeall" aria-label="${t("close")}">${X}</button>
- <div class="qvg"><div class="main"><img id="qvImg" src="${esc(imgs[0])}" alt="${esc(p.name)}"></div>${imgs.length>1?`<div class="thumbs">${imgs.map((s,i)=>`<button class="${i?"":"on"}" data-act="qvthumb" data-i="${i}" data-id="${p.id}"><img src="${esc(s)}" alt=""></button>`).join("")}</div>`:""}</div>
+ <div class="qvg">${carouselHtml(imgs,p.name,"qv",{thumbs:true})}</div>
  <div class="qvi"><span class="catname">${esc(c?c.name:"")}</span><h2>${esc(p.name)}</h2><span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>
  ${(()=>{const r=rating(p.id);return r?`<div class="crate">${stars(r.avg)}<span>${r.avg.toFixed(1)} (${r.n})</span></div>`:`<div class="crate none">${stars(0)}<span>No reviews yet</span></div>`})()}<div class="pricebox"><span class="price">${money(p.price)}</span></div>${p.short?`<p class="lead">${esc(p.short)}</p>`:""}
  ${optsHtml(p,"qv")}<div class="buyrow"><div class="qty"><button data-act="qvq" data-d="-1" aria-label="−">−</button><input id="qvq" type="number" min="1" max="${Math.max(1,p.stock)}" value="1" aria-label="${t("qty")}"><button data-act="qvq" data-d="1" aria-label="+">+</button></div>
@@ -179,12 +179,37 @@ function quickView(id){
  <a class="textlink" href="#/product/${p.id}">${t("viewDetails")} →</a></div></div>`;
  openLayer("qv")}
 
+
+/* ===== photo carousel (product page, quick view, fullscreen) ===== */
+function carouselHtml(imgs,alt,id,o={}){const n=imgs.length;
+ return `<div class="car${n>1?" multi":""}" data-car="${id}" data-alt="${esc(alt)}"><div class="cartrack" tabindex="${n>1?0:-1}" aria-roledescription="carousel" aria-label="${esc(alt)} — photos">${imgs.map((s,i)=>`<div class="carslide" role="group" aria-roledescription="slide" aria-label="${i+1} of ${n}"><img src="${esc(s)}" alt="${esc(alt)}${n>1?` — photo ${i+1}`:""}" ${i?'loading="lazy"':""} draggable="false"${o.zoom?` data-act="lbopen" data-i="${i}"`:""}></div>`).join("")}</div>
+ ${o.zoom?`<button class="carzoom" data-act="lbopen" data-i="0" aria-label="View photos full screen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>`:""}
+ ${n>1?`<button class="carbtn prev" data-act="carmove" data-d="-1" aria-label="Previous photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><button class="carbtn next" data-act="carmove" data-d="1" aria-label="Next photo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+ <div class="carcount" aria-live="polite"><span>1</span> / ${n}</div><div class="cardots" aria-hidden="true">${imgs.map((_,i)=>`<i class="${i?"":"on"}"></i>`).join("")}</div>`:""}</div>
+ ${o.thumbs&&n>1?`<div class="thumbs" data-for="${id}">${imgs.map((s,i)=>`<button class="${i?"":"on"}" data-act="cargo" data-car="${id}" data-i="${i}" aria-label="Show photo ${i+1}"><img src="${esc(s)}" alt="" loading="lazy"></button>`).join("")}</div>`:""}`}
+const carIdx=c=>{const t=c&&c.querySelector(".cartrack");return t&&t.clientWidth?Math.round(t.scrollLeft/t.clientWidth):0};
+function carGo(c,i,instant){if(!c)return;const t=c.querySelector(".cartrack"),n=t.children.length;i=(i+n)%n;t.scrollTo({left:i*t.clientWidth,behavior:instant?"auto":"smooth"});carSync(c,i)}
+function carMove(c,d){carGo(c,carIdx(c)+d)}
+function carSync(c,i){if(!c)return;if(i===undefined)i=carIdx(c);const n=c.querySelector(".cartrack").children.length;
+ const cnt=c.querySelector(".carcount span");if(cnt)cnt.textContent=i+1;c.querySelectorAll(".cardots i").forEach((d,k)=>d.classList.toggle("on",k===i));
+ const z=c.querySelector(".carzoom");if(z)z.dataset.i=i;
+ document.querySelectorAll(`.thumbs[data-for="${c.dataset.car}"] button`).forEach((b,k)=>{b.classList.toggle("on",k===i);if(k===i&&b.parentNode.scrollWidth>b.parentNode.clientWidth)b.scrollIntoView({block:"nearest",inline:"nearest"})})}
+let carT;document.addEventListener("scroll",e=>{const t=e.target;if(!t.classList||!t.classList.contains("cartrack"))return;clearTimeout(carT);carT=setTimeout(()=>carSync(t.closest(".car")),60)},true);
+document.addEventListener("keydown",e=>{const lb=$("#lb");
+ if(lb&&!lb.hidden){if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();closeLightbox()}else if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();carMove(lb.querySelector(".car"),e.key==="ArrowLeft"?-1:1)}return}
+ const t=e.target;if(t.classList&&t.classList.contains("cartrack")&&(e.key==="ArrowLeft"||e.key==="ArrowRight")){e.preventDefault();carMove(t.closest(".car"),e.key==="ArrowLeft"?-1:1)}},true);
+window.addEventListener("resize",()=>document.querySelectorAll(".car").forEach(c=>{const i=+((c.querySelector(".carcount span")||{}).textContent||1)-1;c.querySelector(".cartrack").scrollLeft=i*c.querySelector(".cartrack").clientWidth}));
+let lbFocus=null;
+function lightbox(imgs,i,alt){if(!imgs.length)return;lbFocus=document.activeElement;let lb=$("#lb");if(!lb){lb=document.createElement("div");lb.id="lb";lb.className="lb";lb.setAttribute("role","dialog");lb.setAttribute("aria-modal","true");lb.setAttribute("aria-label","Photo viewer");document.body.appendChild(lb)}
+ lb.innerHTML=`<button class="lbx iconbtn" data-act="lbclose" aria-label="Close">${X}</button>${carouselHtml(imgs,alt,"lb",{thumbs:true})}`;lb.hidden=false;document.body.classList.add("lbopen");
+ requestAnimationFrame(()=>{carGo(lb.querySelector(".car"),i||0,true);lb.querySelector(".lbx").focus()})}
+function closeLightbox(){const lb=$("#lb");if(!lb||lb.hidden)return;lb.hidden=true;lb.innerHTML="";document.body.classList.remove("lbopen");if(lbFocus&&lbFocus.focus)try{lbFocus.focus({preventScroll:true})}catch(_){}}
 /* ===== storefront views ===== */
 function card(p){
  const c=catOf(p.cat),st=stockState(p);
  return `<article class="card"><div class="labels">${p.oldPrice>p.price?`<span class="label sale">−${Math.round(100-p.price/p.oldPrice*100)}%</span>`:""}${st==="out"?`<span class="label out">${t("out")}</span>`:""}${isNew(p)?`<span class="label new">${t("newL")}</span>`:""}</div>
  <button class="fav ${favs.includes(p.id)?"on":""}" data-act="fav" data-id="${p.id}" aria-label="${t("favorites")}">${ICON.heart}</button>
- <div class="phw"><a class="ph" href="#/product/${p.id}"><img src="${esc(img0(p))}" alt="${esc(p.name)}" loading="lazy"></a><button class="qvbtn" data-act="qv" data-id="${p.id}">${t("quickView")}</button></div>
+ <div class="phw"><a class="ph" href="#/product/${p.id}"><img src="${esc(img0(p))}" alt="${esc(p.name)}" loading="lazy">${p.images&&p.images[1]?`<img class="alt" src="${esc(p.images[1])}" alt="" loading="lazy" aria-hidden="true">`:""}${p.images&&p.images.length>1?`<span class="nphotos" aria-label="${p.images.length} photos">${p.images.length} photos</span>`:""}</a><button class="qvbtn" data-act="qv" data-id="${p.id}">${t("quickView")}</button></div>
  <div class="body"><span class="catname">${esc(c?c.name:"")}</span><h3><a href="#/product/${p.id}">${esc(p.name)}</a></h3>${(()=>{const r=rating(p.id);return r?`<div class="crate">${stars(r.avg)}<span>(${r.n})</span></div>`:`<div class="crate none">${stars(0)}<span>(0)</span></div>`})()}
  <div class="bottom"><div><span class="price ${p.oldPrice>p.price?"sale":""}">${money(p.price)}</span>${p.oldPrice>p.price?`<span class="old">${money(p.oldPrice)}</span>`:""}</div>
  <button class="addbtn" data-act="add" data-id="${p.id}" ${st==="out"?"disabled":""} aria-label="${t("addToCart")}">${ICON.bag}</button></div></div></article>`}
@@ -248,7 +273,7 @@ function viewProduct(id){
  const c=catOf(p.cat),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  const rel=visible().filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
  const specs=(p.specs||[]).filter(s=>s[0]||s[1]);
- return `<div class="shell"><div class="pdp"><div class="gallery"><div class="main"><img id="mainImg" src="${esc(imgs[0])}" alt="${esc(p.name)}"></div>${imgs.length>1?`<div class="thumbs">${imgs.map((s,i)=>`<button class="${i?"":"on"}" data-act="thumb" data-i="${i}"><img src="${esc(s)}" alt=""></button>`).join("")}</div>`:""}</div>
+ return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.name,"pdp",{thumbs:true,zoom:true})}</div>
  <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
  ${!p.active?`<div class="note">Hidden product — customers can’t see it.</div>`:""}
  <h1>${esc(p.name)}</h1>${(()=>{const r=rating(p.id);return r?`<button class="crate rlink" data-act="toreviews">${stars(r.avg,17)}<span>${r.avg.toFixed(1)} · ${r.n} ${r.n===1?"review":"reviews"}</span></button>`:`<button class="crate rlink none" data-act="toreviews">${stars(0,17)}<span>No reviews yet · Write a review</span></button>`})()}<span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>${p.sku?` <span class="muted small" style="margin-left:12px">${t("sku")}: ${esc(p.sku)}</span>`:""}
@@ -430,11 +455,14 @@ document.addEventListener("click",e=>{
   lang:()=>{lang=lang==="en"?"uk":"en";LS.set("lang",lang);document.documentElement.lang=lang==="en"?"en":"uk";chrome();render()},
   fav:()=>{e.preventDefault();toggleFav(id)},add:()=>{e.preventDefault();addToCart(id)},
   addq:()=>{const r=readOpts(prod(id),"pdp");if(r.ok)addToCart(id,Math.max(1,parseInt($("#pq").value)||1),r.opt)},
+  carmove:()=>{e.preventDefault();carMove(el.closest(".car"),+el.dataset.d)},
+  cargo:()=>{e.preventDefault();const c=el.closest(".car")||document.querySelector(`.car[data-car="${el.dataset.car}"]`);carGo(c,+el.dataset.i)},
+  lbopen:()=>{const c=el.closest(".car");lightbox([...c.querySelectorAll(".carslide img")].map(i=>i.getAttribute("src")),+el.dataset.i,c.dataset.alt||"")},
+  lbclose:()=>closeLightbox(),
   toreviews:()=>{const r=$("#reviews");r&&r.scrollIntoView({behavior:"smooth"})},
   revopen:()=>{const f=$('[data-form="review"]');if(f){f.hidden=false;el.hidden=true;const s=f.querySelector("input");s&&s.focus()}},
   revlogin:()=>{LS.set("afterLogin","#/product/"+id)},
   "q-":()=>{const i=$("#pq");i.value=Math.max(1,(+i.value||1)-1)},"q+":()=>{const i=$("#pq");i.value=Math.min(+i.max||99,(+i.value||1)+1)},
-  thumb:()=>{const p=prod(location.hash.split("/")[2]);$("#mainImg").src=(p.images||[])[+el.dataset.i];document.querySelectorAll(".thumbs button").forEach(b=>b.classList.toggle("on",b===el))},
   rm:()=>{const k=el.dataset.k;setCart(cart.filter(l=>lkey(l)!==k));render()},
   cq:()=>{const l=lineByKey(el.dataset.k);if(!l)return;l.qty=Math.max(1,Math.min(lineMax(l),l.qty+ +el.dataset.d));setCart(cart);render()},
   hsclear:()=>{e.preventDefault();LS.set("recent",[]);hsClose();hsIn().focus()},
@@ -447,7 +475,6 @@ document.addEventListener("click",e=>{
   more:()=>{shopShown+=12;render()},
   closeall:()=>{e.preventDefault();closeLayers()},
   qv:()=>{e.preventDefault();quickView(id)},
-  qvthumb:()=>{const p=prod(id);$("#qvImg").src=p.images[+el.dataset.i];el.parentNode.querySelectorAll("button").forEach(b=>b.classList.toggle("on",b===el))},
   qvq:()=>{const i=$("#qvq");i.value=Math.max(1,Math.min(+i.max||99,(+i.value||1)+ +el.dataset.d))},
   qvadd:()=>{const r=readOpts(prod(id),"qv");if(r.ok)addToCart(id,Math.max(1,parseInt($("#qvq").value)||1),r.opt)},
   mq:()=>{const l=lineByKey(el.dataset.k);if(!l)return;const mx=lineMax(l);l.qty+=+el.dataset.d;if(l.qty<1)cart=cart.filter(x=>x!==l);else l.qty=Math.min(mx,l.qty);setCart(cart);renderMini();if(/^#\/(cart|checkout)/.test(location.hash))render()},
@@ -470,7 +497,7 @@ document.addEventListener("submit",e=>{const f=e.target;const k=f.dataset.form;i
  if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k.startsWith("ac"))acSubmit(k,f);else if(k.startsWith("s:")&&window.Seller)Seller.submit(k.slice(2),f);else if(typeof Admin!=="undefined")Admin.submit(k,f)});
 function go(f){const cur=new URLSearchParams((location.hash.split("?")[1])||"");const n=new URLSearchParams();if(cur.get("cat"))n.set("cat",cur.get("cat"));const fd=new FormData(f);if(fd.get("q"))n.set("q",fd.get("q"));const sv=fd.get("sort"),def=fd.get("q")?"rel":"pop";if(sv&&sv!==def)n.set("sort",sv);if(fd.get("stock"))n.set("stock","1");location.hash="#/shop"+(n.toString()?"?"+n:"")}
 function copy(s){(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(()=>toast(t("copied"))).catch(()=>{const tmp=document.createElement("textarea");tmp.value=s;document.body.appendChild(tmp);tmp.select();try{document.execCommand("copy");toast(t("copied"))}catch(_){}tmp.remove()})}
-window.addEventListener("hashchange",()=>{if(!SELLER){closeLayers(true);closeAcct()}render()});
+window.addEventListener("hashchange",()=>{if(!SELLER){closeLayers(true);closeAcct();closeLightbox()}render()});
 document.addEventListener("keydown",e=>{if(SELLER)return;if(e.key==="Escape")closeAcct();if(e.key==="Escape"&&$("#overlay").classList.contains("show"))closeLayers()});
 
 (async()=>{sbInit();await load();document.documentElement.lang=SELLER?"uk":"en";chrome();if(SELLER)Seller.boot();else render()})();

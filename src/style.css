@@ -393,3 +393,33 @@ body.locked .chatbtn,body.locked .chatpanel{display:none}
 @media (max-width:480px){.otrk li{font-size:12px}.otrk li b{font-size:11.5px}}
 .otrk-eta{background:#fbf6ec;border:1px solid #efe2c8;border-radius:12px;padding:10px 14px;font-size:14.5px;margin-top:10px}
 .etarow{display:flex;flex-direction:column;gap:4px}.etarow .field{max-width:180px;padding:7px 10px}
+
+/* ===== photo carousel ===== */
+.car{position:relative;border-radius:20px;overflow:hidden;background:#efece4;border:1px solid var(--line)}
+.cartrack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;aspect-ratio:1}
+.cartrack::-webkit-scrollbar{display:none}.cartrack:focus-visible{outline:3px solid var(--forest);outline-offset:-3px}
+.carslide{flex:0 0 100%;scroll-snap-align:start;scroll-snap-stop:always}.carslide img{width:100%;height:100%;object-fit:cover;display:block;user-select:none}
+.carslide img[data-act="lbopen"]{cursor:zoom-in}
+.carbtn{position:absolute;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.12);opacity:0;transition:opacity .2s,background .15s;z-index:2}
+.carbtn.prev{left:12px}.carbtn.next{right:12px}.carbtn:hover{background:#fff}.carbtn:focus-visible{opacity:1;outline:3px solid var(--forest)}
+.car:hover .carbtn{opacity:1}
+@media (hover:none){.carbtn{display:none}}
+.carcount{position:absolute;right:12px;bottom:12px;background:rgba(39,51,43,.72);color:#fff;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;z-index:2}
+.cardots{position:absolute;left:0;right:0;bottom:14px;display:flex;justify-content:center;gap:6px;pointer-events:none;z-index:2}
+.cardots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.6);box-shadow:0 0 0 1px rgba(0,0,0,.08);transition:width .2s,background .2s}.cardots i.on{background:#fff;width:18px;border-radius:4px}
+.carzoom{position:absolute;right:12px;top:12px;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.thumbs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:4px}.thumbs button{flex-shrink:0;cursor:pointer}
+.qvg .car{border-radius:16px}.qvg .cartrack{aspect-ratio:1}
+@media (max-width:860px){.qvg .cartrack{aspect-ratio:4/3}}
+/* fullscreen viewer */
+.lb{position:fixed;inset:0;z-index:200;background:rgba(20,26,22,.94);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:56px 16px 16px}
+.lb[hidden]{display:none}body.lbopen{overflow:hidden}body.lbopen .chatbtn{display:none}
+.lb .car{width:min(92vw,calc(100vh - 190px));background:transparent;border:0;border-radius:12px}
+.lb .cartrack{aspect-ratio:1}.lb .carslide img{object-fit:contain;background:#efece4}
+.lb .carbtn{opacity:1}.lb .thumbs{justify-content:center;max-width:92vw;margin-top:14px}.lb .thumbs button{width:60px;height:60px;border-color:transparent;opacity:.65}.lb .thumbs button.on{opacity:1;border-color:#fff}
+.lbx{position:absolute;top:10px;right:10px;color:#fff;width:44px;height:44px}
+/* card: second photo on hover, photo count */
+.card .ph img.alt{position:absolute;inset:0;opacity:0;transition:opacity .35s}
+@media (hover:hover){.card:hover .ph img.alt{opacity:1}}
+.nphotos{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.9);color:var(--ink);font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;pointer-events:none}
+@media (hover:hover){.card:hover .nphotos{opacity:0}}
