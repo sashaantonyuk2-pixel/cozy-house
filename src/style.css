@@ -446,3 +446,16 @@ tr.st-low td{background:#fff8ec}tr.st-out td{background:#fdf0ee}
 .warnbtn{border-color:#e9c27a}.dangerbtn{border-color:#e7a597}
 .stat.warnstat b{color:#b0442c}
 .impbox{margin-bottom:16px;border-color:#cfd9cf}.impstats{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;margin:8px 0}.impstats .okc b{color:#2f6b37}.impstats .errc b{color:#b0442c}
+/* seller: order page & payment */
+.paypill{display:inline-block;font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;margin-top:4px}.p-unpaid{background:#fdecc8;color:#8a5a0b}.p-paid{background:#e2f0e2;color:#2f6b37}.p-partially_refunded,.p-refunded{background:#ece6f6;color:#5b3f8a}
+.ordgrid{display:grid;grid-template-columns:1.35fr 1fr;gap:18px;align-items:start}.ordgrid .stack{display:flex;flex-direction:column;gap:18px}.ordgrid .panel{margin:0}
+.oline{display:grid;grid-template-columns:56px 1fr auto auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.oline img{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#efece4}
+.addrbox{background:#f7f6f2;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:14px/1.5 inherit;font-family:inherit;white-space:pre-wrap;margin:6px 0 10px}
+.ordh3{font-size:14px;margin:16px 0 4px}.ohist{list-style:none;margin:0;padding:0}.ohist li{display:grid;grid-template-columns:120px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.refundform{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+@media (max-width:960px){.ordgrid{grid-template-columns:1fr}.ohist li{grid-template-columns:1fr;gap:2px}}
+.skuline{display:block;font-size:12.5px;color:var(--muted);margin:-4px 0 6px}
+.otrk-pay{border-radius:12px;padding:10px 14px;font-size:14px;margin:12px 0 4px;background:#f3f1ec}.otrk-pay.unpaid{background:#fdf3dd}.otrk-pay.paid{background:#e8f2e6}
+.hero2-link{position:absolute;inset:0;z-index:2}.hero2-link:focus-visible{outline:3px solid #fff;outline-offset:-6px}
+.mini.sku{width:110px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+form[hidden],div[hidden]{display:none!important}
