@@ -459,3 +459,4 @@ tr.st-low td{background:#fff8ec}tr.st-out td{background:#fdf0ee}
 .hero2-link{position:absolute;inset:0;z-index:2}.hero2-link:focus-visible{outline:3px solid #fff;outline-offset:-6px}
 .mini.sku{width:110px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
 form[hidden],div[hidden]{display:none!important}
+.posbtns{display:inline-flex;align-items:center;gap:4px;margin-right:8px}.posbtns .btn{padding:3px 8px}.posbtns b{min-width:22px;text-align:center;font-size:12px}

@@ -21,8 +21,8 @@ menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2
 /* ===== data: embedded snapshot + live database ===== */
 function save(){if(SELLER&&window.Seller)Seller.queueSync()}
 function normalize(st){const d=demoState().settings;st.settings={...d,...(st.settings||{}),lang:"en"};return st}
-const fromRow=r=>({id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],created:Date.parse(r.created_at)||Date.now()});
-const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[]});
+const fromRow=r=>({id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,created:Date.parse(r.created_at)||Date.now()});
+const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0)});
 async function fetchCatalog(){
  const[c,p,s,rv]=await Promise.all([sb.from("categories").select("*").order("position"),sb.from("products").select("*").order("created_at",{ascending:false}),sb.from("store_settings").select("data").eq("id",1).maybeSingle(),sb.from("reviews").select("id,product_id,name,rating,title,body,verified,created_at").eq("status","approved").order("created_at",{ascending:false}).limit(1000)]);
  const err=c.error||p.error||s.error;if(err)throw err;
@@ -243,7 +243,7 @@ function viewShop(q){
  const base=raw?searchProducts(raw,""):visible();
  const fPrice=p=>(min===null||p.price>=min)&&(max===null||p.price<=max),fStock=p=>!stock||p.stock>0,fCat=p=>!cat||p.cat===cat;
  let list=base.filter(p=>fCat(p)&&fPrice(p)&&fStock(p));
- const by={pop:(a,b)=>(b.featured-a.featured)||((b.stock>0)-(a.stock>0)),new:(a,b)=>(b.created||0)-(a.created||0),cheap:(a,b)=>a.price-b.price,exp:(a,b)=>b.price-a.price,name:(a,b)=>a.name.localeCompare(b.name)};
+ const mpos=p=>p.position>0?p.position:1e9;const by={pop:(a,b)=>(mpos(a)-mpos(b))||((b.stock>0)-(a.stock>0))||(b.featured-a.featured)||((b.created||0)-(a.created||0)),new:(a,b)=>(b.created||0)-(a.created||0),cheap:(a,b)=>a.price-b.price,exp:(a,b)=>b.price-a.price,name:(a,b)=>a.name.localeCompare(b.name)};
  if(sort!=="rel"||!raw)list.sort(by[sort]||by.pop);
  const c=catOf(cat);
  const link=o=>{const n=new URLSearchParams(q);Object.entries(o).forEach(([k,v])=>v!==""&&v!=null?n.set(k,v):n.delete(k));const s=n.toString();return"#/shop"+(s?"?"+s:"")};
