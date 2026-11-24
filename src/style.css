@@ -439,3 +439,10 @@ body.locked .chatbtn,body.locked .chatpanel{display:none}
  .hero2 h1{font-size:38px}.hero2 p{font-size:16px}.hero-cta .btn{flex:1}}
 .hero2 h1{max-width:480px}
 @media (max-width:700px){.hero2 h1{max-width:none}.hero2-in{padding-top:250px}}
+/* seller: stock alerts & import */
+tr.st-low td{background:#fff8ec}tr.st-out td{background:#fdf0ee}
+.stk{display:inline-block;margin-left:6px;font-size:11px;font-weight:800;border-radius:999px;padding:2px 8px;vertical-align:middle}.stk.low{background:#fdecc8;color:#8a5a0b}.stk.out{background:#f8d7d0;color:#9a2d1a}.stk.newp{background:#e2f0e2;color:#2f6b37;margin:0}.stk.upd{background:#e6eef8;color:#2a4f7c;margin:0}
+.navbadge.warn{background:#e0a43a}
+.warnbtn{border-color:#e9c27a}.dangerbtn{border-color:#e7a597}
+.stat.warnstat b{color:#b0442c}
+.impbox{margin-bottom:16px;border-color:#cfd9cf}.impstats{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;margin:8px 0}.impstats .okc b{color:#2f6b37}.impstats .errc b{color:#b0442c}

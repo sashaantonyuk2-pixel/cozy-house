@@ -1,7 +1,7 @@
 /* ===== owner admin panel (working file only) ===== */
 const Admin={draft:null,sel:new Set(),
 nav(cur){const L=[["","📊","Огляд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
- return `<nav class="aside">${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
+ return `<nav class="aside">${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin">${this.nav(cur)}<div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
  if(k==="products")return this.wrap("products",this.products(q));
@@ -22,12 +22,12 @@ after(parts){
  const imp=$("#importFile");if(imp)imp.addEventListener("change",()=>this.importFile(imp.files[0]));
 },
 /* ---- dashboard ---- */
-dash(){const P=S.products,act=P.filter(p=>p.active),out=act.filter(p=>p.stock<=0),low=act.filter(p=>p.stock>0&&p.stock<=3);
+dash(){const P=S.products,act=P.filter(p=>p.active),out=act.filter(p=>p.stock<=0),low=act.filter(p=>p.stock>0&&p.stock<=this.lowN());
  const days=+(sessionStorage.getItem("dashDays")||30);
  setTimeout(()=>this.fillDash(days),0);
  return `<div class="ahead"><h1>Огляд магазину</h1><div style="display:flex;gap:8px;flex-wrap:wrap"><div class="seg">${[7,30,90].map(d=>`<button class="${d===days?"on":""}" data-act="a:dashDays" data-d="${d}">${d} днів</button>`).join("")}</div><a class="btn primary sm" href="#/admin/product/new">${ICON.plus.replace("<svg",'<svg width="15"')} Додати товар</a></div></div>
  <div class="stats" id="kpis">${["Продажі","Замовлення","Середній чек","Продано одиниць"].map(l=>`<div class="stat"><b>…</b><span>${l}</span></div>`).join("")}</div>
- <div class="stats" style="grid-template-columns:repeat(4,1fr)"><a class="stat link" href="#/admin/orders"><b id="needShip">…</b><span>чекають відправлення</span></a><a class="stat link" href="#/admin/messages"><b id="newMsgs">…</b><span>нових повідомлень</span></a><div class="stat"><b>${act.length}</b><span>товарів на сайті</span></div><div class="stat"><b>${out.length+low.length}</b><span>закінчуються / немає</span></div></div>
+ <div class="stats" style="grid-template-columns:repeat(4,1fr)"><a class="stat link" href="#/admin/orders"><b id="needShip">…</b><span>чекають відправлення</span></a><a class="stat link" href="#/admin/messages"><b id="newMsgs">…</b><span>нових повідомлень</span></a><div class="stat"><b>${act.length}</b><span>товарів на сайті</span></div><a class="stat link ${out.length+low.length?"warnstat":""}" href="#/admin/products?stock=low"><b>${out.length+low.length}</b><span>закінчуються / немає</span></a></div>
  <div class="panel" style="margin-bottom:20px"><h2>Продажі по днях</h2><div id="salesChart" class="chart"><p class="muted">Завантаження…</p></div></div>
  <div class="dashgrid"><div class="panel"><h2>Топ товарів</h2><div id="topProducts"><p class="muted">…</p></div></div>
  <div class="panel"><h2>Без продажів за ${days} днів</h2><p class="help" style="margin-top:-8px">Товари в наявності, яких ніхто не купив. Можливо, варто оновити фото чи опис.</p><div id="deadStock"><p class="muted">…</p></div></div></div>
@@ -57,22 +57,91 @@ async fillDash(days){
  const sold=new Set(Object.keys(tp));const dead=S.products.filter(p=>p.active&&p.stock>0&&!sold.has(p.id));
  $("#deadStock").innerHTML=dead.length?dead.slice(0,10).map(p=>`<div class="row" style="border-bottom:1px solid var(--line);padding:8px 0"><a href="#/admin/product/${p.id}">${esc(p.name)}</a><span class="muted small">залишок ${p.stock}</span></div>`).join("")+(dead.length>10?`<p class="help">…і ще ${dead.length-10}</p>`:""):`<p class="muted">Усі товари в наявності мали продажі 👍</p>`},
 /* ---- products list ---- */
-products(q){const term=(q.get("q")||"").toLowerCase(),cat=q.get("cat")||"";
- const L=S.products.filter(p=>(!cat||p.cat===cat)&&(!term||(p.name+" "+p.sku).toLowerCase().includes(term))).sort((a,b)=>(b.created||0)-(a.created||0));
+products(q){const term=(q.get("q")||"").toLowerCase(),cat=q.get("cat")||"",sf=q.get("stock")||"",thr=this.lowN();
+ const L=S.products.filter(p=>(!cat||p.cat===cat)&&(!term||(p.name+" "+p.sku).toLowerCase().includes(term))&&(!sf||(sf==="out"?p.stock<=0:p.stock>0&&p.stock<=thr))).sort((a,b)=>sf?(a.stock-b.stock):((b.created||0)-(a.created||0)));
+ const nLow=S.products.filter(p=>p.stock>0&&p.stock<=thr).length,nOut=S.products.filter(p=>p.stock<=0).length;
+ const sl=v=>{const n=new URLSearchParams(q);v?n.set("stock",v):n.delete("stock");return "#/admin/products"+(n.toString()?"?"+n:"")};
  this.sel=new Set([...this.sel].filter(id=>prod(id)));
- return `<div class="ahead"><h1>Товари <span class="muted" style="font-size:18px">${S.products.length}</span></h1><a class="btn primary" href="#/admin/product/new">${ICON.plus.replace("<svg",'<svg width="17"')} Додати товар</a></div>
+ return `<div class="ahead"><h1>Товари <span class="muted" style="font-size:18px">${S.products.length}</span></h1><div class="acts"><button class="btn" data-act="a:xlsExport" title="Завантажити всі товари в Excel">⬇ Експорт в Excel</button><button class="btn" data-act="a:xlsImportOpen" title="Завантажити товари з Excel або CSV">⬆ Імпорт з Excel</button><a class="btn primary" href="#/admin/product/new">${ICON.plus.replace("<svg",'<svg width="17"')} Додати товар</a></div></div>
+ <div id="impBox"></div>
+ <div class="acts" style="margin:0 0 12px"><a class="btn sm ${!sf?"primary":""}" href="${sl("")}">Усі (${S.products.length})</a><a class="btn sm ${sf==="low"?"primary":""} ${nLow?"warnbtn":""}" href="${sl("low")}">⚠️ Закінчуються (${nLow})</a><a class="btn sm ${sf==="out"?"primary":""} ${nOut?"dangerbtn":""}" href="${sl("out")}">❌ Немає (${nOut})</a><span class="help" style="margin:0 0 0 6px;align-self:center">«Закінчуються» — залишок ${thr} шт. або менше (змінити: Налаштування → Магазин).</span></div>
  <form class="shopbar" data-form="aprodfilter"><label class="search">${ICON.search}<input name="q" value="${esc(q.get("q")||"")}" placeholder="Пошук за назвою або артикулом"></label><select name="cat" data-ach="filtercat"><option value="">Усі категорії</option>${S.categories.map(c=>`<option value="${c.id}" ${cat===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select></form>
  <div class="bulk"><b id="selN">Вибрано: ${this.sel.size}</b><span class="muted">|</span>Змінити ціну на <input class="field" id="pct" type="number" value="10" style="width:80px;display:inline-block;padding:7px"> % <button class="btn sm" data-act="a:pct" data-s="1">↑ Підняти</button><button class="btn sm" data-act="a:pct" data-s="-1">↓ Знизити</button><span class="muted">|</span><button class="btn sm" data-act="a:vis" data-v="1">Показати</button><button class="btn sm" data-act="a:vis" data-v="0">Приховати</button><button class="btn sm danger" data-act="a:bulkdel">Видалити</button></div>
  <div class="tablewrap"><table class="t"><thead><tr><th><input type="checkbox" data-ach="selall" ${L.length&&L.every(p=>this.sel.has(p.id))?"checked":""}></th><th></th><th>Назва</th><th>Ціна, ${esc(S.settings.currency)}</th><th>Стара ціна</th><th>Залишок</th><th>На сайті</th><th>Хіт</th><th></th></tr></thead><tbody>
- ${L.map(p=>`<tr><td><input type="checkbox" data-ach="sel" data-id="${p.id}" ${this.sel.has(p.id)?"checked":""}></td><td><img src="${esc(img0(p))}" alt=""></td>
+ ${L.map(p=>`<tr class="${this.stockCls(p)}"><td><input type="checkbox" data-ach="sel" data-id="${p.id}" ${this.sel.has(p.id)?"checked":""}></td><td><img src="${esc(img0(p))}" alt=""></td>
  <td class="nm"><a href="#/admin/product/${p.id}"><b>${esc(p.name)}</b></a><small>${esc(p.sku||"")} · ${esc((catOf(p.cat)||{}).name||"без категорії")}</small></td>
  <td><input class="mini" type="number" min="0" step="0.01" value="${p.price}" data-ach="price" data-id="${p.id}"></td>
  <td><input class="mini" type="number" min="0" step="0.01" value="${p.oldPrice||""}" placeholder="—" data-ach="oldPrice" data-id="${p.id}"></td>
- <td><input class="mini s" type="number" min="0" step="1" value="${p.stock}" data-ach="stock" data-id="${p.id}"></td>
+ <td><input class="mini s" type="number" min="0" step="1" value="${p.stock}" data-ach="stock" data-id="${p.id}">${p.stock<=0?`<span class="stk out">немає</span>`:p.stock<=thr?`<span class="stk low">мало</span>`:""}</td>
  <td><label class="switch"><input type="checkbox" data-ach="active" data-id="${p.id}" ${p.active?"checked":""}><span></span></label></td>
  <td><label class="switch"><input type="checkbox" data-ach="featured" data-id="${p.id}" ${p.featured?"checked":""}><span></span></label></td>
  <td><div class="acts"><a class="btn sm" href="#/admin/product/${p.id}">Редагувати</a><button class="btn sm" data-act="a:dup" data-id="${p.id}" title="Дублювати">⧉</button><button class="btn sm danger" data-act="a:del" data-id="${p.id}" title="Видалити">✕</button></div></td></tr>`).join("")||`<tr><td colspan="9" class="muted" style="text-align:center;padding:30px">Товарів не знайдено</td></tr>`}
  </tbody></table></div><p class="help">Ціну, стару ціну (для знижки) та залишок можна змінювати прямо в таблиці — зберігається автоматично. «Стара ціна» показується перекресленою, з відсотком знижки.</p>`},
+
+/* ---- stock alerts ---- */
+lowN(){const v=parseInt(S.settings.lowStock);return isNaN(v)?3:Math.max(0,v)},
+stockCls(p){return p.stock<=0?"st-out":p.stock<=this.lowN()?"st-low":""},
+lowList(){const t=this.lowN();return S.products.filter(p=>p.active&&p.stock<=t)},
+/* ---- Excel import / export (SheetJS, loaded only when needed) ---- */
+XCOLS:["ID","SKU","Name","Category","Price","Old price","Stock","Active","Featured","Short description","Description","Specs","Options","Images"],
+loadXLSX(){if(window.XLSX)return Promise.resolve(window.XLSX);return new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";sc.integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw";sc.crossOrigin="anonymous";sc.onload=()=>res(window.XLSX);sc.onerror=()=>rej(new Error("Не вдалося завантажити модуль Excel. Перевірте інтернет."));document.head.appendChild(sc)})},
+xRow(p){const c=catOf(p.cat);return{"ID":p.id,"SKU":p.sku||"","Name":p.name,"Category":c?c.name:"","Price":+p.price||0,"Old price":p.oldPrice==null?"":+p.oldPrice,"Stock":+p.stock||0,"Active":p.active?"yes":"no","Featured":p.featured?"yes":"no","Short description":p.short||"","Description":p.desc||"","Specs":(p.specs||[]).filter(x=>x[0]||x[1]).map(x=>x[0]+": "+x[1]).join("; "),"Options":(p.options||[]).map(o=>o.name+": "+(o.values||[]).join(", ")).join(" | "),"Images":(p.images||[]).filter(u=>!String(u).startsWith("data:")).join(" ")}},
+xWidths(){return [10,12,34,18,9,10,8,8,9,40,60,45,40,60].map(w=>({wch:w}))},
+async xlsExport(){try{toast("Готую файл…");const X=await this.loadXLSX();const ws=X.utils.json_to_sheet(S.products.map(p=>this.xRow(p)),{header:this.XCOLS});ws["!cols"]=this.xWidths();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Products");X.writeFile(wb,"cozyhousevibe-products-"+new Date().toISOString().slice(0,10)+".xlsx");toast("Файл завантажено ✓")}catch(e){toast("⚠️ "+e.message)}},
+async xlsTemplate(){try{const X=await this.loadXLSX();const ex={"ID":"","SKU":"CHV-200","Name":"Linen Table Runner 14×72\"","Category":"Textiles","Price":34,"Old price":"","Stock":12,"Active":"yes","Featured":"no","Short description":"Stonewashed linen, soft and textured.","Description":"A natural linen runner that softens any table.","Specs":"Material: 100% linen; Size: 14 × 72 in; Care: Machine wash cold","Options":"Color: Natural, Sage, Terracotta","Images":"https://example.com/runner-1.jpg https://example.com/runner-2.jpg"};
+ const ws=X.utils.json_to_sheet([ex],{header:this.XCOLS});ws["!cols"]=this.xWidths();
+ const help=[["Колонка","Що вписувати"],["ID","Залиште порожнім для нових товарів. Для оновлення — не змінюйте (береться з експорту)."],["SKU","Артикул. Якщо ID порожній, товар шукається за артикулом; не знайдено — створюється новий."],["Name","Назва англійською. Обов'язково для нових."],["Category","Назва категорії, напр. Textiles. Якщо такої немає — буде створена."],["Price","Ціна в $, напр. 34 або 34.99. Обов'язково для нових."],["Old price","Стара ціна для знижки або порожньо."],["Stock","Залишок, шт."],["Active","yes / no — показувати на сайті (для нових за замовчуванням yes)."],["Featured","yes / no — хіт продажів на головній."],["Short description","Один рядок під назвою."],["Description","Повний опис."],["Specs","Характеристики через «;» у форматі Назва: значення. Напр.: Material: Ceramic; Height: 9.5 in"],["Options","Варіанти через «|», значення через кому. Напр.: Color: Sage, Oat | Size: S, M"],["Images","Посилання на фото (https://…) через пробіл. Перше — головне. Фото з комп'ютера додавайте в редакторі товару."],["",""],["Порожня клітинка","Для існуючих товарів порожня клітинка = не змінювати це поле."]];
+ const ws2=X.utils.aoa_to_sheet(help);ws2["!cols"]=[{wch:20},{wch:110}];const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Products");X.utils.book_append_sheet(wb,ws2,"Інструкція");X.writeFile(wb,"cozyhousevibe-template.xlsx")}catch(e){toast("⚠️ "+e.message)}},
+impHelp(){const b=$("#impBox");if(b&&!this.impPlan)b.innerHTML=`<div class="panel impbox"><b>Імпорт товарів з Excel</b><p class="small" style="margin:6px 0 10px">Підходять файли .xlsx, .xls, .csv (Excel, Google Таблиці, Numbers). Найпростіше: зробіть «⬇ Експорт в Excel», змініть ціни чи залишки й завантажте файл назад. Для нових товарів — <button class="linkbtn" data-act="a:xlsTemplate">завантажте шаблон</button>. Перед збереженням ви побачите, що саме зміниться.</p><button class="btn sm ghost" data-act="a:impCancel">Закрити</button></div>`},
+async xlsImport(file){const box=$("#impBox");box.innerHTML=`<div class="panel impbox"><p class="muted">Читаю файл «${esc(file.name)}»…</p></div>`;
+ try{if(file.size>8*1024*1024)throw new Error("Файл завеликий (більше 8 МБ).");const X=await this.loadXLSX();const wb=X.read(await file.arrayBuffer(),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const rows=X.utils.sheet_to_json(ws,{defval:"",raw:true});
+  if(!rows.length)throw new Error("У першому аркуші немає рядків з товарами.");this.impPlan=this.impBuild(rows);this.impShow(file.name)}
+ catch(e){this.impPlan=null;box.innerHTML=`<div class="panel impbox"><div class="note">⚠️ ${esc(e.message||String(e))}</div><button class="btn sm" data-act="a:impCancel" style="margin-top:10px">Закрити</button></div>`}},
+impBuild(rows){
+ const A={id:["id"],sku:["sku","артикул"],name:["name","назва","title"],cat:["category","категорія","категория"],price:["price","ціна","цена"],oldPrice:["old price","oldprice","стара ціна","compare at price"],stock:["stock","залишок","кількість","qty","quantity"],active:["active","на сайті","visible","показувати"],featured:["featured","хіт","bestseller"],short:["short description","короткий опис","short"],desc:["description","опис","повний опис"],specs:["specs","характеристики","specifications"],options:["options","варіанти","variants"],images:["images","фото","image","photos"]};
+ const keys=Object.keys(rows[0]),col={};for(const f in A){const k=keys.find(h=>A[f].includes(String(h).trim().toLowerCase()));if(k!==undefined)col[f]=k}
+ if(!col.name&&!col.sku&&!col.id)throw new Error("Не знайдено колонок Name / SKU / ID. Використайте шаблон або файл експорту.");
+ const txt=v=>String(v??"").trim(),num=v=>{const s=txt(v).replace(/\s/g,"").replace(",",".").replace(/[^0-9.\-]/g,"");return s===""?null:Number(s)},bool=v=>{const s=txt(v).toLowerCase();if(!s)return undefined;if(["yes","y","так","true","1","+","да"].includes(s))return true;if(["no","n","ні","false","0","-","нет"].includes(s))return false;return undefined};
+ const plan={create:[],update:[],errors:[],newCats:[],skipped:0},catByName=n=>{n=n.toLowerCase();return S.categories.find(c=>c.name.toLowerCase()===n||c.id===n)||plan.newCats.find(c=>c.name.toLowerCase()===n)};
+ const seen=new Set();
+ rows.forEach((r,i)=>{const line=i+2,g=f=>col[f]!==undefined?r[col[f]]:"";
+  if(Object.values(r).every(v=>txt(v)==="")){plan.skipped++;return}
+  const id=txt(g("id")),sku=txt(g("sku"));let p=id?prod(id):null;if(!p&&sku)p=S.products.find(x=>(x.sku||"").toLowerCase()===sku.toLowerCase());
+  const key=p?p.id:"sku:"+sku.toLowerCase()+":"+line;if(p&&seen.has(p.id)){plan.errors.push(`Рядок ${line}: товар «${p.name}» уже є вище у файлі — рядок пропущено.`);return}if(p)seen.add(p.id);
+  const d={},err=[];
+  if(txt(g("name")))d.name=txt(g("name")).slice(0,200);
+  if(sku)d.sku=sku.slice(0,60);
+  const pr=num(g("price"));if(txt(g("price"))!==""){if(pr==null||isNaN(pr)||pr<0)err.push("неправильна ціна");else d.price=Math.round(pr*100)/100}
+  if(txt(g("oldPrice"))!==""){const op=num(g("oldPrice"));if(op==null||isNaN(op)||op<0)err.push("неправильна стара ціна");else d.oldPrice=Math.round(op*100)/100}
+  if(txt(g("stock"))!==""){const st=num(g("stock"));if(st==null||isNaN(st)||st<0)err.push("неправильний залишок");else d.stock=Math.round(st)}
+  const ac=bool(g("active"));if(ac!==undefined)d.active=ac;const fe=bool(g("featured"));if(fe!==undefined)d.featured=fe;
+  if(txt(g("short")))d.short=txt(g("short")).slice(0,180);if(txt(g("desc")))d.desc=txt(g("desc")).slice(0,20000);
+  if(txt(g("specs")))d.specs=txt(g("specs")).split(/[;\n]+/).map(x=>{const k=x.indexOf(":");return k<0?[x.trim(),""]:[x.slice(0,k).trim(),x.slice(k+1).trim()]}).filter(x=>x[0]||x[1]).slice(0,30);
+  if(txt(g("options")))d.options=txt(g("options")).split(/[|\n]+/).map(x=>{const k=x.indexOf(":");if(k<0)return null;return{name:x.slice(0,k).trim().slice(0,40),values:[...new Set(x.slice(k+1).split(",").map(v=>v.trim().slice(0,40)).filter(Boolean))].slice(0,20)}}).filter(o=>o&&o.name&&o.values.length).slice(0,5);
+  if(txt(g("images")))d.images=txt(g("images")).split(/[\s,]+/).filter(u=>/^(https?:\/\/|images\/)/.test(u)).slice(0,12);
+  const cn=txt(g("cat"));if(cn){let c=catByName(cn);if(!c){let cid=translit(cn)||uid();if(catOf(cid)||plan.newCats.some(x=>x.id===cid))cid+="-"+uid().slice(0,3);c={id:cid,name:cn.slice(0,80),image:""};plan.newCats.push(c)}d.cat=c.id}
+  if(!p){if(!d.name)err.push("немає назви (Name)");if(d.price==null)err.push("немає ціни (Price)")}
+  if(err.length){plan.errors.push(`Рядок ${line}${d.name||p?` («${esc(d.name||p.name)}»)`:""}: ${err.join(", ")} — рядок пропущено.`);return}
+  if(p){const ch=Object.keys(d).filter(k=>JSON.stringify(d[k])!==JSON.stringify(p[k]));if(ch.length)plan.update.push({id:p.id,line,data:Object.fromEntries(ch.map(k=>[k,d[k]])),name:p.name});else plan.skipped++}
+  else plan.create.push({line,data:d})});
+ plan.newCats=plan.newCats.filter(c=>plan.create.some(x=>x.data.cat===c.id)||plan.update.some(x=>x.data.cat===c.id));
+ return plan},
+impShow(fname){const P=this.impPlan,L={name:"назва",sku:"артикул",price:"ціна",oldPrice:"стара ціна",stock:"залишок",active:"на сайті",featured:"хіт",short:"короткий опис",desc:"опис",specs:"характеристики",options:"варіанти",images:"фото",cat:"категорія"};
+ const fmt=(k,v)=>k==="price"||k==="oldPrice"?(v==null?"—":money(v)):k==="active"||k==="featured"?(v?"так":"ні"):k==="cat"?esc((catOf(v)||P.newCats.find(c=>c.id===v)||{}).name||v):k==="specs"||k==="options"||k==="images"?(v.length+" шт."):esc(String(v).slice(0,40));
+ const ok=P.create.length+P.update.length;
+ $("#impBox").innerHTML=`<div class="panel impbox"><h2 style="margin:0 0 6px">Перевірка імпорту: ${esc(fname)}</h2>
+ <div class="impstats"><span class="okc">➕ Нових товарів: <b>${P.create.length}</b></span><span>✏️ Оновлень: <b>${P.update.length}</b></span>${P.newCats.length?`<span>🗂 Нових категорій: <b>${P.newCats.length}</b> (${P.newCats.map(c=>esc(c.name)).join(", ")})</span>`:""}<span class="muted">Без змін: ${P.skipped}</span>${P.errors.length?`<span class="errc">⚠️ Помилок: <b>${P.errors.length}</b></span>`:""}</div>
+ ${P.errors.length?`<div class="note" style="margin:10px 0"><b>Ці рядки не будуть імпортовані:</b><br>${P.errors.slice(0,30).join("<br>")}${P.errors.length>30?"<br>…":""}</div>`:""}
+ ${ok?`<div class="tablewrap" style="max-height:340px;overflow:auto;margin:10px 0"><table class="t"><thead><tr><th>Рядок</th><th>Дія</th><th>Товар</th><th>Що зміниться</th></tr></thead><tbody>
+ ${P.create.slice(0,200).map(x=>`<tr><td>${x.line}</td><td><span class="stk newp">новий</span></td><td><b>${esc(x.data.name)}</b></td><td class="small">${money(x.data.price)}${x.data.stock!=null?` · ${x.data.stock} шт.`:""}${x.data.cat?" · "+fmt("cat",x.data.cat):""}</td></tr>`).join("")}
+ ${P.update.slice(0,300).map(x=>{const p=prod(x.id);return `<tr><td>${x.line}</td><td><span class="stk upd">оновити</span></td><td><b>${esc(x.name)}</b></td><td class="small">${Object.keys(x.data).map(k=>`${L[k]||k}: ${["specs","options","images","desc","short"].includes(k)?fmt(k,x.data[k]):`${fmt(k,p[k])} → <b>${fmt(k,x.data[k])}</b>`}`).join("<br>")}</td></tr>`}).join("")}
+ </tbody></table></div>`:`<p class="muted">Немає змін для збереження.</p>`}
+ <div class="acts">${ok?`<button class="btn primary" data-act="a:impApply">Зберегти ${ok} ${ok===1?"зміну":"змін"}</button>`:""}<button class="btn" data-act="a:impCancel">Скасувати</button></div></div>`},
+impApply(){const P=this.impPlan;if(!P)return;
+ P.newCats.forEach(c=>{if(!catOf(c.id))S.categories.push(c)});
+ P.create.forEach(x=>S.products.push({id:uid(),created:Date.now(),sku:"",cat:"",oldPrice:null,stock:0,active:true,featured:false,short:"",desc:"",specs:[],options:[],images:[],...x.data}));
+ P.update.forEach(x=>{const p=prod(x.id);if(p)Object.assign(p,x.data)});
+ const n=P.create.length+P.update.length;this.impPlan=null;save();chrome();render();toast(`Імпортовано: ${n}. Зберігаю в базу…`)},
 /* ---- product editor ---- */
 editor(id){
  const isNew=id==="new",p=isNew?null:prod(id);if(!isNew&&!p)return `<div class="empty"><b>Товар не знайдено</b></div>`;
@@ -125,7 +194,7 @@ settings(){const s=S.settings;const f=(k,l,o={})=>`<div class="${o.full?"full":"
  <div class="panel"><h2>Магазин</h2><div class="form">${f("name","Назва магазину")}${f("tagline","Підзаголовок")}${f("currency","Символ валюти",{ph:"₴ або $"})}
  <div><label>Позиція валюти</label><select class="field" name="currencyPos"><option value="after" ${s.currencyPos!=="before"?"selected":""}>Після суми: 890 ₴</option><option value="before" ${s.currencyPos==="before"?"selected":""}>Перед сумою: $890</option></select></div>
 </div>
- ${f("freeFrom","Безкоштовна доставка від (сума)",{type:"number",help:"0 — не показувати."})}${f("promo","Текст у верхній смузі",{full:true,help:"Порожньо — смуга прихована."})}</div></div>
+ ${f("freeFrom","Безкоштовна доставка від (сума)",{type:"number",help:"0 — не показувати."})}${f("lowStock","Поріг «закінчується», шт.",{type:"number",ph:"3",help:"Товари з таким або меншим залишком підсвічуються, а в Telegram приходить сповіщення."})}${f("promo","Текст у верхній смузі",{full:true,help:"Порожньо — смуга прихована."})}</div></div>
  <div class="panel"><h2>Головна сторінка</h2><div class="form">${f("heroEyebrow","Надпис над заголовком",{full:true})}${f("heroTitle","Великий заголовок",{full:true})}${f("heroText","Текст під заголовком",{full:true,area:true,h:80})}
  ${f("heroBtnText","Текст кнопки",{ph:"Shop now"})}<div><label>Куди веде кнопка</label><select class="field" name="heroBtnLink"><option value="#/shop">Усі товари</option>${S.categories.map(c=>`<option value="#/shop?cat=${c.id}" ${s.heroBtnLink==="#/shop?cat="+c.id?"selected":""}>Категорія: ${esc(c.name)}</option>`).join("")}<option value="#/shop?sort=new" ${s.heroBtnLink==="#/shop?sort=new"?"selected":""}>Новинки</option><option value="#/about" ${s.heroBtnLink==="#/about"?"selected":""}>Our story</option></select></div>
  <div class="full"><label>Фото банера для комп'ютера</label><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><img src="${esc(s.heroImage||PHOTO.hero)}" style="width:200px;height:90px;object-fit:cover;border-radius:10px;object-position:${esc(s.heroFocus||"center")}"><label class="btn sm">Завантажити фото<input type="file" accept="image/*" hidden data-up="hero"></label>${s.heroImage?`<button type="button" class="btn sm" data-act="a:herodel">Прибрати</button>`:""}</div><div class="help">Широке горизонтальне фото, найкраще 2400×1200 px або більше. Ліва частина фото буде під текстом — там має бути спокійний фон.</div></div>
@@ -292,6 +361,11 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  imgmv:()=>{const I=this.draft.images,i=+el.dataset.i,j=i+ +el.dataset.d;if(j<0||j>=I.length)return;[I[i],I[j]]=[I[j],I[i]];$("#imgs").innerHTML=this.imgsHtml()},
  imgdel:()=>{this.draft.images.splice(+el.dataset.i,1);$("#imgs").innerHTML=this.imgsHtml()},
  imgurl:()=>{const u=$("#imgUrl").value.trim();if(!/^https?:\/\//.test(u))return toast("Вставте посилання, що починається з https://");this.draft.images.push(u);$("#imgUrl").value="";$("#imgs").innerHTML=this.imgsHtml()},
+ xlsExport:()=>this.xlsExport(),
+ xlsTemplate:()=>this.xlsTemplate(),
+ xlsImportOpen:()=>{let i=$("#xlsFile");if(!i){i=document.createElement("input");i.type="file";i.id="xlsFile";i.accept=".xlsx,.xls,.csv,.ods,.tsv";i.hidden=true;document.body.appendChild(i);i.addEventListener("change",()=>{const f=i.files[0];i.value="";if(f)this.xlsImport(f)})}this.impHelp();i.click()},
+ impApply:()=>this.impApply(),
+ impCancel:()=>{this.impPlan=null;$("#impBox").innerHTML=""},
  specadd:()=>$("#specs").insertAdjacentHTML("beforeend",this.specRow(["",""])),
  optadd:()=>{if(document.querySelectorAll("#opts .specrow").length>=5)return toast("Максимум 5 параметрів");$("#opts").insertAdjacentHTML("beforeend",this.optRow({name:"",values:[]}))},
  optdel:()=>el.closest(".specrow").remove(),
