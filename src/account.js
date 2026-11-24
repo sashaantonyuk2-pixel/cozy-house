@@ -68,7 +68,7 @@ async function fillOrders(){const box=$("#acMain");if(!box)return;
  const{data,error}=await sb.from("orders").select("order_no,status,items,total,created_at,carrier,tracking_number,shipped_at").order("created_at",{ascending:false}).limit(50);
  if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
  const st={new:"Received",confirmed:"Confirmed",shipped:"Shipped",completed:"Delivered",cancelled:"Cancelled",returned:"Returned"};
- box.innerHTML=`<div class="panel"><h2>My orders</h2>${data.length?data.map(o=>`<div class="orow"><div><b>${esc(o.order_no)}</b><span class="muted small">${new Date(o.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})} · ${o.items.reduce((s,i)=>s+(+i.qty||0),0)} items</span><span class="small">${o.items.slice(0,3).map(i=>esc(i.name)).join(", ")}${o.items.length>3?"…":""}</span>${o.tracking_number?`<span class="small">${esc(o.carrier||"Tracking")}: ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)} — track package ↗</a>`:esc(o.tracking_number)}</span>`:""}</div><div class="oright"><span class="ostat s-${esc(o.status)}">${st[o.status]||esc(o.status)}</span><b>${money(o.total)}</b></div></div>`).join(""):`<div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div>`}</div>`}
+ box.innerHTML=`<div class="panel"><h2>My orders</h2>${data.length?data.map(o=>`<div class="orow"><div><b>${esc(o.order_no)}</b><span class="muted small">${new Date(o.created_at).toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})} · ${o.items.reduce((s,i)=>s+(+i.qty||0),0)} items</span><span class="small">${o.items.slice(0,3).map(i=>esc(i.name)+(i.opt?` (${esc(optStr(i.opt,prod(i.id)))})`:"")).join(", ")}${o.items.length>3?"…":""}</span>${o.tracking_number?`<span class="small">${esc(o.carrier||"Tracking")}: ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)} — track package ↗</a>`:esc(o.tracking_number)}</span>`:""}</div><div class="oright"><span class="ostat s-${esc(o.status)}">${st[o.status]||esc(o.status)}</span><b>${money(o.total)}</b></div></div>`).join(""):`<div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div>`}</div>`}
 function acMsg(html,ok){const m=$("#acMsg");if(m)m.innerHTML=`<div class="${ok?"okbox":"note"}" style="margin-bottom:4px">${html}</div>`}
 async function acSubmit(k,f){
  const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button.primary");const busy=b=>{btn.disabled=b};
@@ -100,12 +100,13 @@ async function saveOrderToDb(o){
  if(!sb)return{ok:false};const c=o.c;
  const customer={name:c.name,phone:c.phone,email:c.email||null,delivery:c.delivery,city:c.city,state:c.state||null,zip:c.zip||null,address:c.address||null,payment:c.payment,comment:c.comment||null};
  for(let i=0;i<3;i++){
-  const row={order_no:o.no,customer,items:o.lines.map(l=>({id:l.id,name:l.name,sku:l.sku||null,price:l.price,qty:l.qty})),total:o.total,currency:"USD",user_id:user?user.id:null};
+  const row={order_no:o.no,customer,items:o.lines.map(l=>({id:l.id,name:l.name,sku:l.sku||null,price:l.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),total:o.total,currency:"USD",user_id:user?user.id:null};
   const{error}=await sb.from("orders").insert(row);
   if(!error)return{ok:true};
   const m=error.message||"";
   if(/duplicate|unique/i.test(m)){o.no=o.no.slice(0,-4)+Math.floor(1000+Math.random()*9000);continue}
   let r=m.match(/OUT_OF_STOCK:(.+):(\d+)/);if(r)return{ok:false,stock:true,msg:+r[2]>0?`Only ${r[2]} left of “${r[1]}”. Please update the quantity in your cart.`:`“${r[1]}” just sold out. Please remove it from your cart.`};
+  r=m.match(/OPTION_REQUIRED:(.+):[^:]+$/);if(r)return{ok:false,stock:true,msg:`The options for “${r[1]}” have changed. Please remove it from your cart and add it again.`};
   r=m.match(/UNAVAILABLE:(.+)/);if(r)return{ok:false,stock:true,msg:`“${r[1]}” is no longer available. Please remove it from your cart.`};
   console.warn("order save failed",m);return{ok:false}}
  return{ok:false}}
