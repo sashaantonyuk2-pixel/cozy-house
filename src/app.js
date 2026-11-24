@@ -53,6 +53,12 @@ const optOk=(l,p)=>optList(p).every(o=>l.opt&&o.values.includes(l.opt[o.name]));
 function cartLines(){return cart.map(l=>({...l,k:lkey(l),p:prod(l.id)})).filter(l=>l.p&&l.p.active&&optOk(l,l.p))}
 function lineMax(l){const p=prod(l.id);if(!p)return 0;const k=lkey(l);return Math.max(0,p.stock-cart.filter(x=>x.id===l.id&&lkey(x)!==k).reduce((s,x)=>s+x.qty,0))}
 const lineByKey=k=>cart.find(x=>lkey(x)===k);
+/* "Buy now": checkout of a single item without touching the cart */
+let buyNow=LS.get("buynow",null);
+const isBuyNow=()=>/[?&]buy=1/.test(location.hash)&&!!buyNow&&!!prod(buyNow.id);
+function coLines(){return isBuyNow()?[{...buyNow,k:lkey(buyNow),p:prod(buyNow.id)}].filter(l=>l.p&&l.p.active&&optOk(l,l.p)):cartLines()}
+const coTotal=()=>coLines().reduce((s,l)=>s+l.p.price*l.qty,0);
+function startBuyNow(id,q,opt){const p=prod(id);if(!p||p.stock<=0)return;buyNow={id,qty:Math.max(1,Math.min(p.stock,q||1)),...(opt?{opt}:{})};LS.set("buynow",buyNow);closeLayers(true);location.hash="#/checkout?buy=1"}
 function cartTotal(){return cartLines().reduce((s,l)=>s+l.p.price*l.qty,0)}
 function setCart(c){cart=c;LS.set("cart",cart);badges()}
 function addToCart(id,q=1,opt=null){const p=prod(id);if(!p||p.stock<=0)return;
@@ -176,6 +182,7 @@ function quickView(id){
  ${optsHtml(p,"qv")}<div class="buyrow"><div class="qty"><button data-act="qvq" data-d="-1" aria-label="−">−</button><input id="qvq" type="number" min="1" max="${Math.max(1,p.stock)}" value="1" aria-label="${t("qty")}"><button data-act="qvq" data-d="1" aria-label="+">+</button></div>
  <button class="btn primary" style="flex:1" data-act="qvadd" data-id="${p.id}" ${st==="out"?"disabled":""} data-autofocus>${st==="out"?t("notAvail"):t("addToCart")}</button>
  <button class="btn ${favs.includes(p.id)?"fav-inline on":"fav-inline"}" data-act="fav" data-id="${p.id}" aria-label="${t("favorites")}" style="padding:11px 13px">${ICON.heart.replace("<svg",'<svg width="20" height="20"')}</button></div>
+ <button class="btn buynow block" data-act="buynow" data-id="${p.id}" data-scope="qv" ${st==="out"?"hidden":""}>Buy now</button>
  <a class="textlink" href="#/product/${p.id}">${t("viewDetails")} →</a></div></div>`;
  openLayer("qv")}
 
@@ -282,6 +289,7 @@ function viewProduct(id){
  ${optsHtml(p,"pdp")}<div class="buyrow"><div class="qty"><button data-act="q-" aria-label="-">−</button><input id="pq" type="number" min="1" max="${Math.max(1,p.stock)}" value="1" aria-label="${t("qty")}"><button data-act="q+" aria-label="+">+</button></div>
  <button class="btn primary" style="flex:1" data-act="addq" data-id="${p.id}" ${st==="out"?"disabled":""}>${ICON.bag.replace("<svg",'<svg width="18" height="18"')} ${st==="out"?t("notAvail"):t("addToCart")}</button>
  <button class="btn fav-inline ${favs.includes(p.id)?"on":""}" data-act="fav" data-id="${p.id}" aria-label="${t("favorites")}" style="padding:11px 13px">${ICON.heart.replace("<svg",'<svg width="20" height="20"')}</button></div>
+ <button class="btn buynow block" data-act="buynow" data-id="${p.id}" data-scope="pdp" ${st==="out"?"hidden":""}>Buy now</button>
  <div class="infobox"><b>🚚 ${t("deliveryInfo")}</b>${esc((S.settings.deliveryOptions||"").split("\n").filter(Boolean).join(" · "))}${S.settings.freeFrom?`\n${t("freeOk").replace(" ✓","")} ${lang==="en"?"over":"від"} ${money(S.settings.freeFrom)}`:""}<span class="retnote">↺ Easy returns within 14 days · <a class="textlink" href="#/returns">Return policy</a></span></div></div></div>
  <div class="tabsec">${p.desc?`<div><h2>${t("description")}</h2><div class="desc">${esc(p.desc)}</div></div>`:"<div></div>"}${specs.length?`<div><h2>${t("specs")}</h2><table class="specs">${specs.map(s=>`<tr><td>${esc(s[0])}</td><td>${esc(s[1])}</td></tr>`).join("")}</table></div>`:""}</div>
  ${reviewsHtml(p)}
@@ -293,18 +301,18 @@ function viewCart(){
  <div class="right"><div class="qty"><button data-act="cq" data-d="-1" data-k="${esc(l.k)}">−</button><input type="number" value="${l.qty}" min="1" max="${lineMax(l)}" data-act="cqi" data-k="${esc(l.k)}" aria-label="${t("qty")}"><button data-act="cq" data-d="1" data-k="${esc(l.k)}">+</button></div><b>${money(l.p.price*l.qty)}</b></div></div>`).join("")}
  <a class="textlink" href="#/shop">← ${t("continueShop")}</a></div>${summary(true)}</div>`}
 function summary(withBtn){
- const tot=cartTotal(),ff=+S.settings.freeFrom||0;
- return `<aside class="summary"><h3>${t("yourOrder")}</h3>${withBtn?"":cartLines().map(l=>`<div class="row small"><span>${esc(l.p.name)}${l.opt?` <span class="muted">(${esc(optStr(l.opt,l.p))})</span>`:""} × ${l.qty}</span><span>${money(l.p.price*l.qty)}</span></div>`).join("")}
+ const tot=withBtn?cartTotal():coTotal(),ff=+S.settings.freeFrom||0;
+ return `<aside class="summary"><h3>${t("yourOrder")}</h3>${withBtn?"":coLines().map(l=>`<div class="row small"><span>${esc(l.p.name)}${l.opt?` <span class="muted">(${esc(optStr(l.opt,l.p))})</span>`:""} × ${l.qty}</span><span>${money(l.p.price*l.qty)}</span></div>`).join("")}
  <div class="row"><span>${t("subtotal")}</span><b>${money(tot)}</b></div><div class="row"><span>${t("shipping")}</span><span class="muted">${ff&&tot>=ff?t("free"):t("shipCarrier")}</span></div>
  ${ff?`<div class="small" style="margin:6px 0;color:${tot>=ff?"#3f7a4d":"#8a5a45"}">${tot>=ff?t("freeOk"):t("freeLeft")+money(ff-tot)}</div>`:""}
  <div class="row total"><span>${t("total")}</span><span>${money(tot)}</span></div>${withBtn?`<a class="btn primary block" style="margin-top:14px" href="#/checkout">${t("checkout")} →</a>`:""}</aside>`}
 function viewCheckout(){
- if(!cartLines().length){location.hash="#/cart";return""}
+ if(!coLines().length){location.hash=/[?&]buy=1/.test(location.hash)?"#/":"#/cart";return""}
  const o=s=>(s||"").split("\n").map(x=>x.trim()).filter(Boolean);let d=LS.get("buyer",{});
  if(user&&!profile){loadProfile().then(()=>{if(location.hash.startsWith("#/checkout"))render()})}
  if(user&&profile)d={...d,name:profile.full_name||d.name,phone:profile.phone||d.phone,email:user.email,city:profile.city||d.city,address:profile.address_line||d.address,state:profile.state||d.state,zip:profile.zip||d.zip};
  return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/cart">${t("cart")}</a> / ${t("checkout")}</div><h1>${t("checkoutT")}</h1></div></div>
- <div class="shell cartgrid"><form class="stack" data-form="checkout" novalidate>${sb&&!user?`<div class="signhint">Have an account? <a class="textlink" href="#/account" data-act="cologin">Sign in</a> for faster checkout — or continue as a guest.</div>`:""}<div class="panel"><h2>${t("contactsT")}</h2><div class="form">
+ <div class="shell cartgrid"><form class="stack" data-form="checkout" novalidate>${isBuyNow()?`<div class="signhint buynowbar">⚡ <b>Buy now:</b> you’re checking out just this item.${cartLines().length?` Your cart (${cartLines().reduce((s,l)=>s+l.qty,0)}) is saved — <a class="textlink" href="#/cart">go to cart</a>.`:""}</div>`:""}${sb&&!user?`<div class="signhint">Have an account? <a class="textlink" href="#/account" data-act="cologin">Sign in</a> for faster checkout — or continue as a guest.</div>`:""}<div class="panel"><h2>${t("contactsT")}</h2><div class="form">
  <div class="full"><label>Full name <span class="req">*</span></label><input class="field" name="name" autocomplete="name" maxlength="120" value="${esc(d.name)}" required></div>
  <div><label>${t("email")} <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" maxlength="200" value="${esc(d.email)}" required><div class="ferr" data-for="email"></div></div>
  <div><label>${t("phone")} <span class="req">*</span></label><input class="field" name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(d.phone)}" placeholder="(555) 123-4567" required><div class="ferr" data-for="phone"></div></div>
@@ -337,14 +345,14 @@ async function placeOrder(f){
  $("#coErr").innerHTML="";fd.address=fd.address+(fd.address2?", "+fd.address2:"");
  const btn=f.querySelector("button:last-child");btn.disabled=true;
  const d=new Date(),no="CHV-"+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+Math.floor(1000+Math.random()*9000);
- const o={no,date:d.toISOString(),lines:cartLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),total:cartTotal(),c:fd,sent:false};
+ const o={no,date:d.toISOString(),lines:coLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),total:coTotal(),c:fd,sent:false};const bn=!!isBuyNow();
  LS.set("buyer",{name:fd.name,phone:fd.phone,email:fd.email,city:fd.city,address:fd.address.replace(", "+fd.address2,"").replace(/, $/,""),address2:fd.address2,state:fd.state,zip:fd.zip});
  let res={ok:false};try{res=await saveOrderToDb(o)}catch(e){}
  if(res.stock){$("#coErr").innerHTML=`<div class="note">${esc(res.msg)} <a class="textlink" href="#/cart">Go to cart →</a></div>`;btn.disabled=false;refreshCatalog();return}
  o.sent=res.ok;o.db=res.ok;o.mine=!!(res.ok&&user);if(res.ok)setTimeout(refreshCatalog,800);
  const ep=(S.settings.formEndpoint||"").trim();
  if(ep&&!o.sent){try{const r=await fetch(ep,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({order:o.no,total:o.total,message:orderText(o),email:fd.email||undefined,_subject:"New order "+o.no})});o.sent=r.ok}catch(e){o.sent=false}}
- LS.set("lastOrder",o);setCart([]);location.hash="#/order";}
+ LS.set("lastOrder",o);if(bn){buyNow=null;LS.set("buynow",null)}else setCart([]);location.hash="#/order";}
 function viewOrder(){
  const o=LS.get("lastOrder",null);if(!o)return notFound();const st=S.settings,txt=orderText(o);
  const tg=(st.telegram||"").replace(/^@/,""),vb=(st.viber||"").replace(/[^\d+]/g,"");
@@ -459,6 +467,7 @@ document.addEventListener("click",e=>{
   cargo:()=>{e.preventDefault();const c=el.closest(".car")||document.querySelector(`.car[data-car="${el.dataset.car}"]`);carGo(c,+el.dataset.i)},
   lbopen:()=>{const c=el.closest(".car");lightbox([...c.querySelectorAll(".carslide img")].map(i=>i.getAttribute("src")),+el.dataset.i,c.dataset.alt||"")},
   lbclose:()=>closeLightbox(),
+  buynow:()=>{const sc=el.dataset.scope,r=readOpts(prod(id),sc);if(!r.ok)return;const q=parseInt(($(sc==="qv"?"#qvq":"#pq")||{}).value)||1;startBuyNow(id,q,r.opt)},
   toreviews:()=>{const r=$("#reviews");r&&r.scrollIntoView({behavior:"smooth"})},
   revopen:()=>{const f=$('[data-form="review"]');if(f){f.hidden=false;el.hidden=true;const s=f.querySelector("input");s&&s.focus()}},
   revlogin:()=>{LS.set("afterLogin","#/product/"+id)},

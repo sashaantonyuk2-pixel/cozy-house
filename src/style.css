@@ -423,3 +423,5 @@ body.locked .chatbtn,body.locked .chatpanel{display:none}
 @media (hover:hover){.card:hover .ph img.alt{opacity:1}}
 .nphotos{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.9);color:var(--ink);font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;pointer-events:none}
 @media (hover:hover){.card:hover .nphotos{opacity:0}}
+.btn.buynow{margin-top:10px;background:var(--terra);border-color:var(--terra);color:#fff;font-weight:800;padding:13px}.btn.buynow:hover{background:#a0604a;border-color:#a0604a}
+.buynowbar{background:#fbeee7;border-color:#f1d5c7}
