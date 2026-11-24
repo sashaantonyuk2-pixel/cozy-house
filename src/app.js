@@ -21,8 +21,8 @@ menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2
 /* ===== data: embedded snapshot + live database ===== */
 function save(){if(SELLER&&window.Seller)Seller.queueSync()}
 function normalize(st){const d=demoState().settings;st.settings={...d,...(st.settings||{}),lang:"en"};return st}
-const fromRow=r=>({id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,created:Date.parse(r.created_at)||Date.now()});
-const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0)});
+const fromRow=r=>({id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,seoTitle:r.seo_title||"",seoDesc:r.seo_description||"",imgAlt:r.image_alt||"",created:Date.parse(r.created_at)||Date.now()});
+const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0),seo_title:(p.seoTitle||"").trim()||null,seo_description:(p.seoDesc||"").trim()||null,image_alt:(p.imgAlt||"").trim()||null});
 async function fetchCatalog(){
  const[c,p,s,rv]=await Promise.all([sb.from("categories").select("*").order("position"),sb.from("products").select("*").order("created_at",{ascending:false}),sb.from("store_settings").select("data").eq("id",1).maybeSingle(),sb.from("reviews").select("id,product_id,name,rating,title,body,verified,created_at").eq("status","approved").order("created_at",{ascending:false}).limit(1000)]);
  const err=c.error||p.error||s.error;if(err)throw err;
@@ -145,17 +145,17 @@ function chrome(){
  if(SELLER)return Seller.chrome();
  const st=S.settings;document.title=st.name+(st.tagline?" — "+st.tagline:"");
  $("#promo").textContent=st.promo||"";$("#brandName").textContent=st.name;$("#brandTag").textContent=st.tagline||"";
- $("#nav").innerHTML=[["#/",t("home")],["#/shop",t("shop")],["#/delivery",t("delivery")],["#/about","Our story"],["#/contacts",t("contacts")]].map(([h,l])=>`<a href="${h}">${esc(l)}</a>`).join("")+`<a href="#/account" class="navacct" id="navAcct">${user?"My account":"Sign in / Register"}</a>`;
+ $("#nav").innerHTML=[["#/",t("home")],["#/shop","All products"],...S.categories.map(c=>["#/shop?cat="+c.id,c.name])].map(([h,l])=>`<a href="${h}">${esc(l)}</a>`).join("")+`<a href="#/account" class="navacct" id="navAcct">${user?"My account":"Sign in / Register"}</a>`;
  const c=S.settings;
  const logo=($(".brand img")||{}).src||"";
  $("#footer").innerHTML=`<div class="shell foot"><div><a class="footlogo" href="#/">${logo?`<img src="${esc(logo)}" alt="" width="48" height="48">`:""}<span>${esc(c.name)}</span></a><p>${esc(c.tagline)}</p>${c.hours?`<p>${esc(c.hours)}</p>`:""}</div>
  <div><h4>${t("shop")}</h4><a href="#/shop">${t("allCats")}</a>${S.categories.slice(0,6).map(x=>`<a href="#/shop?cat=${x.id}">${esc(x.name)}</a>`).join("")}</div>
- <div><h4>${t("contacts")}</h4>${c.phone?`<a href="tel:${esc(c.phone.replace(/[^+\d]/g,""))}">${esc(c.phone)}</a>`:""}${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:""}${c.telegram?`<a href="https://t.me/${esc(c.telegram.replace(/^@/,""))}" target="_blank" rel="noopener">Telegram</a>`:""}${c.instagram?`<a href="https://instagram.com/${esc(c.instagram.replace(/^@/,""))}" target="_blank" rel="noopener">Instagram</a>`:""}<a href="#/contacts">Contact us</a></div>
+ <div><h4>${t("contacts")}</h4>${c.address?`<p class="footaddr">${esc(c.address).replace(/\n/g,"<br>")}</p>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/[^+\d]/g,""))}">${esc(c.phone)}</a>`:""}${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:""}${c.telegram?`<a href="https://t.me/${esc(c.telegram.replace(/^@/,""))}" target="_blank" rel="noopener">Telegram</a>`:""}${c.instagram?`<a href="https://instagram.com/${esc(c.instagram.replace(/^@/,""))}" target="_blank" rel="noopener">Instagram</a>`:""}<a href="#/contacts">Contact us</a></div>
  <div><h4>Help</h4><a href="#/track">Track your order</a><a href="#/delivery">${t("delivery")}</a><a href="#/returns">Returns &amp; refunds</a><a href="#/privacy">Privacy policy</a><a href="#/terms">Terms of service</a><a href="#/about">Our story</a></div></div>
  <div class="shell copy"><span>© ${new Date().getFullYear()} ${esc(c.name)}. ${t("rights")}.</span></div>`;
  hsSetup();badges();acctBadge();
 }
-function markNav(path){document.querySelectorAll("#nav a").forEach(a=>{const h=a.getAttribute("href").slice(1);a.classList.toggle("active",h==="/"?path==="/":path.startsWith(h))});$("#nav").classList.remove("open")}
+function markNav(path){const full=(location.hash.slice(1)||"/"),cat=new URLSearchParams(full.split("?")[1]||"").get("cat");document.querySelectorAll("#nav a").forEach(a=>{const h=a.getAttribute("href").slice(1);const on=h==="/"?path==="/":h.includes("?cat=")?path==="/shop"&&h.endsWith("="+cat):h==="/shop"?path==="/shop"&&!cat:path.startsWith(h);a.classList.toggle("active",on)});$("#nav").classList.remove("open")}
 
 
 /* ===== layers: mini cart, quick view, filter drawer ===== */
@@ -281,7 +281,7 @@ function viewProduct(id){
  const c=catOf(p.cat),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  const rel=visible().filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
  const specs=(p.specs||[]).filter(s=>s[0]||s[1]);
- return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.name,"pdp",{thumbs:true,zoom:true})}</div>
+ return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}</div>
  <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
  ${!p.active?`<div class="note">Hidden product — customers can’t see it.</div>`:""}
  <h1>${esc(p.name)}</h1>${(()=>{const r=rating(p.id);return r?`<button class="crate rlink" data-act="toreviews">${stars(r.avg,17)}<span>${r.avg.toFixed(1)} · ${r.n} ${r.n===1?"review":"reviews"}</span></button>`:`<button class="crate rlink none" data-act="toreviews">${stars(0,17)}<span>No reviews yet · Write a review</span></button>`})()}<span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>${p.sku?` <span class="muted small" style="margin-left:12px">Item # <b>${esc(p.sku)}</b></span>`:""}
@@ -367,7 +367,7 @@ function viewContacts(){const c=S.settings;const r=(l,v,h)=>v?`<div class="row" 
  const nm=(user&&((profile&&profile.full_name)||(user.user_metadata&&user.user_metadata.full_name)))||LS.get("ctName",""),em=(user&&user.email)||LS.get("ctEmail","");
  return `<div class="page-head"><div class="shell"><h1>${t("contacts")}</h1><p>Questions about an order or a product? Send us a message.</p></div></div><div class="shell section contactgrid">
  <div class="panel"><h2>Contact us</h2><form class="stack" data-form="contact" novalidate><div class="form"><div><label>Name <span class="req">*</span></label><input class="field" name="name" autocomplete="name" maxlength="120" value="${esc(nm)}" required></div><div><label>Email <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" maxlength="200" value="${esc(em)}" required></div><div class="full"><label>Order number (optional)</label><input class="field" name="order_no" maxlength="40" placeholder="CHV-…"></div><div class="full"><label>Message <span class="req">*</span></label><textarea class="field" name="body" maxlength="5000" required style="min-height:140px"></textarea></div></div><input type="text" name="website" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true"><div id="ctMsg"></div><button class="btn primary">Send message</button></form></div>
- <div class="panel"><h2>Other ways to reach us</h2>${r(t("phone"),c.phone,"tel:"+(c.phone||"").replace(/[^+\d]/g,""))}${r(t("email"),c.email,"mailto:"+c.email)}${r("Instagram",c.instagram,"https://instagram.com/"+(c.instagram||"").replace(/^@/,""))}${r(t("hours"),c.hours)}</div></div>`}
+ <div class="panel"><h2>Other ways to reach us</h2>${r(t("phone"),c.phone,"tel:"+(c.phone||"").replace(/[^+\d]/g,""))}${r(t("email"),c.email,"mailto:"+c.email)}${r("Instagram",c.instagram,"https://instagram.com/"+(c.instagram||"").replace(/^@/,""))}${r(t("hours"),c.hours)}${c.address?`<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line);align-items:flex-start"><span class="muted">Address</span><span style="text-align:right">${esc(c.address).replace(/\n/g,"<br>")}</span></div>`:""}</div></div>`}
 
 
 /* ===== checkout helpers ===== */
@@ -442,6 +442,16 @@ function viewAbout(){
  ${paras.length?`<section class="section"><div class="shell about-story">${paras.map((p,i)=>i===0?`<p class="first">${esc(p)}</p>`:`<p>${esc(p)}</p>`).join("")}</div></section>`:""}
  ${vals.length?`<section class="section alt"><div class="shell"><div class="section-head"><div><span class="eyebrow">What we care about</span><h2>Our promise to you</h2></div></div><div class="values">${vals.map(([i,ti,tx])=>`<div class="value"><i aria-hidden="true">${esc(i)}</i><b>${esc(ti||"")}</b><p>${esc(tx||"")}</p></div>`).join("")}</div></div></section>`:""}
  <section class="section"><div class="shell about-cta"><h2>${esc(s.aboutCta||"Make your home a little cozier")}</h2><p>Have a question about a product or an order? We read every message — <a class="textlink" href="#/contacts">get in touch</a>.</p><a class="btn primary" href="#/shop">Browse all products →</a></div></section>`}
+/* ===== SEO tags (title, description, social preview, product data for Google) ===== */
+function setMetaTag(attr,key,val){let m=document.head.querySelector(`meta[${attr}="${key}"]`);if(!m){m=document.createElement("meta");m.setAttribute(attr,key);document.head.appendChild(m)}m.setAttribute("content",val||"")}
+function applySeo(parts,q){const st=S.settings,base=st.name||"CozyHouseVibe",clip=(x,n)=>{x=String(x||"").replace(/\s+/g," ").trim();return x.length>n?x.slice(0,n-1).trim()+"…":x};
+ let title=st.seoTitle||base+(st.tagline?" — "+st.tagline:""),desc=st.seoDescription||st.heroText||"",img=st.heroImage||"",ld=null;const pg=parts[0]||"";
+ if(pg==="product"){const p=prod(parts[1]);if(p&&p.active){title=p.seoTitle||p.name+" | "+base;desc=p.seoDesc||p.short||p.desc||"";img=img0(p);const r=rating(p.id);
+  ld={"@context":"https://schema.org","@type":"Product",name:p.name,sku:p.sku||undefined,description:clip(p.desc||p.short,500),image:(p.images||[]).filter(u=>/^https?:/.test(u)).slice(0,5),brand:{"@type":"Brand",name:base},offers:{"@type":"Offer",priceCurrency:"USD",price:String(p.price),availability:"https://schema.org/"+(p.stock>0?"InStock":"OutOfStock"),url:location.href},...(r?{aggregateRating:{"@type":"AggregateRating",ratingValue:r.avg.toFixed(1),reviewCount:r.n}}:{})}}}
+ else if(pg==="shop"){const c=catOf(q.get("cat"));title=(c?c.name:"All products")+" | "+base;desc=c?`Shop ${c.name.toLowerCase()} at ${base}: ${clip(desc,110)}`:desc}
+ else if(pg){const T={about:"Our story",contacts:"Contact us",delivery:"Shipping & payment",returns:"Returns & refunds",privacy:"Privacy policy",terms:"Terms of service",track:"Track your order"};if(T[pg])title=T[pg]+" | "+base}
+ document.title=clip(title,70);desc=clip(desc,160);setMetaTag("name","description",desc);setMetaTag("property","og:title",document.title);setMetaTag("property","og:description",desc);setMetaTag("property","og:type",pg==="product"?"product":"website");if(/^https?:/.test(img))setMetaTag("property","og:image",img);
+ let s=document.getElementById("ldjson");if(ld){if(!s){s=document.createElement("script");s.type="application/ld+json";s.id="ldjson";document.head.appendChild(s)}s.textContent=JSON.stringify(ld).replace(/</g,"\\u003c")}else if(s)s.remove()}
 function notFound(){return `<div class="shell section"><div class="empty"><b>404</b>${lang==="en"?"Page not found.":"Сторінку не знайдено."}<br><br><a class="btn" href="#/">${t("backHome")}</a></div></div>`}
 
 /* ===== router ===== */
@@ -452,7 +462,7 @@ function render(){
  markNav(path);hsClose();hsSync(path,q);let html;
  html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:viewOrder,favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
- if(path!==lastPath)window.scrollTo(0,0);lastPath=path;
+ if(path!==lastPath)window.scrollTo(0,0);lastPath=path;applySeo(parts,q);
 }
 
 /* ===== events ===== */

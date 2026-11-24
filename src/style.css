@@ -460,3 +460,9 @@ tr.st-low td{background:#fff8ec}tr.st-out td{background:#fdf0ee}
 .mini.sku{width:110px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
 form[hidden],div[hidden]{display:none!important}
 .posbtns{display:inline-flex;align-items:center;gap:4px;margin-right:8px}.posbtns .btn{padding:3px 8px}.posbtns b{min-width:22px;text-align:center;font-size:12px}
+.footaddr{line-height:1.6;color:#c8d3c6}
+.nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}.nav a{white-space:nowrap}
+/* seller SEO */
+.serp{font-family:Arial,sans-serif;max-width:560px}.serp-url{font-size:12px;color:#4d5156;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.serp-t{color:#1a0dab;font-size:17px;line-height:1.3}.serp-d{font-size:13px;color:#4d5156;line-height:1.45;margin-top:2px}
+.seoscore{display:inline-block;font-weight:800;font-size:12px;border-radius:999px;padding:3px 9px}.seoscore.s4{background:#e2f0e2;color:#2f6b37}.seoscore.s3,.seoscore.s2{background:#fdecc8;color:#8a5a0b}.seoscore.s1,.seoscore.s0{background:#f8d7d0;color:#9a2d1a}
+.cnt{float:right;font-size:12px;color:var(--muted);font-weight:500}.cnt.ok{color:#2f6b37}.cnt.over{color:#b0442c;font-weight:700}.seoform{background:#faf9f6;padding:14px;border-radius:12px}
