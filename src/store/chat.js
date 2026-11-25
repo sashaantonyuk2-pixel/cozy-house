@@ -4,7 +4,7 @@
 const Chat={key:null,msgs:[],last:0,seen:0,isOpen:false,timer:null,busy:false,
  icon:'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg>',
  init(){
-  if(SELLER||!sb||$("#chatBtn"))return;
+  if(!sb||$("#chatBtn"))return;
   this.key=LS.get("chatKey",null);this.msgs=LS.get("chatMsgs",[]);this.last=this.msgs.reduce((m,x)=>Math.max(m,x.id||0),0);this.seen=LS.get("chatSeen",0);
   const b=document.createElement("button");b.id="chatBtn";b.className="chatbtn";b.type="button";b.setAttribute("aria-label","Chat with us");b.setAttribute("aria-expanded","false");b.setAttribute("aria-controls","chatPanel");
   b.innerHTML=this.icon+'<span class="chatlbl">Chat with us</span><span class="chatdot" id="chatDot" hidden></span>';b.addEventListener("click",()=>this.toggle());document.body.appendChild(b);

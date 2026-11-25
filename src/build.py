@@ -1,4 +1,5 @@
-"""Build the storefront (../index.html) and Seller Central (../seller/index.html) from the parts in this folder.
+"""Build the storefront (../index.html) and Seller Central (../seller/index.html).
+   shared/ = code and styles used by both, store/ = storefront only, seller/ = Seller Central only.
 Run from this folder:  python3 build.py   (needs Python 3 and Node.js — or, on a Mac, the built-in JavaScriptCore)"""
 import os
 import subprocess,json,shutil,tempfile
@@ -12,21 +13,22 @@ def run_js(code):
     with tempfile.NamedTemporaryFile('w',suffix='.js',delete=False,encoding='utf-8') as f: f.write(code);fn=f.name
     try: return subprocess.run([JSC,fn],capture_output=True,text=True)
     finally: os.remove(fn)
-css=open('style.css').read()+'.fav-inline.on svg{fill:var(--terra);stroke:var(--terra)}\n'
+css=open('shared/style.css').read()+'.fav-inline.on svg{fill:var(--terra);stroke:var(--terra)}\n'
 def js(files): return ''.join(open(f).read()+'\n' for f in files)
 # snapshot for the storefront fallback (demo data with embedded photos)
-_r=run_js("eval(readFile('photos.js')+readFile('demo.js'));print(JSON.stringify(demoState()))")
+_r=run_js("eval(readFile('shared/photos.js')+readFile('shared/demo.js'));print(JSON.stringify(demoState()))")
 if _r.returncode or not _r.stdout.strip(): raise SystemExit('snapshot failed: '+_r.stderr[:600])
 snap=_r.stdout.strip()
 import re as _re
-_ph=json.loads(open('photos.js').read()[len('const PHOTO='):-2]);_inv={v:k for k,v in _ph.items()}
+_ph=json.loads(open('shared/photos.js').read()[len('const PHOTO='):-2]);_inv={v:k for k,v in _ph.items()}
 _d=json.loads(snap)
 for p in _d['products']: p['images']=['photo:'+_inv[u] if u in _inv else u for u in p['images']]
 snap=json.dumps(_d).replace('<','\\u003c')
-body=open('body.html').read().replace('<script id="store-data" type="application/json">null</script>','<script id="store-data" type="application/json">'+snap+'</script>')
-store=open('head.html').read()+'\n'+css+body+js(['i18n.js','photos.js','demo.js','account.js','chat.js','app.js'])+'</script>\n</body></html>'
+body=open('store/body.html').read().replace('<script id="store-data" type="application/json">null</script>','<script id="store-data" type="application/json">'+snap+'</script>')
+SHARED=['shared/i18n.js','shared/photos.js','shared/demo.js','shared/supabase.js','shared/core.js']
+store=open('store/head.html').read()+'\n'+css+body+js(SHARED+['store/account.js','store/chat.js','store/store.js'])+'</script>\n</body></html>'
 open('store.html','w').write(store)
-seller=open('seller_head.html').read()+'\n'+css+open('seller_body.html').read()+js(['i18n.js','photos.js','demo.js','admin.js','account.js','seller.js','app.js'])+'</script>\n</body></html>'
+seller=open('seller/head.html').read()+'\n'+css+open('seller/body.html').read()+js(SHARED+['seller/admin.js','seller/seller.js','seller/main.js'])+'</script>\n</body></html>'
 open('seller.html','w').write(seller)
 for f in ['store.html','seller.html']:
     r=run_js("const s=readFile('%s');const ms=[...s.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];new Function(ms[ms.length-1][1]);print('%s syntax ok '+s.length)"%(f,f))

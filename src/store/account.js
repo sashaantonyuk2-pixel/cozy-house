@@ -1,16 +1,13 @@
-/* ===== customer accounts (Supabase Auth) ===== */
-const SB_URL="https://wkbrbrykqjdyovtdxflo.supabase.co",SB_KEY="sb_publishable_UZiqJFbTofapMmGhPmkDeg_t_bBxD0m";
-const SITE_URL="https://sashaantonyuk2-pixel.github.io/cozy-house/";
-let sb=null,user=null,profile=null,authReady=false;
+/* ===== customer accounts (Supabase Auth, storefront only) ===== */
+let user=null,profile=null,authReady=false;
 function sbInit(){
  try{if(!window.supabase||!window.supabase.createClient)return;
-  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:window.SELLER_MODE?{flowType:"pkce",persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storage:window.sessionStorage,storageKey:"chv-seller-auth"}:{flowType:"pkce",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{flowType:"pkce",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   sb.auth.onAuthStateChange((ev,session)=>{const was=user&&user.id;user=session?session.user:null;if(!user)profile=null;
-   if(window.SELLER_MODE){setTimeout(()=>window.Seller&&Seller.onAuth(ev),0);return}
    setTimeout(()=>{acctBadge();
     if(ev==="PASSWORD_RECOVERY"){location.hash="#/account/reset";return}
     if((was||null)!==(user&&user.id||null)&&/^#\/(account|checkout|orders)/.test(location.hash))render()},0)});
-  if(!window.SELLER_MODE)sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;authReady=true;acctBadge();
+  sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;authReady=true;acctBadge();
    if(/[?&]code=|[?&]error/.test(location.search))history.replaceState(null,"",location.pathname+(location.hash||"#/account"));
    if(/^#\/(account|checkout|orders)/.test(location.hash))render()});
  }catch(e){sb=null}}
@@ -24,15 +21,6 @@ function acctBadge(){const b=$("#acctBtn");if(!b)return;b.classList.toggle("on",
   :`<a class="btn primary block" href="#/account" role="menuitem">Sign in</a><p class="amnew">New customer? <a href="#/account/register" role="menuitem">Start here</a></p><div class="amlinks">${links}</div>`}
 function closeAcct(){const w=$("#acctWrap");if(w){w.classList.remove("open");$("#acctBtn").setAttribute("aria-expanded","false")}}
 async function loadProfile(){if(!sb||!user)return null;if(profile)return profile;const{data}=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();profile=data||{id:user.id};return profile}
-const authErr=e=>{const m=(e&&e.message)||String(e);
- if(/Invalid login/i.test(m))return"Wrong email or password.";
- if(/already registered|already exists/i.test(m))return"An account with this email already exists. Try signing in.";
- if(/Email not confirmed/i.test(m))return"Please confirm your email first — check your inbox.";
- if(/not authorized|Error sending|sending.*email/i.test(m))return"We couldn’t send an email right now. Please contact us and we’ll help.";
- if(/rate limit|too many/i.test(m))return"Too many attempts. Please wait a minute and try again.";
- if(/Password should/i.test(m))return"Password must be at least 8 characters.";
- if(/Failed to fetch|NetworkError/i.test(m))return"Can’t reach the server. Check your connection and try again.";
- return m};
 function authShell(title,sub,body){return `<div class="shell section"><div class="authbox"><div class="authhead"><span class="authicon">${ICON.user}</span><h1>${title}</h1>${sub?`<p class="muted">${sub}</p>`:""}</div>${body}</div></div>`}
 function notReady(){return authShell("Account","",`<div class="note">${sb?"Loading…":"Accounts are unavailable right now. You can still place orders as a guest."}</div>`)}
 function viewAccount(parts){
@@ -93,9 +81,6 @@ async function acSubmit(k,f){
   const{data,error}=await sb.from("profiles").upsert(row).select().maybeSingle();busy(false);if(error)return acMsg(esc(authErr(error)));profile=data;
   if(row.full_name)sb.auth.updateUser({data:{full_name:row.full_name}}).catch(()=>{});const n=$("#acName");if(n)n.textContent=row.full_name||"";acMsg("Saved ✓",true);return}
  }catch(e){busy(false);acMsg(esc(authErr(e)))}}
-function trackUrl(c,n){n=encodeURIComponent(String(n||"").trim());if(!n)return"";c=String(c||"").toLowerCase();
- if(c.includes("usps"))return"https://tools.usps.com/go/TrackConfirmAction?tLabels="+n;if(c.includes("ups"))return"https://www.ups.com/track?tracknum="+n;
- if(c.includes("fedex"))return"https://www.fedex.com/fedextrack/?trknbr="+n;if(c.includes("dhl"))return"https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id="+n;return""}
 async function saveOrderToDb(o){
  if(!sb)return{ok:false};const c=o.c;
  const customer={name:c.name,phone:c.phone,email:c.email||null,delivery:c.delivery,city:c.city,state:c.state||null,zip:c.zip||null,address:c.address||null,payment:c.payment,comment:c.comment||null};
