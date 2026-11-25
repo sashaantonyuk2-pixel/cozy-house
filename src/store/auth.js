@@ -18,7 +18,7 @@ function acctBadge(){const b=$("#acctBtn");if(!b)return;b.classList.toggle("on",
  const l=$("#acctLbl");if(l)l.innerHTML=`<small>${user?`Hi${nm?", "+esc(nm):""}`:"Hello, sign in"}</small><b>Account <i class="chev"></i></b>`;
  const m=$("#navAcct");if(m)m.textContent=user?"My account":"Sign in / Register";
  const mu=$("#acctMenu");if(!mu)return;
- const links=`<a role="menuitem" href="#/account/orders">${ICON.bag.replace("<svg",'<svg width="18" height="18"')} My orders</a><a role="menuitem" href="#/account">${ICON.user.replace("<svg",'<svg width="18" height="18"')} My details</a><a role="menuitem" href="#/favorites">${ICON.heart.replace("<svg",'<svg width="18" height="18"')} Wishlist</a>`;
+ const links=`<a role="menuitem" href="#/account/orders">${ICON.bag.replace("<svg",'<svg width="18" height="18"')} My orders</a><a role="menuitem" href="#/account">${ICON.user.replace("<svg",'<svg width="18" height="18"')} Profile</a><a role="menuitem" href="#/favorites">${ICON.heart.replace("<svg",'<svg width="18" height="18"')} Wishlist</a>`;
  mu.innerHTML=user?`<div class="amhead"><b>${esc(nm||"Your account")}</b><span>${esc(user.email)}</span></div><div class="amlinks">${links}</div><button class="btn block sm" data-act="signout" role="menuitem">Sign out</button>`
   :`<a class="btn primary block" href="#/account" role="menuitem">Sign in</a><p class="amnew">New customer? <a href="#/account/register" role="menuitem">Start here</a></p><div class="amlinks">${links}</div>`}
 function closeAcct(){const w=$("#acctWrap");if(w){w.classList.remove("open");$("#acctBtn").setAttribute("aria-expanded","false")}}
