@@ -90,6 +90,7 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("Ğ
  retForm:()=>{const r=$("#ret-"+id);if(r)r.hidden=!r.hidden},
  retCancel:()=>{const r=$("#ret-"+id);if(r)r.hidden=true},
  navToggle:()=>{const w=el.closest(".admin");if(!w)return;const off=!w.classList.contains("navoff");w.classList.toggle("navoff",off);LS.set("navOff",off);const f=w.querySelector(off?".navrail button":".navhide");f&&f.focus({preventScroll:true})},
+ moveStorage:()=>Admin.moveToStorage(el),
  supNewInline:()=>{e.preventDefault();Admin.supNewInline()},
  supDel:()=>Admin.supplierDelete(id),
  retSet:()=>Admin.retSet(id,el.dataset.v,el),

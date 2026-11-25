@@ -20,7 +20,9 @@ _r=run_js("eval(readFile('shared/photos.js')+readFile('shared/demo.js'));print(J
 if _r.returncode or not _r.stdout.strip(): raise SystemExit('snapshot failed: '+_r.stderr[:600])
 snap=_r.stdout.strip()
 import re as _re
-_ph=json.loads(open('shared/photos.js').read()[len('const PHOTO='):-2]);_inv={v:k for k,v in _ph.items()}
+_pr=run_js("eval(readFile('shared/photos.js')+';print(JSON.stringify(PHOTO))')")
+if _pr.returncode or not _pr.stdout.strip(): raise SystemExit('photos failed: '+_pr.stderr[:300])
+_ph=json.loads(_pr.stdout.strip());_inv={v:k for k,v in _ph.items()}
 _d=json.loads(snap)
 for p in _d['products']: p['images']=['photo:'+_inv[u] if u in _inv else u for u in p['images']]
 snap=json.dumps(_d).replace('<','\\u003c')

@@ -1,7 +1,7 @@
 -- =====================================================================
 -- 00 · Base: extensions, private schema, admins, shared helpers, audit log
 -- Snapshot of the live Supabase structure (project cozyhousevibe), 25.11.2026.
--- No data and no secrets. Run files 00 → 10 in order on an empty project.
+-- No data and no secrets. Run files 00 → 11 in order on an empty project.
 -- =====================================================================
 
 create extension if not exists pgcrypto with schema extensions;

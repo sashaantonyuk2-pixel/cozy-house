@@ -7,6 +7,7 @@ products(q){const term=(q.get("q")||"").toLowerCase(),cat=q.get("cat")||"",sf=q.
  const sl=v=>{const n=new URLSearchParams(q);v?n.set("stock",v):n.delete("stock");return "#/admin/products"+(n.toString()?"?"+n:"")};
  this.sel=new Set([...this.sel].filter(id=>prod(id)));
  return `<div class="ahead"><h1>Товари <span class="muted" style="font-size:18px">${S.products.length}</span></h1><div class="acts"><button class="btn" data-act="a:xlsExport" title="Завантажити всі товари в Excel">⬇ Експорт в Excel</button><button class="btn" data-act="a:xlsImportOpen" title="Завантажити товари з Excel або CSV">⬆ Імпорт з Excel</button><a class="btn primary" href="#/admin/product/new">${ICON.plus.replace("<svg",'<svg width="17"')} Додати товар</a></div></div>
+ ${(()=>{const n=this.outsideStorage().length;return n?`<div class="note storagenote">🗂 <b>${n} фото ще не в сховищі</b> — вони лежать разом із кодом сайту. Перенесіть їх в окреме сховище фото (Supabase Storage): <button class="btn sm primary" data-act="a:moveStorage">Перенести в сховище</button></div>`:""})()}
  <form class="supadd" data-form="supadd"><b>＋ Товар за SKU постачальника</b><select class="field" name="supplierId"><option value="">Постачальник…</option>${(S.suppliers||[]).map(x=>`<option value="${x.id}" ${q.get("sup")===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select><input class="field" name="supplierSku" maxlength="80" placeholder="SKU постачальника" required><button class="btn sm primary">Знайти або додати</button><span class="help">Якщо такий SKU вже є — відкриється цей товар, інакше — новий товар із заповненими даними постачальника.</span></form>
  <div id="impBox"></div>
  <div class="acts" style="margin:0 0 12px"><a class="btn sm ${!sf?"primary":""}" href="${sl("")}">Усі (${S.products.length})</a><a class="btn sm ${sf==="low"?"primary":""} ${nLow?"warnbtn":""}" href="${sl("low")}">⚠️ Закінчуються (${nLow})</a><a class="btn sm ${sf==="out"?"primary":""} ${nOut?"dangerbtn":""}" href="${sl("out")}">❌ Немає (${nOut})</a><span class="help" style="margin:0 0 0 6px;align-self:center">«Закінчуються» — залишок ${thr} шт. або менше (змінити: Налаштування → Магазин).</span></div>
@@ -66,4 +67,15 @@ supAdd(f){const sup=f.supplierId.value,sku=f.supplierSku.value.trim().slice(0,80
  this.prefill={supplierId:sup,supplierSku:sku};this.draft=null;location.hash="#/admin/product/new";toast("Новий товар: заповніть назву й ціну")},
 marginInfo(){const f=document.querySelector('[data-form="product"]'),el=$("#marginInfo");if(!f||!el)return;const c=parseFloat(f.cost.value),pr=parseFloat(f.price.value);
  el.innerHTML=isNaN(c)||isNaN(pr)||!pr?"":`Націнка: <b>${money(pr-c)}</b> · маржа <b style="color:${pr-c>=0?"#2f7d4a":"#b3412e"}">${Math.round((pr-c)/pr*100)}%</b> (без доставки й податку)`},
+/* ---- move photos that still live in the site code / GitHub into Storage (bucket product-images) ---- */
+inStorage(u){return /\/storage\/v1\/object\/public\/product-images\//.test(String(u||""))},
+outsideStorage(){const L=[];S.products.forEach(p=>(p.images||[]).forEach((u,i)=>{if(u&&!String(u).startsWith("data:")&&!this.inStorage(u))L.push({p,i,u})}));
+ S.categories.forEach(c=>{if(c.image&&!String(c.image).startsWith("data:")&&!this.inStorage(c.image))L.push({c,u:c.image})});return L},
+async moveToStorage(btn){const L=this.outsideStorage();if(!L.length)return toast("Усі фото вже в сховищі ✓");
+ if(!confirm(`Перенести ${L.length} фото у сховище Supabase? Посилання в товарах оновляться автоматично.`))return;
+ btn.disabled=true;let done=0,fail=0;
+ for(const x of L){btn.textContent=`Переношу… ${done+fail+1}/${L.length}`;
+  try{const abs=new URL(x.u,location.href).href;const url=await Seller.upload(abs,x.p?"products/"+x.p.id:"categories");if(x.p)x.p.images[x.i]=url;else x.c.image=url;done++}
+  catch(e){fail++;console.warn("move failed",x.u,e&&e.message)}}
+ save();toast(`Перенесено: ${done}${fail?` · не вдалося: ${fail}`:""}. Зберігаю…`);render()},
 });
