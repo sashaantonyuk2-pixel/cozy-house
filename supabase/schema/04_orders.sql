@@ -30,7 +30,7 @@ create table if not exists public.orders (
   refunded_at timestamp with time zone,
   admin_note text,
   subtotal numeric(10,2),                          -- items only
-  shipping numeric(10,2) default 0 not null,       -- Standard / Express price from settings (free over freeFrom)
+  shipping numeric(10,2) default 0 not null,       -- Standard / Express price from settings
   tax numeric(10,2) default 0 not null,            -- sales tax by shipping state (settings.taxRates)
   tax_rate numeric(6,3) default 0 not null,        -- percent used for this order
   constraint orders_order_no_key unique (order_no),
@@ -62,7 +62,7 @@ revoke update, delete on public.orders from anon, authenticated;
 grant update (status, customer, carrier, tracking_number, shipped_at, return_reason, delivery_eta, payment_status, payment_method, payment_ref, paid_amount, paid_at, refund_amount, refunded_at, admin_note) on public.orders to authenticated;
 
 -- Checkout: required fields (street address must have a house number), real prices from products, variants,
--- stock check and reservation, shipping (Standard / Express from settings, free over freeFrom) and sales tax by state (settings.taxRates)
+-- stock check and reservation, shipping (Standard / Express price from settings, no free-shipping threshold) and sales tax by state (settings.taxRates)
 create or replace function private.prepare_order()
  returns trigger
  language plpgsql
@@ -71,7 +71,7 @@ create or replace function private.prepare_order()
 as $function$
 declare it jsonb; pr record; out_items jsonb := '[]'::jsonb; tot numeric := 0; q int;
         o jsonb; chosen jsonb; pick text; opt_out jsonb; line jsonb; c jsonb;
-        st jsonb; num text; v_free numeric; v_std numeric; v_exp numeric; exp_on boolean; is_exp boolean;
+        st jsonb; num text; v_std numeric; v_exp numeric; exp_on boolean; is_exp boolean;
         ship numeric; rate numeric; taxable numeric; dlabel text;
 begin
   perform set_config('app.order_ctx', '1', true);
@@ -113,13 +113,12 @@ begin
   -- shipping & tax from Seller Central settings (store_settings.data)
   select coalesce(s.data, '{}'::jsonb) into st from public.store_settings s where s.id = 1;
   st := coalesce(st, '{}'::jsonb);
-  num := st->>'freeFrom';    v_free := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 0 end;
   num := st->>'shipStandard'; v_std := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 12 end;
   num := st->>'shipExpress';  v_exp := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 25 end;
   exp_on := coalesce(st->>'expressOn', '') in ('true', '1');
   is_exp := exp_on and coalesce(c->>'delivery', '') ~* 'express';
   if is_exp then ship := v_exp; dlabel := 'Express shipping (1–2 business days)';
-  else ship := case when v_free > 0 and tot >= v_free then 0 else v_std end; dlabel := 'Standard shipping (3–5 business days)'; end if;
+  else ship := v_std; dlabel := 'Standard shipping (3–5 business days)'; end if;
   num := st->'taxRates'->>(c->>'state');
   rate := case when num ~ '^\d+(\.\d+)?$' then least(num::numeric, 20) else 0 end;
   taxable := tot + case when coalesce(st->>'taxShipping', '') in ('true', '1') then ship else 0 end;

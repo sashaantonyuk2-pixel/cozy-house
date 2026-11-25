@@ -122,12 +122,12 @@ let lastFocus=null;
 function openLayer(id){closeLayers(true);lastFocus=document.activeElement;const el=$("#"+id);el.classList.add(id==="qv"?"show":"open");$("#overlay").classList.add("show");document.body.classList.add("locked");setTimeout(()=>{const f=el.querySelector("[data-autofocus]")||el.querySelector("button,a,input");f&&f.focus({preventScroll:true})},60)}
 function closeLayers(silent){["cartDrawer","filters"].forEach(i=>{const e=document.getElementById(i);e&&e.classList.remove("open")});const q=$("#qv");q&&q.classList.remove("show");$("#overlay").classList.remove("show");document.body.classList.remove("locked");if(!silent&&lastFocus&&lastFocus.focus)try{lastFocus.focus({preventScroll:true})}catch(e){}}
 function renderMini(){
- const L=cartLines(),tot=cartTotal(),ff=shipCfg().free,n=L.reduce((s,l)=>s+l.qty,0);
+ const L=cartLines(),tot=cartTotal(),n=L.reduce((s,l)=>s+l.qty,0);
  $("#cartDrawer").innerHTML=`<div class="dhead"><h3>${t("yourCart")} <span class="muted">(${n})</span></h3><button class="iconbtn" data-act="closeall" aria-label="${t("close")}" data-autofocus>${X}</button></div>
- ${L.length?`<div class="dbody">${ff?`<div class="ship"><div>${tot>=ff?t("freeOk"):t("freeLeft")+"<b>"+money(ff-tot)+"</b>"}</div><div class="bar"><i style="width:${Math.min(100,Math.round(tot/ff*100))}%"></i></div></div>`:""}
+ ${L.length?`<div class="dbody">
  ${L.map(l=>`<div class="mline"><a href="#/product/${l.p.id}"><img src="${esc(img0(l.p))}" alt=""></a><div class="mi"><a href="#/product/${l.p.id}" class="mn">${esc(l.p.name)}</a>${l.opt?`<span class="optline">${esc(optStr(l.opt,l.p))}</span>`:""}${l.p.sku?`<span class="optline">Item # ${esc(l.p.sku)}</span>`:""}<span class="muted small">${money(l.p.price)}</span>
  <div class="mrow"><div class="qty sm"><button data-act="mq" data-d="-1" data-k="${esc(l.k)}" aria-label="−">−</button><span>${l.qty}</span><button data-act="mq" data-d="1" data-k="${esc(l.k)}" aria-label="+" ${l.qty>=lineMax(l)?"disabled":""}>+</button></div><button class="linkbtn" data-act="mrm" data-k="${esc(l.k)}">${t("remove")}</button></div></div><b class="mt">${money(l.p.price*l.qty)}</b></div>`).join("")}</div>
- <div class="dfoot"><div class="row total" style="margin:0 0 4px;border:0;padding-top:0"><span>${t("subtotal")}</span><span>${money(tot)}</span></div><p class="muted small" style="margin:0 0 14px">${t("shipping")}: ${shipCost(tot,false)?money(shipCost(tot,false)):t("free")} · tax calculated at checkout</p>
+ <div class="dfoot"><div class="row total" style="margin:0 0 4px;border:0;padding-top:0"><span>${t("subtotal")}</span><span>${money(tot)}</span></div><p class="muted small" style="margin:0 0 14px">${t("shipping")}: ${money(shipCost(tot,false))} · tax calculated at checkout</p>
  <a class="btn primary block" href="#/checkout">${t("checkout")} →</a><a class="btn block" style="margin-top:8px" href="#/cart">${t("viewCart")}</a></div>`
  :`<div class="dbody"><div class="empty" style="border:0;padding:50px 10px"><b>${t("cartEmpty")}</b>${t("cartEmptyS")}<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div></div>`}`}
 function openCart(){renderMini();openLayer("cartDrawer")}
@@ -259,18 +259,17 @@ function viewCart(){
  <a class="textlink" href="#/shop">← ${t("continueShop")}</a></div>${summary(true)}</div>`}
 /* ===== shipping & sales tax (same rules as private.prepare_order in the database) ===== */
 function shipCfg(){const s=S.settings,n=(v,d)=>{const x=parseFloat(v);return isNaN(x)?d:x},on=v=>v===true||v==="1"||v==="true";
- return{std:n(s.shipStandard,12),exp:n(s.shipExpress,25),expOn:on(s.expressOn),free:n(s.freeFrom,0),rates:s.taxRates&&typeof s.taxRates==="object"?s.taxRates:{},taxShip:on(s.taxShipping),days:n(s.returnDays,14)}}
+ return{std:n(s.shipStandard,12),exp:n(s.shipExpress,25),expOn:on(s.expressOn),rates:s.taxRates&&typeof s.taxRates==="object"?s.taxRates:{},taxShip:on(s.taxShipping),days:n(s.returnDays,14)}}
 function deliveryOpts(){const c=shipCfg(),L=[{k:"standard",label:"Standard shipping (3–5 business days)",price:c.std}];if(c.expOn)L.push({k:"express",label:"Express shipping (1–2 business days)",price:c.exp});return L}
-function shipCost(sub,express){const c=shipCfg();return express&&c.expOn?c.exp:(c.free>0&&sub>=c.free?0:c.std)}
+function shipCost(sub,express){const c=shipCfg();return express&&c.expOn?c.exp:c.std}
 function taxRate(st){const r=parseFloat(shipCfg().rates[st]);return isNaN(r)?0:Math.min(20,Math.max(0,r))}
 function calcTotals(sub,express,st){const c=shipCfg(),ship=shipCost(sub,express),rate=st?taxRate(st):0,tax=Math.round((sub+(c.taxShip?ship:0))*rate+1e-9)/100;
  return{sub,ship,rate,tax,total:Math.round((sub+ship+tax)*100)/100,express:!!(express&&c.expOn)}}
-function shipNote(){const c=shipCfg();return `Standard (3–5 business days) — ${money(c.std)}${c.free?`, free on orders over ${money(c.free)}`:""}${c.expOn?` · Express (1–2 business days) — ${money(c.exp)}`:""}`}
+function shipNote(){const c=shipCfg();return `Standard (3–5 business days) — ${money(c.std)}${c.expOn?` · Express (1–2 business days) — ${money(c.exp)}`:""}`}
 function summary(withBtn,st,express){
- const sub=withBtn?cartTotal():coTotal(),ff=shipCfg().free,T=calcTotals(sub,express,st);
+ const sub=withBtn?cartTotal():coTotal(),T=calcTotals(sub,express,st);
  return `<aside class="summary" id="coSum"><h3>${t("yourOrder")}</h3>${withBtn?"":coLines().map(l=>`<div class="row small"><span>${esc(l.p.name)}${l.opt?` <span class="muted">(${esc(optStr(l.opt,l.p))})</span>`:""} × ${l.qty}${l.p.sku?`<br><span class="muted">Item # ${esc(l.p.sku)}</span>`:""}</span><span>${money(l.p.price*l.qty)}</span></div>`).join("")}
- <div class="row"><span>${t("subtotal")}</span><b>${money(sub)}</b></div><div class="row"><span>${t("shipping")}${T.express?" (Express)":""}</span><span>${T.ship?money(T.ship):`<b style="color:#3f7a4d">${t("free")}</b>`}</span></div>
- ${ff&&!T.express?`<div class="small" style="margin:6px 0;color:${sub>=ff?"#3f7a4d":"#8a5a45"}">${sub>=ff?t("freeOk"):t("freeLeft")+money(ff-sub)}</div>`:""}
+ <div class="row"><span>${t("subtotal")}</span><b>${money(sub)}</b></div><div class="row"><span>${t("shipping")}${T.express?" (Express)":""}</span><span>${money(T.ship)}</span></div>
  <div class="row"><span>Estimated sales tax${!withBtn&&st&&T.rate?` <span class="muted small">(${esc(st)} ${+T.rate.toFixed(3)}%)</span>`:""}</span><span${withBtn||!st?' class="muted small"':""}>${withBtn?"Calculated at checkout":st?money(T.tax):"Select your state"}</span></div>
  <div class="row total"><span>${withBtn?"Estimated total":t("total")}</span><span>${money(withBtn?T.sub+T.ship:T.total)}</span></div>${withBtn?`<a class="btn primary block" style="margin-top:14px" href="#/checkout">${t("checkout")} →</a>`:`<p class="small muted" style="margin:10px 0 0">Sales tax is based on your shipping state.</p>`}</aside>`}
 function viewCheckout(){
@@ -284,7 +283,7 @@ function viewCheckout(){
  <div><label>${t("email")} <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" maxlength="200" value="${esc(d.email)}" required><div class="ferr" data-for="email"></div></div>
  <div><label>${t("phone")} <span class="req">*</span></label><input class="field" name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(d.phone)}" placeholder="(555) 123-4567" required><div class="ferr" data-for="phone"></div></div>
  <p class="full help" style="margin:0">We’ll email your order confirmation and tracking number. Your phone is only used by the carrier for delivery.</p></div></div>
- <div class="panel"><h2>${t("deliveryM")}</h2><div class="radio">${deliveryOpts().map((x,i)=>{const p=x.k==="express"?x.price:shipCost(coTotal(),false);return `<label class="shipopt"><input type="radio" name="delivery" value="${esc(x.label)}" ${i?"":"checked"}><span>${esc(x.label)}</span><b>${p?money(p):t("free")}</b></label>`}).join("")}</div>
+ <div class="panel"><h2>${t("deliveryM")}</h2><div class="radio">${deliveryOpts().map((x,i)=>{return `<label class="shipopt"><input type="radio" name="delivery" value="${esc(x.label)}" ${i?"":"checked"}><span>${esc(x.label)}</span><b>${money(x.price)}</b></label>`}).join("")}</div>
  <h3 style="margin:20px 0 4px;font-size:16px">Shipping address</h3><div class="form" style="margin-top:10px"><div class="full"><label>Street address (house number and street) <span class="req">*</span></label><input class="field" name="address" autocomplete="address-line1" maxlength="150" value="${esc(d.address)}" placeholder="123 Main St" required><div class="ferr" data-for="address"></div></div>
  <div class="full"><label>Apartment, suite, unit, floor <span class="muted small">(optional)</span></label><input class="field" name="address2" autocomplete="address-line2" maxlength="60" placeholder="Apt 4B" value="${esc(d.address2||"")}"></div>
  <div><label>${t("city")} <span class="req">*</span></label><input class="field" name="city" autocomplete="address-level2" maxlength="100" value="${esc(d.city)}" required></div>
