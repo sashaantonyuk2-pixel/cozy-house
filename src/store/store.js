@@ -259,7 +259,7 @@ function viewCart(){
  <a class="textlink" href="#/shop">← ${t("continueShop")}</a></div>${summary(true)}</div>`}
 /* ===== shipping & sales tax (same rules as private.prepare_order in the database) ===== */
 function shipCfg(){const s=S.settings,n=(v,d)=>{const x=parseFloat(v);return isNaN(x)?d:x},on=v=>v===true||v==="1"||v==="true";
- return{std:n(s.shipStandard,12),exp:n(s.shipExpress,25),expOn:on(s.expressOn),rates:s.taxRates&&typeof s.taxRates==="object"?s.taxRates:{},taxShip:on(s.taxShipping),days:n(s.returnDays,14)}}
+ return{std:n(s.shipStandard,12),exp:n(s.shipExpress,25),expOn:on(s.expressOn),pay:on(s.paymentsOn),rates:s.taxRates&&typeof s.taxRates==="object"?s.taxRates:{},taxShip:on(s.taxShipping),days:n(s.returnDays,14)}}
 function deliveryOpts(){const c=shipCfg(),L=[{k:"standard",label:"Standard shipping (3–5 business days)",price:c.std}];if(c.expOn)L.push({k:"express",label:"Express shipping (1–2 business days)",price:c.exp});return L}
 function shipCost(sub,express){const c=shipCfg();return express&&c.expOn?c.exp:c.std}
 function taxRate(st){const r=parseFloat(shipCfg().rates[st]);return isNaN(r)?0:Math.min(20,Math.max(0,r))}
@@ -290,9 +290,9 @@ function viewCheckout(){
  <div><label>State <span class="req">*</span></label><select class="field" name="state" autocomplete="address-level1" required><option value="">Select state</option>${US_STATES.map(([c,n])=>`<option value="${c}" ${stateCode(d.state)===c?"selected":""}>${n}</option>`).join("")}</select></div>
  <div><label>ZIP code <span class="req">*</span></label><input class="field" name="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" value="${esc(d.zip)}" placeholder="12345" required><div class="ferr" data-for="zip"></div></div>
  <div><label>Country</label><input class="field" value="United States" disabled></div></div></div>
- <div class="panel"><h2>${t("paymentM")}</h2><div class="radio">${o(S.settings.paymentOptions).map((x,i)=>`<label><input type="radio" name="payment" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>
+ <div class="panel"><h2>${t("paymentM")}</h2>${shipCfg().pay?`<div class="paysecure">🔒 <div><b>Pay securely by card, Apple Pay or Google Pay</b><br><span class="small muted">You’ll complete payment on a secure Stripe page. Your order is placed as soon as the payment goes through.</span></div></div><input type="hidden" name="payment" value="Card (Stripe)">`:`<div class="radio">${o(S.settings.paymentOptions).map((x,i)=>`<label><input type="radio" name="payment" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>`}
  <div style="margin-top:14px"><label class="lbl">${t("comment")}</label><textarea class="field" name="comment"></textarea></div></div>
- <div id="coErr"></div><p class="small muted" style="margin:0">By placing your order, you agree to our <a class="textlink" href="#/terms" target="_blank">Terms of Service</a> and <a class="textlink" href="#/privacy" target="_blank">Privacy Policy</a>.</p><button class="btn primary block" style="padding:15px">${t("placeOrder")} →</button></form>${summary(false,stateCode(d.state),false)}</div>`}
+ <div id="coErr">${/[?&]canceled=1/.test(location.hash)?`<div class="note">Payment was cancelled — nothing was charged. Your cart is saved, you can try again.</div>`:""}</div><p class="small muted" style="margin:0">By placing your order, you agree to our <a class="textlink" href="#/terms" target="_blank">Terms of Service</a> and <a class="textlink" href="#/privacy" target="_blank">Privacy Policy</a>.</p><button class="btn primary block" style="padding:15px">${shipCfg().pay?"Continue to payment":t("placeOrder")} →</button></form>${summary(false,stateCode(d.state),false)}</div>`}
 function orderText(o){
  const L=o.lines.map(l=>`• ${l.name}${l.opt?" — "+optStr(l.opt,prod(l.id)):""}${l.sku?" ("+l.sku+")":""} × ${l.qty} = ${money(l.price*l.qty)}`).join("\n");
  return `${lang==="en"?"New order":"Нове замовлення"} ${o.no}\n\n${L}\n\n${o.sub!=null?`${t("subtotal")}: ${money(o.sub)}\n${t("shipping")}: ${o.ship?money(o.ship):t("free")}\nSales tax: ${money(o.tax||0)}\n`:""}${t("total")}: ${money(o.total)}\n\n${t("name")}: ${o.c.name}\n${t("phone")}: ${o.c.phone}${o.c.email?"\n"+t("email")+": "+o.c.email:""}\n${t("deliveryM")}: ${o.c.delivery}\n${t("city")}: ${o.c.city}${o.c.address?", "+o.c.address:""}\n${t("paymentM")}: ${o.c.payment}${o.c.comment?"\n"+t("comment")+": "+o.c.comment:""}`}
@@ -311,6 +311,7 @@ async function placeOrder(f){
  if(bad.length){$("#coErr").innerHTML=`<div class="note">${t("required")}</div>`;const first=f.querySelector(".field.bad");first&&first.focus();return}
  $("#coErr").innerHTML="";fd.address=fd.address+(fd.address2?", "+fd.address2:"");
  const btn=f.querySelector("button:last-child");btn.disabled=true;
+ if(shipCfg().pay){const r=await startPayment(fd);if(!r.ok){btn.disabled=false;$("#coErr").innerHTML=`<div class="note">${r.msg}</div>`;if(r.stock)refreshCatalog()}return}
  const d=new Date(),no="CHV-"+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+Math.floor(1000+Math.random()*9000);
  const o={no,date:d.toISOString(),lines:coLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),c:fd,sent:false};
  const T=calcTotals(coTotal(),/express/i.test(fd.delivery||""),fd.state);Object.assign(o,{sub:T.sub,ship:T.ship,tax:T.tax,rate:T.rate,total:T.total});const bn=!!isBuyNow();
@@ -321,13 +322,38 @@ async function placeOrder(f){
  const ep=(S.settings.formEndpoint||"").trim();
  if(ep&&!o.sent){try{const r=await fetch(ep,{method:"POST",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({order:o.no,total:o.total,message:orderText(o),email:fd.email||undefined,_subject:"New order "+o.no})});o.sent=r.ok}catch(e){o.sent=false}}
  LS.set("lastOrder",o);if(bn){buyNow=null;LS.set("buynow",null)}else setCart([]);location.hash="#/order";}
-function viewOrder(){
+function viewOrder(q){
+ if(q&&q.get("paid"))return viewPaid(q.get("paid"));
  const o=LS.get("lastOrder",null);if(!o)return notFound();const st=S.settings,txt=orderText(o);
  const tg=(st.telegram||"").replace(/^@/,""),vb=(st.viber||"").replace(/[^\d+]/g,"");
  return `<div class="shell section" style="max-width:760px"><div class="panel"><span class="eyebrow">${t("orderNo")}: ${esc(o.no)}</span><h1 style="font-size:36px;margin:8px 0 14px">${t("orderT")}</h1>
  ${o.sent?`<div class="okbox">${t("orderSent")}</div>${o.mine?`<p style="margin-top:14px"><a class="textlink" href="#/account/orders">View your orders →</a></p>`:""}`:`<p>${t("orderSend")}</p><textarea class="field" id="otext" readonly style="min-height:220px;font-size:13px">${esc(txt)}</textarea>
  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${tg?`<button class="btn primary" data-act="tg" data-u="${esc(tg)}">${t("sendTg")}</button>`:""}${st.email?`<a class="btn ${tg?"":"primary"}" href="mailto:${esc(st.email)}?subject=${encodeURIComponent((lang==="en"?"Order ":"Замовлення ")+o.no)}&body=${encodeURIComponent(txt)}">${t("sendEmail")}</a>`:""}${vb?`<a class="btn" href="viber://chat?number=${encodeURIComponent(vb)}" data-act="copyorder">${t("sendViber")}</a>`:""}<button class="btn" data-act="copyorder">${t("copy")}</button>${st.phone?`<a class="btn ghost" href="tel:${esc(st.phone.replace(/[^+\d]/g,""))}">${t("call")} ${esc(st.phone)}</a>`:""}</div>`}
  <p style="margin-top:16px"><a class="btn" href="#/track?no=${encodeURIComponent(o.no)}">📦 Track your order</a></p><br><a class="textlink" href="#/">← ${t("backHome")}</a></div></div>`}
+/* ===== online payment (Stripe) — module is switched on in Seller Central → Settings ===== */
+const PAY_FN=SB_URL+"/functions/v1/";
+async function startPayment(fd){
+ const items=coLines().map(l=>({id:l.p.id,qty:l.qty,...(l.opt?{opt:l.opt}:{})}));
+ const customer={name:fd.name,phone:fd.phone,email:fd.email,delivery:fd.delivery,city:fd.city,state:fd.state,zip:fd.zip,address:fd.address,address2:fd.address2||null,comment:fd.comment||null,payment:"Card (Stripe)"};
+ let token=SB_KEY;try{const{data}=await sb.auth.getSession();if(data&&data.session)token=data.session.access_token}catch(e){}
+ try{const r=await fetch(PAY_FN+"payments-checkout",{method:"POST",headers:{"Content-Type":"application/json",apikey:SB_KEY,Authorization:"Bearer "+token},body:JSON.stringify({customer,items,return_url:location.origin+location.pathname})});
+  const d=await r.json().catch(()=>({}));
+  if(r.ok&&d.url){LS.set("pendingPay",{id:d.id,buyNow:!!isBuyNow(),at:Date.now()});location.href=d.url;return{ok:true}}
+  const m=String(d.error||"");let x=m.match(/OUT_OF_STOCK:(.+):(\d+)/);if(x)return{ok:false,stock:true,msg:esc(+x[2]>0?`Only ${x[2]} left of “${x[1]}”. Please update the quantity in your cart.`:`“${x[1]}” just sold out. Please remove it from your cart.`)};
+  x=m.match(/BAD_FIELD:(\w+)/);if(x)return{ok:false,msg:`Please check your ${esc(x[1])}.`};
+  x=m.match(/UNAVAILABLE:(.+)/);if(x)return{ok:false,stock:true,msg:esc(`“${x[1]}” is no longer available. Please remove it from your cart.`)};
+  if(/OPTION_REQUIRED/.test(m))return{ok:false,stock:true,msg:"The options for one of the items have changed. Please remove it from your cart and add it again."};
+  return{ok:false,msg:`Online payment is temporarily unavailable. Please try again in a few minutes or <a class="textlink" href="#/contacts">contact us</a>.`}}
+ catch(e){return{ok:false,msg:"Can’t reach the payment page. Check your connection and try again."}}}
+function viewPaid(id){setTimeout(()=>pollPaid(id,0),0);
+ return `<div class="shell section" style="max-width:760px"><div class="panel" id="paidBox"><span class="eyebrow">Payment</span><h1 style="font-size:32px;margin:8px 0 14px">Thank you! Confirming your payment…</h1><p class="muted">This usually takes a few seconds. Please don’t close this page.</p></div></div>`}
+async function pollPaid(id,n){const box=$("#paidBox");if(!box)return;let d={};
+ try{const r=await fetch(PAY_FN+"payments-status?id="+encodeURIComponent(id),{headers:{apikey:SB_KEY}});d=await r.json()}catch(e){}
+ if(d.status==="paid"&&d.order_no){const p=LS.get("pendingPay",null);if(p&&p.id===id){if(p.buyNow){buyNow=null;LS.set("buynow",null)}else setCart([]);LS.set("pendingPay",null)}
+  box.innerHTML=`<span class="eyebrow">Order ${esc(d.order_no)}</span><h1 style="font-size:34px;margin:8px 0 14px">Thank you — your order is confirmed!</h1><div class="okbox">💳 Payment received. We’ll email you when your order ships.</div><p style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary" href="#/track?no=${encodeURIComponent(d.order_no)}">📦 Track your order</a>${user?`<a class="btn" href="#/account/orders">My orders & invoice</a>`:""}<a class="btn ghost" href="#/">${t("backHome")}</a></p>`;setTimeout(refreshCatalog,800);return}
+ if(d.status==="failed"){box.innerHTML=`<h1 style="font-size:30px;margin:0 0 12px">We couldn’t complete your order</h1><div class="note">An item sold out while you were paying, so we refunded your payment in full. It can take 5–10 business days to appear.</div><p style="margin-top:14px"><a class="btn" href="#/cart">Back to cart</a> <a class="btn ghost" href="#/contacts">Contact us</a></p>`;return}
+ if(n<40)setTimeout(()=>pollPaid(id,n+1),n<10?1500:3000);
+ else box.innerHTML=`<h1 style="font-size:30px;margin:0 0 12px">Payment received — we’re finishing your order</h1><p>It’s taking a little longer than usual. You’ll get an email confirmation shortly${user?`, and the order will appear in <a class="textlink" href="#/account/orders">My orders</a>`:""}.</p><p class="small muted">Reference: ${esc(id)}</p>`}
 function viewFavs(){const L=favs.map(prod).filter(p=>p&&p.active);return `<div class="page-head"><div class="shell"><h1>${t("favorites")}</h1></div></div><div class="shell section">${L.length?`<div class="grid">${L.map(card).join("")}</div>`:`<div class="empty"><b>${t("favEmpty")}</b>${t("favEmptyS")}</div>`}</div>`}
 function viewText(title,text){return `<div class="page-head"><div class="shell"><h1>${esc(title)}</h1></div></div><div class="shell section"><div class="prose">${esc(text)}</div></div>`}
 function viewContacts(){const c=S.settings;const r=(l,v,h)=>v?`<div class="row" style="padding:12px 0;border-bottom:1px solid var(--line)"><span class="muted">${l}</span>${h?`<a class="textlink" href="${h}">${esc(v)}</a>`:`<b>${esc(v)}</b>`}</div>`:"";
@@ -426,7 +452,7 @@ let lastPath="";
 function render(){
  const h=location.hash.slice(1)||"/";const[path,qs]=h.split("?");const q=new URLSearchParams(qs||"");const parts=path.split("/").filter(Boolean);
  document.body.classList.toggle("invoice-mode",path.startsWith("/account/invoice"));markNav(path);hsClose();hsSync(path,q);let html;
- html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:viewOrder,favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
+ html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:()=>viewOrder(q),favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
  if(path!==lastPath)window.scrollTo(0,0);lastPath=path;applySeo(parts,q);
 }

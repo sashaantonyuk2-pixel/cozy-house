@@ -69,6 +69,7 @@ orderSubmit(k,f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);if(
   if(st==="paid"&&amt!=null&&amt<+o.total&&!confirm(`Отримано ${money(amt)} — менше за суму замовлення ${money(o.total)}. Все одно позначити оплаченим?`))return;
   return this.orderUpdate(id,patch,"Оплату збережено ✓")}
  if(k==="orefund"){const amt=Math.round(+f.amount.value*100)/100,paid=+(o.paid_amount??o.total);if(!(amt>0))return toast("Вкажіть суму повернення");if(amt>paid)return toast("Сума більша за оплачену ("+money(paid)+")");
+  if(String(o.payment_ref||"").startsWith("pi_")){if(!confirm(`Повернути ${money(amt)} покупцю на картку через Stripe?`))return;return this.stripeRefund(id,amt,f)}
   const total=Math.round(((+o.refund_amount||0)+amt)*100)/100;if(total>paid)return toast("Разом повернень більше, ніж оплачено");
   if(!confirm(`Позначити повернення ${money(amt)} покупцю?`))return;
   const note=f.note.value.trim();return this.orderUpdate(id,{payment_status:total>=paid?"refunded":"partially_refunded",refund_amount:total,refunded_at:new Date().toISOString(),payment_ref:note?((o.payment_ref?o.payment_ref+" · ":"")+"Refund: "+note).slice(0,120):o.payment_ref},"Повернення коштів позначено")}
@@ -131,4 +132,9 @@ slip(id){const o=this.ordersData.find(x=>x.id===+id);if(!o)return;const c=o.cust
  <p class="small">Items: ${(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0)}${c.comment?` · Note: ${esc(c.comment)}`:""}</p>
  <p class="slipthanks">Thank you for shopping with ${esc(st.name)}!${st.email?` Questions? ${esc(st.email)}`:""}</p></div></div>`;
  document.body.classList.add("printing")},
+async stripeRefund(id,amt,f){const b=f&&f.querySelector("button.primary,button");if(b)b.disabled=true;
+ try{const{data:ss}=await sb.auth.getSession();const r=await fetch(SB_URL+"/functions/v1/payments-refund",{method:"POST",headers:{"Content-Type":"application/json",apikey:SB_KEY,Authorization:"Bearer "+(ss&&ss.session?ss.session.access_token:"")},body:JSON.stringify({order_id:id,amount:amt})});
+  const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error==="BAD_AMOUNT"?"Можна повернути щонайбільше "+money(d.left):d.error==="NOT_ALLOWED"?"Немає доступу (увійдіть знову з 2FA)":d.message||d.error||("помилка "+r.status));
+  toast("Кошти повернено через Stripe ✓ ("+money(amt)+")");this.afterOrderChange(id)}
+ catch(e){toast("⚠️ Stripe: "+(e.message||e))}finally{if(b)b.disabled=false}},
 });

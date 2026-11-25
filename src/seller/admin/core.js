@@ -126,7 +126,7 @@ submit(k,f){
  if(k==="settings"){delete S.settings.freeFrom;const fd=new FormData(f),NUM={shipStandard:12,shipExpress:25,returnDays:14},R={};let bad="";
   String(fd.get("taxRatesText")||"").split(/[\n;]+/).map(x=>x.trim()).filter(Boolean).forEach(x=>{const m=x.toUpperCase().match(/^([A-Z]{2})\s*[=:\s]\s*(\d+(?:[.,]\d+)?)\s*%?$/);const r=m&&+m[2].replace(",",".");if(!m||r>20)bad=bad||x;else R[m[1]]=r});
   if(bad){const t=f.querySelector("[name=taxRatesText]");t&&t.focus();return toast("⚠️ Не зрозумів рядок податку «"+bad+"». Формат: FL=7 (до 20%). Нічого не збережено.")}
-  for(const[key,v]of fd.entries()){if(key==="taxRatesText")continue;if(key in NUM){const n=Number(String(v).replace(",","."));S.settings[key]=v===""||isNaN(n)||n<0?NUM[key]:n}else if(key==="expressOn"||key==="taxShipping")S.settings[key]=v==="1";else S.settings[key]=String(v)}
+  for(const[key,v]of fd.entries()){if(key==="taxRatesText")continue;if(key in NUM){const n=Number(String(v).replace(",","."));S.settings[key]=v===""||isNaN(n)||n<0?NUM[key]:n}else if(key==="expressOn"||key==="taxShipping"||key==="paymentsOn")S.settings[key]=v==="1";else S.settings[key]=String(v)}
   S.settings.taxRates=R;save();chrome();toast("Налаштування збережено ✓");return}
  if(k==="product"){const fd=new FormData(f);const name=String(fd.get("name")).trim(),price=fd.get("price");
   f.name.style.borderColor=name?"":"#c0563a";f.price.style.borderColor=price!==""?"":"#c0563a";
