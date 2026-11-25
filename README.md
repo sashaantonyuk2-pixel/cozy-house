@@ -20,3 +20,7 @@ Online store for cozy home goods: ceramics, textiles, lighting and décor.
 ## Хостинг
 
 Settings → Pages → Source: *Deploy from a branch*, Branch: `main`, folder `/ (root)`.
+
+## License
+
+© 2026 CozyHouseVibe. **All rights reserved.** The code, design, texts and photos are not open source — copying or reusing any part of this repository without written permission is prohibited. See [LICENSE](LICENSE).
