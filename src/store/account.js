@@ -100,14 +100,22 @@ async function submitReturn(f){const msg=f.querySelector(".retmsg"),err=h=>{msg.
   if(error)throw error;toast("Return request sent ✓");fillOrders()}
  catch(e){const m=(e&&e.message)||"";btn.disabled=false;btn.textContent="Send return request";
   err(/RETURN_WINDOW_CLOSED/.test(m)?"The return window for this order has closed.":/ALREADY_REQUESTED/.test(m)?"A return for this order has already been requested.":/NOT_RETURNABLE/.test(m)?"This order can’t be returned yet — it hasn’t shipped.":/mime|type/i.test(m)?"This file type isn’t supported. Please use JPG, PNG, HEIC or MP4/MOV video.":/size|large/i.test(m)?`A file is too large (max ${RET_MAX_MB} MB).`:"Couldn’t send your request. Please try again or contact us.")}}
-/* ===== Invoice (printable / Save as PDF) ===== */
+/* ===== Invoice (download as PDF / print) ===== */
+function loadHtml2pdf(){if(window.html2pdf)return Promise.resolve(window.html2pdf);return new Promise((res,rej)=>{const s=document.createElement("script");
+ s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==";s.crossOrigin="anonymous";s.referrerPolicy="no-referrer";
+ s.onload=()=>window.html2pdf?res(window.html2pdf):rej(new Error("PDF library failed to load"));s.onerror=()=>rej(new Error("PDF library failed to load"));document.head.appendChild(s)})}
+async function downloadInvoice(btn){const el=$(".invoice");if(!el)return;const no=btn.dataset.no||"invoice",txt=btn.textContent;btn.disabled=true;btn.textContent="Preparing PDF…";
+ try{const h=await loadHtml2pdf();el.classList.add("pdfmode");
+  await h().set({margin:[10,10,12,10],filename:`CozyHouseVibe-Invoice-${no}.pdf`,image:{type:"jpeg",quality:.96},html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},jsPDF:{unit:"mm",format:"letter",orientation:"portrait"},pagebreak:{mode:["css","legacy"]}}).from(el).save();
+  toast("Invoice downloaded ✓")}catch(e){toast("Couldn’t create the PDF — use Print → Save as PDF instead.")}
+ finally{el.classList.remove("pdfmode");btn.disabled=false;btn.textContent=txt}}
 async function fillInvoice(no){const box=$("#invBox");if(!box)return;
  const{data:o,error}=await sb.from("orders").select("*").eq("order_no",decodeURIComponent(no||"")).maybeSingle();if(!$("#invBox"))return;
  if(error||!o){box.innerHTML=`<div class="empty"><b>Invoice not found</b><a class="textlink" href="#/account/orders">← My orders</a></div>`;return}
  if(!["paid","partially_refunded","refunded"].includes(o.payment_status)){box.innerHTML=`<div class="empty"><b>The invoice will be available after payment</b><a class="textlink" href="#/account/orders">← My orders</a></div>`;return}
  const st=S.settings,c=o.customer||{},logo=($(".brand img")||{}).src||"",sub=o.subtotal!=null?+o.subtotal:+o.total,d=x=>x?fmtDate(x):"—";
  const PAY={paid:"Paid",partially_refunded:"Paid · partially refunded",refunded:"Refunded"};
- box.innerHTML=`<div class="invbar noprint"><a class="textlink" href="#/account/orders">← My orders</a><button class="btn primary" data-act="invprint">🖨 Print / Save as PDF</button></div>
+ box.innerHTML=`<div class="invbar noprint"><a class="textlink" href="#/account/orders">← My orders</a><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-act="invpdf" data-no="${esc(o.order_no)}">⬇ Download PDF</button><button class="btn" data-act="invprint">🖨 Print</button></span></div>
  <article class="invoice"><div class="invh"><div class="invfrom">${logo?`<img src="${esc(logo)}" alt="" width="54" height="54">`:""}<div><b class="invname">${esc(st.name)}</b><p>${esc(st.address||"").replace(/\n/g,"<br>")}${st.email?`<br>${esc(st.email)}`:""}<br>${esc(SITE_URL.replace(/^https?:\/\//,"").replace(/\/$/,""))}</p></div></div>
  <div class="invmeta"><h1>Invoice</h1><table><tr><th>Invoice #</th><td>INV-${esc(o.order_no)}</td></tr><tr><th>Invoice date</th><td>${d(o.paid_at||o.created_at)}</td></tr><tr><th>Order #</th><td>${esc(o.order_no)}</td></tr><tr><th>Order date</th><td>${d(o.created_at)}</td></tr><tr><th>Payment</th><td>${PAY[o.payment_status]}${o.payment_method?" · "+esc(o.payment_method):""}</td></tr></table></div></div>
  <section class="invparties"><div><h3>Bill to</h3><p>${esc(c.name||"")}<br>${esc(c.email||"")}${c.phone?`<br>${esc(c.phone)}`:""}</p></div><div><h3>Ship to</h3><p>${esc(c.name||"")}<br>${esc(c.address||"")}<br>${esc([c.city,[c.state,c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "))}<br>United States</p></div><div><h3>Shipping method</h3><p>${esc(c.delivery||"Standard shipping")}</p></div></section>

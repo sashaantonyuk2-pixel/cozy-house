@@ -468,6 +468,7 @@ document.addEventListener("click",e=>{
   copyorder:()=>{copy($("#otext").value)},
   retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   invprint:()=>window.print(),
+  invpdf:()=>downloadInvoice(el),
   tg:()=>{copy($("#otext").value);window.open("https://t.me/"+el.dataset.u,"_blank")},
  };
  if(H[a])H[a]();
