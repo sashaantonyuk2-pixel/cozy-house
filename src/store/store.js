@@ -447,6 +447,18 @@ function applySeo(parts,q){const st=S.settings,base=st.name||"CozyHouseVibe",cli
  let s=document.getElementById("ldjson");if(ld){if(!s){s=document.createElement("script");s.type="application/ld+json";s.id="ldjson";document.head.appendChild(s)}s.textContent=JSON.stringify(ld).replace(/</g,"\\u003c")}else if(s)s.remove()}
 function notFound(){return `<div class="shell section"><div class="empty"><b>404</b>${lang==="en"?"Page not found.":"Сторінку не знайдено."}<br><br><a class="btn" href="#/">${t("backHome")}</a></div></div>`}
 
+/* ===== contact form ===== */
+async function sendContact(f){
+ const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button.primary"),msg=$("#ctMsg");
+ if(fd.website)return; // honeypot
+ const name=String(fd.name||"").trim(),email=String(fd.email||"").trim(),body=String(fd.body||"").trim(),order_no=String(fd.order_no||"").trim()||null;
+ if(!name||!/^\S+@\S+\.\S+$/.test(email)||body.length<2){msg.innerHTML=`<div class="note">Please enter your name, a valid email and a message.</div>`;return}
+ if(!sb){msg.innerHTML=`<div class="note">Can’t send right now. Please email us instead.</div>`;return}
+ btn.disabled=true;const{error}=await sb.from("messages").insert({name,email,body,order_no});btn.disabled=false;
+ if(error){msg.innerHTML=`<div class="note">${/TOO_MANY/.test(error.message)?"You’ve sent several messages already. We’ll get back to you soon.":"Couldn’t send your message. Please try again or email us."}</div>`;return}
+ LS.set("ctName",name);LS.set("ctEmail",email);
+ f.innerHTML=`<div class="okbox">Thanks, ${esc(name.split(" ")[0])}! Your message was sent. We usually reply within one business day.</div>`}
+
 /* ===== router ===== */
 let lastPath="";
 function render(){

@@ -8,6 +8,11 @@
 
 <!-- NEW ENTRIES BELOW -->
 
+### 25.11.2026 — Вхід і реєстрація — окремим модулем коду
+- Код кабінету покупця розділено на три файли: **`store/auth.js`** — вхід і реєстрація (email + пароль, Google, Facebook, «Forgot password», новий пароль, сесія, меню акаунта); **`store/account.js`** — «My account» і «My details»; **`store/orders.js`** — збереження замовлення, «My orders», скасування, повернення, інвойс. Форма «Contact us» перенесена до решти сторінок магазину.
+- Для покупців нічого не змінилося — перевірено всі екрани (Sign in, Create account, Reset password, My details, My orders, Invoice).
+- Дані акаунтів, як і раніше, зберігаються окремо від даних магазину — у захищеній частині Supabase Auth (паролі лише в зашифрованому вигляді).
+
 ### 25.11.2026 — Увімкнено вхід через Google
 - Створено застосунок Google (Google Cloud, проєкт «CozyHouseVibe», екран згоди з посиланнями на сайт, Privacy Policy і Terms) і ввімкнено провайдера Google у Supabase → Authentication. На сторінках Sign in і Create account з’явилася кнопка **«Continue with Google»**. Перевірено: Supabase правильно переадресовує на вхід Google і назад на сайт.
 - Facebook ще не підключено (кнопка з’явиться автоматично після ввімкнення — див. `docs/social-login.md`).
