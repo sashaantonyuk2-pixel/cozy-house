@@ -61,56 +61,52 @@ create policy "Customers read own orders, admins read all" on public.orders as p
 revoke update, delete on public.orders from anon, authenticated;
 grant update (status, customer, carrier, tracking_number, shipped_at, return_reason, delivery_eta, payment_status, payment_method, payment_ref, paid_amount, paid_at, refund_amount, refunded_at, admin_note) on public.orders to authenticated;
 
--- Checkout: required fields (street address must have a house number), real prices from products, variants,
--- stock check and reservation, shipping (Standard / Express price from settings, no free-shipping threshold) and sales tax by state (settings.taxRates)
-create or replace function private.prepare_order()
- returns trigger
+-- One place that validates and prices an order: required fields (street address must have a house number),
+-- real prices from products, variants, stock check, shipping (Standard / Express from settings) and sales tax by state.
+-- Used by the checkout trigger below and by the payment module (public.checkout_quote → Edge Function payments-checkout).
+create or replace function private.quote_order(c jsonb, items jsonb)
+ returns jsonb
  language plpgsql
- security definer
+ stable security definer
  set search_path to ''
 as $function$
 declare it jsonb; pr record; out_items jsonb := '[]'::jsonb; tot numeric := 0; q int;
-        o jsonb; chosen jsonb; pick text; opt_out jsonb; line jsonb; c jsonb;
+        o jsonb; chosen jsonb; pick text; opt_out jsonb; line jsonb;
         st jsonb; num text; v_std numeric; v_exp numeric; exp_on boolean; is_exp boolean;
-        ship numeric; rate numeric; taxable numeric; dlabel text;
+        ship numeric; rate numeric; taxable numeric; dlabel text; tax numeric;
 begin
-  perform set_config('app.order_ctx', '1', true);
-  c := new.customer;
+  c := coalesce(c, '{}'::jsonb);
   if coalesce(btrim(c->>'name'), '') = '' then raise exception 'BAD_FIELD:name'; end if;
   if coalesce(c->>'email', '') !~* '^[^@\s]+@[^@\s]+\.[^@\s]{2,}$' then raise exception 'BAD_FIELD:email'; end if;
   if char_length(regexp_replace(coalesce(c->>'phone', ''), '\D', '', 'g')) < 10 then raise exception 'BAD_FIELD:phone'; end if;
-  -- street address must have a house number and a street name
   if coalesce(btrim(c->>'address'), '') !~ '[0-9]' or coalesce(c->>'address', '') !~ '[A-Za-z]' then raise exception 'BAD_FIELD:address'; end if;
   if coalesce(btrim(c->>'city'), '') = '' then raise exception 'BAD_FIELD:city'; end if;
   if coalesce(c->>'state', '') !~ '^[A-Z]{2}$' then raise exception 'BAD_FIELD:state'; end if;
   if coalesce(c->>'zip', '') !~ '^\d{5}(-\d{4})?$' then raise exception 'BAD_FIELD:zip'; end if;
   if char_length(coalesce(c->>'address2', '')) > 100 then raise exception 'BAD_FIELD:address2'; end if;
-  new.customer := c || jsonb_build_object('email', lower(btrim(c->>'email')));
+  if jsonb_typeof(items) <> 'array' or jsonb_array_length(items) = 0 or jsonb_array_length(items) > 100 then raise exception 'BAD_ITEMS'; end if;
+  c := c || jsonb_build_object('email', lower(btrim(c->>'email')));
 
-  for it in select * from jsonb_array_elements(new.items) loop
+  for it in select * from jsonb_array_elements(items) loop
     begin q := (it->>'qty')::int; exception when others then q := null; end;
     if q is null or q < 1 or q > 999 then raise exception 'BAD_QTY'; end if;
-    select p.id, p.name, p.sku, p.price, p.stock, p.active, p.options into pr from public.products p where p.id = it->>'id' for update;
+    select p.id, p.name, p.sku, p.price, p.stock, p.active, p.options into pr from public.products p where p.id = it->>'id';
     if not found or not pr.active then raise exception 'UNAVAILABLE:%', left(coalesce(it->>'name', 'item'), 120); end if;
     chosen := case when jsonb_typeof(it->'opt') = 'object' then it->'opt' else '{}'::jsonb end;
     opt_out := '{}'::jsonb;
     for o in select * from jsonb_array_elements(coalesce(pr.options, '[]'::jsonb)) loop
       if jsonb_array_length(coalesce(o->'values', '[]'::jsonb)) = 0 then continue; end if;
       pick := chosen->>(o->>'name');
-      if pick is null or not (o->'values') ? pick then
-        raise exception 'OPTION_REQUIRED:%:%', pr.name, o->>'name';
-      end if;
+      if pick is null or not (o->'values') ? pick then raise exception 'OPTION_REQUIRED:%:%', pr.name, o->>'name'; end if;
       opt_out := opt_out || jsonb_build_object(o->>'name', pick);
     end loop;
     if pr.stock < q then raise exception 'OUT_OF_STOCK:%:%', pr.name, pr.stock; end if;
-    update public.products set stock = stock - q where id = pr.id;
     line := jsonb_build_object('id', pr.id, 'name', pr.name, 'sku', pr.sku, 'price', pr.price, 'qty', q);
     if opt_out <> '{}'::jsonb then line := line || jsonb_build_object('opt', opt_out); end if;
     out_items := out_items || jsonb_build_array(line);
     tot := tot + pr.price * q;
   end loop;
 
-  -- shipping & tax from Seller Central settings (store_settings.data)
   select coalesce(s.data, '{}'::jsonb) into st from public.store_settings s where s.id = 1;
   st := coalesce(st, '{}'::jsonb);
   num := st->>'shipStandard'; v_std := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 12 end;
@@ -122,9 +118,34 @@ begin
   num := st->'taxRates'->>(c->>'state');
   rate := case when num ~ '^\d+(\.\d+)?$' then least(num::numeric, 20) else 0 end;
   taxable := tot + case when coalesce(st->>'taxShipping', '') in ('true', '1') then ship else 0 end;
-  new.customer := new.customer || jsonb_build_object('delivery', dlabel);
-  new.items := out_items; new.subtotal := tot; new.shipping := ship; new.tax_rate := rate;
-  new.tax := round(taxable * rate / 100, 2); new.total := tot + ship + new.tax; new.status := 'new';
+  tax := round(taxable * rate / 100, 2);
+  return jsonb_build_object('customer', c || jsonb_build_object('delivery', dlabel), 'items', out_items,
+    'subtotal', tot, 'shipping', ship, 'tax_rate', rate, 'tax', tax, 'total', tot + ship + tax, 'currency', 'USD');
+end; $function$;
+revoke execute on function private.quote_order(jsonb, jsonb) from public;
+
+-- Checkout trigger: shared calculation, then reserves stock (atomic: never sells more than in stock)
+create or replace function private.prepare_order()
+ returns trigger
+ language plpgsql
+ security definer
+ set search_path to ''
+as $function$
+declare q jsonb; it jsonb; left_qty int;
+begin
+  perform set_config('app.order_ctx', '1', true);
+  q := private.quote_order(new.customer, new.items);
+  for it in select * from jsonb_array_elements(q->'items') loop
+    update public.products set stock = stock - (it->>'qty')::int where id = it->>'id' and stock >= (it->>'qty')::int;
+    if not found then
+      select stock into left_qty from public.products where id = it->>'id';
+      raise exception 'OUT_OF_STOCK:%:%', it->>'name', coalesce(left_qty, 0);
+    end if;
+  end loop;
+  new.customer := q->'customer'; new.items := q->'items';
+  new.subtotal := (q->>'subtotal')::numeric; new.shipping := (q->>'shipping')::numeric;
+  new.tax_rate := (q->>'tax_rate')::numeric; new.tax := (q->>'tax')::numeric; new.total := (q->>'total')::numeric;
+  new.status := 'new';
   new.carrier := null; new.tracking_number := null; new.shipped_at := null; new.delivery_eta := null; new.delivered_at := null; new.payment_status := 'unpaid'; new.payment_method := null; new.payment_ref := null; new.paid_amount := null; new.paid_at := null; new.refund_amount := null; new.refunded_at := null; new.admin_note := null;
   return new;
 end; $function$;

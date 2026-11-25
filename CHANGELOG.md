@@ -8,6 +8,10 @@
 
 <!-- NEW ENTRIES BELOW -->
 
+### 25.11.2026 — Опис бази: модуль оплати
+- `supabase/schema/04_orders.sql`: спільна функція розрахунку `private.quote_order` і новий тригер оформлення (резервує залишок атомарно — не продасть більше, ніж є).
+- Новий `supabase/schema/10_payments.sql`: `checkout_sessions`, `payments`, `checkout_quote`, `am_i_admin`. Перевірено в кабінеті: блок «💳 Онлайн-оплата» показує «Не підключено», доки немає ключів Stripe.
+
 ### 25.11.2026 — Модуль онлайн-оплати (Stripe), поки вимкнений
 - Окремий модуль оплати: 4 серверні функції в Supabase (`payments-checkout`, `payments-webhook`, `payments-status`, `payments-refund`), таблиці `checkout_sessions` і `payments`, спільна функція розрахунку суми `private.quote_order` (звичайні замовлення тепер теж рахуються через неї). Код — `supabase/functions/`.
 - Коли увімкнено: на оформленні «Continue to payment» → сторінка оплати Stripe → **замовлення створюється лише після оплати** (одразу «Paid»), сторінка «Thank you — your order is confirmed»; якщо товар закінчився під час оплати — автоматичне повернення коштів. У кабінеті повернення коштів для таких замовлень іде через Stripe.
