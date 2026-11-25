@@ -16,7 +16,7 @@ async check(msg){
  if(error||!adm){this.state="noaccess";return this.render0()}
  const{data:aal}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
  if(aal&&aal.currentLevel==="aal2"){
-  try{S=await this.loadSup(await fetchCatalog());this.snapshot();this.state="ready";this.chrome();if(!/^#\/admin/.test(location.hash))location.hash="#/admin";else render()}
+  try{S=await this.loadSup(await fetchCatalog());this.snapshot();this.state="ready";LS.set("noTrack",true);this.chrome();if(!/^#\/admin/.test(location.hash))location.hash="#/admin";else render()}
   catch(e){this.state="error";this.msg=e.message;this.render0()}
   return}
  const{data:f}=await sb.auth.mfa.listFactors();

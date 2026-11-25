@@ -17,7 +17,7 @@ dFmt(d){return new Date(d).toLocaleDateString("uk-UA",{day:"numeric",month:"shor
 dISO(d){const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")},
 ago(at){const s=(Date.now()-Date.parse(at))/1000;if(isNaN(s))return"";if(s<3600)return Math.max(1,Math.round(s/60))+" хв тому";if(s<86400)return Math.round(s/3600)+" год тому";if(s<172800)return"вчора";return this.dFmt(at)},
 dash(){const R=this.dRange(),h=new Date().getHours(),hi=h<5?"Доброї ночі":h<12?"Доброго ранку":h<18?"Добрий день":"Добрий вечір";
- setTimeout(()=>this.fillDash(),0);
+ setTimeout(()=>{this.fillDash();this.fillDashAn(R)},0);
  const tile=(id,l,sm)=>`<div class="dbt${sm?" sm":""}" id="${id}"><div class="dbl">${l}</div><div class="dbv">…</div></div>`;
  return `<div class="dbhead"><h1>${hi}! Стан магазину:</h1><span class="dbhealth" id="dbHealth">…</span><span class="dbhint" id="dbHint"></span>
  <div class="dbper"><div class="seg">${this.DPRESETS.map(([k,v])=>`<button class="${R.p===k?"on":""}" data-act="a:dashP" data-p="${k}">${v}</button>`).join("")}</div>
@@ -26,6 +26,7 @@ dash(){const R=this.dRange(),h=new Date().getHours(),hi=h<5?"Доброї ноч
  <div class="dbgrid"><div class="dbside">
   <section class="dbcard"><h2>Дії <span class="dbn" id="dbActN">…</span></h2><div class="dbacts" id="dbActs"><p class="muted small">Завантаження…</p></div></section>
   <section class="dbcard"><h2>Комунікації</h2><div class="dbcomm" id="dbComm"><p class="muted small">Завантаження…</p></div></section>
+  <section class="dbcard"><h2>📈 Відвідування <small>· ${esc(R.label)}</small></h2><div class="dbcomm" id="dbAn" style="padding-top:10px"><p class="muted small">Завантаження…</p></div></section>
  </div><div class="dbmain">
   <section class="dbcard"><h2>Огляд показників <small>· ${esc(R.label)}</small></h2><div class="dbtiles six">
    ${tile("tSum","Продажі")}${tile("tOpen","Відкриті замовлення")}${tile("tMsg","Повідомлення покупців")}${tile("tRev","Відгуки")}${tile("tPay","Оплати")}${tile("tStock","Склад")}

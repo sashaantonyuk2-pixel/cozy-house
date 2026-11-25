@@ -26,11 +26,12 @@ let buyNow=LS.get("buynow",null);
 const isBuyNow=()=>/[?&]buy=1/.test(location.hash)&&!!buyNow&&!!prod(buyNow.id);
 function coLines(){return isBuyNow()?[{...buyNow,k:lkey(buyNow),p:prod(buyNow.id)}].filter(l=>l.p&&l.p.active&&optOk(l,l.p)):cartLines()}
 const coTotal=()=>coLines().reduce((s,l)=>s+l.p.price*l.qty,0);
-function startBuyNow(id,q,opt){const p=prod(id);if(!p||p.stock<=0)return;buyNow={id,qty:Math.max(1,Math.min(p.stock,q||1)),...(opt?{opt}:{})};LS.set("buynow",buyNow);closeLayers(true);location.hash="#/checkout?buy=1"}
+function startBuyNow(id,q,opt){const p=prod(id);if(!p||p.stock<=0)return;Trk.cart(id,q);buyNow={id,qty:Math.max(1,Math.min(p.stock,q||1)),...(opt?{opt}:{})};LS.set("buynow",buyNow);closeLayers(true);location.hash="#/checkout?buy=1"}
 function cartTotal(){return cartLines().reduce((s,l)=>s+l.p.price*l.qty,0)}
 function setCart(c){cart=c;LS.set("cart",cart);badges()}
 function addToCart(id,q=1,opt=null){const p=prod(id);if(!p||p.stock<=0)return;
  if(optList(p).length&&!opt){closeLayers(true);location.hash="#/product/"+id;toast("Please choose "+optList(p).map(o=>o.name.toLowerCase()).join(" and "));return}
+ Trk.cart(id,q);
  const nl={id,qty:0,...(opt?{opt}:{})},k=lkey(nl);let l=lineByKey(k);if(!l){l=nl;cart.push(l)}
  const max=lineMax(l);if(max<=l.qty){if(!l.qty)cart=cart.filter(x=>x!==l);toast(max?"You already have all "+max+" in your cart":"No more in stock");return}
  l.qty=Math.min(max,l.qty+q);setCart(cart);openCart()}
@@ -132,7 +133,7 @@ function renderMini(){
  :`<div class="dbody"><div class="empty" style="border:0;padding:50px 10px"><b>${t("cartEmpty")}</b>${t("cartEmptyS")}<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div></div>`}`}
 function openCart(){renderMini();openLayer("cartDrawer")}
 function quickView(id){
- const p=prod(id);if(!p)return;const c=catOf(p.cat),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
+ const p=prod(id);if(!p)return;Trk.product(id);const c=catOf(p.cat),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  $("#qv").innerHTML=`<div class="box"><button class="iconbtn qvx" data-act="closeall" aria-label="${t("close")}">${X}</button>
  <div class="qvg">${carouselHtml(imgs,p.name,"qv",{thumbs:true})}</div>
  <div class="qvi"><span class="catname">${esc(c?c.name:"")}</span><h2>${esc(p.name)}</h2>${p.sku?`<span class="skuline">Item # ${esc(p.sku)}</span>`:""}<span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>
@@ -183,14 +184,14 @@ function viewHome(){
  const shown=new Set(feat.slice(0,4).map(p=>p.id));let fresh=[...vis].sort((a,b)=>(b.created||0)-(a.created||0));fresh=fresh.filter(p=>!shown.has(p.id)).concat(fresh.filter(p=>shown.has(p.id))).slice(0,4);
  const heroImg=st.heroImage||PHOTO.hero;
  const heroMob=st.heroImageMobile||heroImg,pos=st.heroFocus||"center",link=st.heroBtnLink||"#/shop";
- return `<section class="hero2" aria-label="${esc(st.heroTitle||st.name)}"><picture>${st.heroImageMobile?`<source media="(max-width:700px)" srcset="${esc(heroMob)}">`:""}<img src="${esc(heroImg)}" alt="" fetchpriority="high" style="object-position:${esc(pos)}"></picture>
+ return `<section class="hero2" data-track="hero" aria-label="${esc(st.heroTitle||st.name)}"><picture>${st.heroImageMobile?`<source media="(max-width:700px)" srcset="${esc(heroMob)}">`:""}<img src="${esc(heroImg)}" alt="" fetchpriority="high" style="object-position:${esc(pos)}"></picture>
  <div class="shell hero2-in"><div class="hero2-box">${st.heroEyebrow?`<span class="eyebrow">${esc(st.heroEyebrow)}</span>`:""}<h1>${esc(st.heroTitle)}</h1>${st.heroText?`<p>${esc(st.heroText)}</p>`:""}
  ${st.heroButtons==="1"?`<div class="hero-cta"><a class="btn hero-btn" href="${esc(link)}">${esc(st.heroBtnText||t("shopNow"))} →</a><a class="btn hero-btn2" href="#/about">Our story</a></div>`:""}</div></div>${st.heroButtons==="1"?"":`<a class="hero2-link" href="${esc(link)}" aria-label="${esc(st.heroBtnText||t("shopNow"))}"></a>`}</section>
- <div class="shell perks">${[["🚚","perk1"],["💳","perk2"],["↺","perk3"],["💬","perk4"]].map(([i,k])=>`<div class="perk"><i>${i}</i><span><b>${t(k)}</b>${t(k+"s")}</span></div>`).join("")}</div>
- <section class="section" style="padding-top:20px"><div class="shell"><div class="section-head"><div><span class="eyebrow">${t("categories")}</span><h2>${lang==="en"?"Shop by category":"Оберіть категорію"}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div>
+ <div class="shell perks" data-track="perks">${[["🚚","perk1"],["💳","perk2"],["↺","perk3"],["💬","perk4"]].map(([i,k])=>`<div class="perk"><i>${i}</i><span><b>${t(k)}</b>${t(k+"s")}</span></div>`).join("")}</div>
+ <section class="section" style="padding-top:20px" data-track="categories"><div class="shell"><div class="section-head"><div><span class="eyebrow">${t("categories")}</span><h2>${lang==="en"?"Shop by category":"Оберіть категорію"}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div>
  <div class="grid cats">${S.categories.map(c=>`<a class="cat" href="#/shop?cat=${c.id}"><div class="ph"><img src="${esc(catImg(c))}" alt="" loading="lazy"></div><b>${esc(c.name)}</b><small>${nItems(vis.filter(p=>p.cat===c.id).length)}</small></a>`).join("")}</div></div></section>
- <section class="section alt"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Our favourites":"Обирають найчастіше"}</span><h2>${t("featured")}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div><div class="grid">${feat.slice(0,4).map(card).join("")}</div></div></section>
- <section class="section"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Just in":"Щойно надійшли"}</span><h2>${t("newArrivals")}</h2></div><a class="textlink" href="#/shop?sort=new">${t("viewAll")}</a></div><div class="grid">${fresh.map(card).join("")}</div></div></section>`}
+ <section class="section alt" data-track="featured"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Our favourites":"Обирають найчастіше"}</span><h2>${t("featured")}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div><div class="grid">${feat.slice(0,4).map(card).join("")}</div></div></section>
+ <section class="section" data-track="new"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Just in":"Щойно надійшли"}</span><h2>${t("newArrivals")}</h2></div><a class="textlink" href="#/shop?sort=new">${t("viewAll")}</a></div><div class="grid">${fresh.map(card).join("")}</div></div></section>`}
 let shopShown=12,shopKey="";
 function viewShop(q){
  const cat=q.get("cat")||"",raw=(q.get("q")||"").trim(),stock=q.get("stock")==="1",sort=q.get("sort")||(raw?"rel":"pop");
@@ -199,6 +200,7 @@ function viewShop(q){
  const base=raw?searchProducts(raw,""):visible();
  const fPrice=p=>(min===null||p.price>=min)&&(max===null||p.price<=max),fStock=p=>!stock||p.stock>0,fCat=p=>!cat||p.cat===cat;
  let list=base.filter(p=>fCat(p)&&fPrice(p)&&fStock(p));
+ if(raw)Trk.search(raw,base.length);
  const mpos=p=>p.position>0?p.position:1e9;const by={pop:(a,b)=>(mpos(a)-mpos(b))||((b.stock>0)-(a.stock>0))||(b.featured-a.featured)||((b.created||0)-(a.created||0)),new:(a,b)=>(b.created||0)-(a.created||0),cheap:(a,b)=>a.price-b.price,exp:(a,b)=>b.price-a.price,name:(a,b)=>a.name.localeCompare(b.name)};
  if(sort!=="rel"||!raw)list.sort(by[sort]||by.pop);
  const c=catOf(cat);
@@ -349,7 +351,7 @@ function viewPaid(id){setTimeout(()=>pollPaid(id,0),0);
  return `<div class="shell section" style="max-width:760px"><div class="panel" id="paidBox"><span class="eyebrow">Payment</span><h1 style="font-size:32px;margin:8px 0 14px">Thank you! Confirming your payment…</h1><p class="muted">This usually takes a few seconds. Please don’t close this page.</p></div></div>`}
 async function pollPaid(id,n){const box=$("#paidBox");if(!box)return;let d={};
  try{const r=await fetch(PAY_FN+"payments-status?id="+encodeURIComponent(id),{headers:{apikey:SB_KEY}});d=await r.json()}catch(e){}
- if(d.status==="paid"&&d.order_no){const p=LS.get("pendingPay",null);if(p&&p.id===id){if(p.buyNow){buyNow=null;LS.set("buynow",null)}else setCart([]);LS.set("pendingPay",null)}
+ if(d.status==="paid"&&d.order_no){Trk.purchase(d.order_no,null);const p=LS.get("pendingPay",null);if(p&&p.id===id){if(p.buyNow){buyNow=null;LS.set("buynow",null)}else setCart([]);LS.set("pendingPay",null)}
   box.innerHTML=`<span class="eyebrow">Order ${esc(d.order_no)}</span><h1 style="font-size:34px;margin:8px 0 14px">Thank you — your order is confirmed!</h1><div class="okbox">💳 Payment received. We’ll email you when your order ships.</div><p style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary" href="#/track?no=${encodeURIComponent(d.order_no)}">📦 Track your order</a>${user?`<a class="btn" href="#/account/orders">My orders & invoice</a>`:""}<a class="btn ghost" href="#/">${t("backHome")}</a></p>`;setTimeout(refreshCatalog,800);return}
  if(d.status==="failed"){box.innerHTML=`<h1 style="font-size:30px;margin:0 0 12px">We couldn’t complete your order</h1><div class="note">An item sold out while you were paying, so we refunded your payment in full. It can take 5–10 business days to appear.</div><p style="margin-top:14px"><a class="btn" href="#/cart">Back to cart</a> <a class="btn ghost" href="#/contacts">Contact us</a></p>`;return}
  if(n<40)setTimeout(()=>pollPaid(id,n+1),n<10?1500:3000);
@@ -466,7 +468,7 @@ function render(){
  document.body.classList.toggle("invoice-mode",path.startsWith("/account/invoice"));markNav(path);hsClose();hsSync(path,q);let html;
  html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:()=>viewOrder(q),favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
- if(path!==lastPath)window.scrollTo(0,0);lastPath=path;applySeo(parts,q);
+ if(path!==lastPath)window.scrollTo(0,0);lastPath=path;applySeo(parts,q);Trk.page(parts);
 }
 
 /* ===== events ===== */

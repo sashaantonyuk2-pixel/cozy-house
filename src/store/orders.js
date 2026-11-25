@@ -5,7 +5,7 @@ async function saveOrderToDb(o){
  for(let i=0;i<3;i++){
   const row={order_no:o.no,customer,items:o.lines.map(l=>({id:l.id,name:l.name,sku:l.sku||null,price:l.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),total:o.total,currency:"USD",user_id:user?user.id:null};
   const{error}=await sb.from("orders").insert(row);
-  if(!error)return{ok:true};
+  if(!error){Trk.purchase(o.no,o.total);return{ok:true}}
   const m=error.message||"";
   if(/duplicate|unique/i.test(m)){o.no=o.no.slice(0,-4)+Math.floor(1000+Math.random()*9000);continue}
   let r=m.match(/OUT_OF_STOCK:(.+):(\d+)/);if(r)return{ok:false,stock:true,msg:+r[2]>0?`Only ${r[2]} left of “${r[1]}”. Please update the quantity in your cart.`:`“${r[1]}” just sold out. Please remove it from your cart.`};
