@@ -36,6 +36,28 @@ revoke all on public.suppliers from anon, authenticated;
 grant select, insert, update, delete on public.suppliers to authenticated;
 create trigger suppliers_updated_at before update on public.suppliers for each row execute function public.set_updated_at();
 create trigger audit_suppliers after insert or delete or update on public.suppliers for each row execute function public.log_change();
+-- list fields (status, type, fixed choices for terms) — migration suppliers_list_fields, 25.11.2026
+alter table public.suppliers
+  add column if not exists status text not null default 'active',
+  add column if not exists kind text,
+  add column if not exists country text,
+  add column if not exists currency text,
+  add column if not exists payment_method text,
+  add column if not exists lead_days_min smallint,
+  add column if not exists lead_days_max smallint,
+  add column if not exists shipping text,
+  add column if not exists defect_returns text,
+  add column if not exists rating smallint;
+alter table public.suppliers
+  add constraint suppliers_status_check check (status in ('active','paused','archived')),
+  add constraint suppliers_kind_check check (kind is null or kind in ('manufacturer','wholesaler','dropship','marketplace','handmade')),
+  add constraint suppliers_country_check check (country is null or char_length(country) <= 60),
+  add constraint suppliers_currency_check check (currency is null or currency in ('USD','EUR','UAH','CNY','GBP')),
+  add constraint suppliers_payment_method_check check (payment_method is null or payment_method in ('bank','card','paypal','other')),
+  add constraint suppliers_lead_days_check check ((lead_days_min is null or lead_days_min between 0 and 365) and (lead_days_max is null or lead_days_max between 0 and 365) and (lead_days_min is null or lead_days_max is null or lead_days_min <= lead_days_max)),
+  add constraint suppliers_shipping_check check (shipping is null or shipping in ('free','fixed','weight')),
+  add constraint suppliers_defect_returns_check check (defect_returns is null or defect_returns in ('yes','partial','no')),
+  add constraint suppliers_rating_check check (rating is null or rating between 1 and 5);
 
 create table if not exists public.product_suppliers (
   product_id text not null,

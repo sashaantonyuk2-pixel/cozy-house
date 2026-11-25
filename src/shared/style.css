@@ -574,6 +574,19 @@ small.supsku{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;wh
 .supgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:14px}
 .supcard{padding:18px;display:flex;flex-direction:column;gap:10px}.supcard-h{display:flex;justify-content:space-between;gap:10px;align-items:center}.supcard-h b{font-size:16px}
 .supmeta{display:grid;gap:3px;color:#3d4741}.supstats{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;border-top:1px solid var(--line);padding-top:10px;margin-top:auto}
+.suptable td{vertical-align:top}.suptable tr.suparch td{opacity:.6}
+.supsort{color:inherit;white-space:nowrap}.supsort.on{color:var(--forest)}
+.suppill{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:20px;white-space:nowrap}
+.sp-active{background:#e4f0e3;color:#2f6a3b}.sp-paused{background:#fbefd6;color:#8a5a0b}.sp-archived{background:#eeefeb;color:#6b736d}
+.supwarn{color:#a3412b;font-weight:650}
+.supstars{color:#d9a13a;letter-spacing:1px;white-space:nowrap}.supstars span{color:#dcdfd8}
+.supbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.supbar .search{flex:1;min-width:220px}
+.supchips{display:flex;gap:6px;flex-wrap:wrap}.supchips .chip{padding:6px 12px}.supn{opacity:.7;font-weight:600;margin-left:2px}
+.suprate{display:flex;align-items:center;gap:2px;min-height:44px}.suprate label{cursor:pointer;margin:0}.suprate input[type=radio]{position:absolute;opacity:0;width:1px;height:1px}
+.suprate span{font-size:24px;color:#dcdfd8;padding:0 2px}.suprate:has(input[value="1"]:checked) label:nth-child(-n+1) span,.suprate:has(input[value="2"]:checked) label:nth-child(-n+2) span,.suprate:has(input[value="3"]:checked) label:nth-child(-n+3) span,.suprate:has(input[value="4"]:checked) label:nth-child(-n+4) span,.suprate:has(input[value="5"]:checked) label:nth-child(-n+5) span{color:#d9a13a}
+.suprate label:last-child{margin-left:12px}.suprate label:last-child input{position:static;opacity:1;width:auto;height:auto}
+.suprate input:focus-visible+span{outline:2px solid var(--forest);border-radius:4px}
+.suplead{display:flex;align-items:center;gap:8px}.suplead input{max-width:110px}
 /* custom file picker (English on every computer) */
 .filepick{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px dashed var(--line);border-radius:12px;padding:10px 12px;background:#fff;cursor:pointer}
 .filepick input{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}.filepick:focus-within{outline:2px solid var(--forest);outline-offset:2px}
