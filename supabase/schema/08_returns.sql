@@ -104,7 +104,7 @@ begin
               case when new.free_return then ' · доставка за наш рахунок' else ' · доставку оплачує покупець' end ||
               E'\n' || coalesce(lines, '') || coalesce(E'\n\n' || left(new.details, 800), '') ||
               E'\n\nhttps://sashaantonyuk2-pixel.github.io/cozy-house/seller/#/admin/returns'),
-    headers := '{"Content-Type":"application/json"}'::jsonb);
+    headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
   return new;
 exception when others then return new;
 end; $function$;

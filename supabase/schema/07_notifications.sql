@@ -2,6 +2,7 @@
 -- 07 · Telegram notifications: new orders, contact messages, chat, low stock
 -- The bot token is NOT here: it is saved from Seller Central → Налаштування
 -- into Supabase Vault (secret name 'telegram_bot_token').
+-- timeout_milliseconds := 15000 — pg_net's default 5 s is sometimes too short for api.telegram.org.
 -- =====================================================================
 
 create table if not exists private.notify_settings (
@@ -65,7 +66,7 @@ begin
   perform net.http_post(
     url := 'https://api.telegram.org/bot' || tok || '/sendMessage',
     body := jsonb_build_object('chat_id', cid, 'text', '✅ CozyHouseVibe: сповіщення підключено. Сюди приходитимуть нові замовлення, повідомлення з форми «Contact us» і з чату на сайті.'),
-    headers := '{"Content-Type":"application/json"}'::jsonb);
+    headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
   return jsonb_build_object('chat', cname);
 end; $function$;
 
@@ -124,7 +125,7 @@ begin
   perform net.http_post(
     url := 'https://api.telegram.org/bot' || tok || '/sendMessage',
     body := jsonb_build_object('chat_id', s.telegram_chat_id, 'text', msg, 'disable_web_page_preview', true),
-    headers := '{"Content-Type":"application/json"}'::jsonb);
+    headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
   return new;
 exception when others then
   return new;
@@ -151,7 +152,7 @@ begin
       'text', '✉️ Нове повідомлення від ' || new.name || ' <' || new.email || '>' ||
               coalesce(E'\nЗамовлення: ' || new.order_no, '') || E'\n\n' || left(new.body, 1500) ||
               E'\n\nhttps://sashaantonyuk2-pixel.github.io/cozy-house/seller/#/admin/messages'),
-    headers := '{"Content-Type":"application/json"}'::jsonb);
+    headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
   return new;
 exception when others then return new;
 end; $function$;
@@ -186,7 +187,7 @@ begin
       'text', '💬 Чат на сайті: ' || coalesce(th.name, 'Відвідувач') || coalesce(' <' || th.email || '>', '') ||
               E'\n\n' || left(new.body, 1500) ||
               E'\n\nВідповісти: https://sashaantonyuk2-pixel.github.io/cozy-house/seller/#/admin/chat?t=' || new.thread_id),
-    headers := '{"Content-Type":"application/json"}'::jsonb);
+    headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
   return new;
 exception when others then return new;
 end; $function$;
@@ -217,7 +218,7 @@ begin
   perform net.http_post(
     url := 'https://api.telegram.org/bot' || tok || '/sendMessage',
     body := jsonb_build_object('chat_id', s.telegram_chat_id, 'text', msg, 'disable_web_page_preview', true),
-    headers := '{"Content-Type":"application/json"}'::jsonb);
+    headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
   return new;
 exception when others then return new;
 end; $function$;
