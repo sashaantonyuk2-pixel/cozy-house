@@ -45,6 +45,9 @@ const X='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="cur
 function catImg(c){if(c.image)return c.image;const p=visible().find(p=>p.cat===c.id&&p.images&&p.images[0]);return p?p.images[0]:art("basket","#efece4","#e4ddd0")}
 
 function copy(s){(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(()=>toast(t("copied"))).catch(()=>{const tmp=document.createElement("textarea");tmp.value=s;document.body.appendChild(tmp);tmp.select();try{document.execCommand("copy");toast(t("copied"))}catch(_){}tmp.remove()})}
+/* values saved by the seller that customers see (old orders may have Ukrainian ones) */
+const EN_VAL={"Інший":"Other","Інше":"Other","Банківський переказ":"Bank transfer","Готівка":"Cash","Payoneer (посилання на оплату)":"Payoneer (payment link)"};
+const enVal=v=>{v=String(v??"");return EN_VAL[v]||(/[А-Яа-яІіЇїЄєҐґ]/.test(v)?"Other":v)};
 /* carrier tracking links (used by customer orders and the seller order page) */
 function trackUrl(c,n){n=encodeURIComponent(String(n||"").trim());if(!n)return"";c=String(c||"").toLowerCase();
  if(c.includes("usps"))return"https://tools.usps.com/go/TrackConfirmAction?tLabels="+n;if(c.includes("ups"))return"https://www.ups.com/track?tracknum="+n;
