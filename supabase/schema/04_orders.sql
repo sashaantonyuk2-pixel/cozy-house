@@ -29,6 +29,10 @@ create table if not exists public.orders (
   refund_amount numeric,
   refunded_at timestamp with time zone,
   admin_note text,
+  subtotal numeric(10,2),                          -- items only
+  shipping numeric(10,2) default 0 not null,       -- Standard / Express price from settings (free over freeFrom)
+  tax numeric(10,2) default 0 not null,            -- sales tax by shipping state (settings.taxRates)
+  tax_rate numeric(6,3) default 0 not null,        -- percent used for this order
   constraint orders_order_no_key unique (order_no),
   constraint orders_pkey primary key (id),
   constraint orders_user_id_fkey foreign key (user_id) references auth.users(id) on delete set null,
@@ -42,7 +46,8 @@ create table if not exists public.orders (
   constraint orders_return_reason_check check ((char_length(return_reason) <= 300)),
   constraint orders_status_check check ((status = any (array['new'::text, 'confirmed'::text, 'shipped'::text, 'completed'::text, 'cancelled'::text, 'returned'::text]))),
   constraint orders_total_check check (((total >= (0)::numeric) and (total < (1000000)::numeric))),
-  constraint orders_tracking_number_check check ((char_length(tracking_number) <= 80))
+  constraint orders_tracking_number_check check ((char_length(tracking_number) <= 80)),
+  constraint orders_amounts_check check (((subtotal is null) or ((subtotal >= (0)::numeric) and (subtotal < (1000000)::numeric))) and (shipping >= (0)::numeric) and (shipping < (10000)::numeric) and (tax >= (0)::numeric) and (tax < (100000)::numeric) and (tax_rate >= (0)::numeric) and (tax_rate <= (20)::numeric))
 );
 create index if not exists orders_user_id_idx on public.orders using btree (user_id);
 alter table public.orders enable row level security;
@@ -56,7 +61,8 @@ create policy "Customers read own orders, admins read all" on public.orders as p
 revoke update, delete on public.orders from anon, authenticated;
 grant update (status, customer, carrier, tracking_number, shipped_at, return_reason, delivery_eta, payment_status, payment_method, payment_ref, paid_amount, paid_at, refund_amount, refunded_at, admin_note) on public.orders to authenticated;
 
--- Checkout: required fields, real prices from products, variants, stock check and reservation
+-- Checkout: required fields (street address must have a house number), real prices from products, variants,
+-- stock check and reservation, shipping (Standard / Express from settings, free over freeFrom) and sales tax by state (settings.taxRates)
 create or replace function private.prepare_order()
  returns trigger
  language plpgsql
@@ -64,20 +70,21 @@ create or replace function private.prepare_order()
  set search_path to ''
 as $function$
 declare it jsonb; pr record; out_items jsonb := '[]'::jsonb; tot numeric := 0; q int;
-        o jsonb; chosen jsonb; pick text; opt_out jsonb; line jsonb; c jsonb; pickup boolean;
+        o jsonb; chosen jsonb; pick text; opt_out jsonb; line jsonb; c jsonb;
+        st jsonb; num text; v_free numeric; v_std numeric; v_exp numeric; exp_on boolean; is_exp boolean;
+        ship numeric; rate numeric; taxable numeric; dlabel text;
 begin
   perform set_config('app.order_ctx', '1', true);
   c := new.customer;
   if coalesce(btrim(c->>'name'), '') = '' then raise exception 'BAD_FIELD:name'; end if;
   if coalesce(c->>'email', '') !~* '^[^@\s]+@[^@\s]+\.[^@\s]{2,}$' then raise exception 'BAD_FIELD:email'; end if;
   if char_length(regexp_replace(coalesce(c->>'phone', ''), '\D', '', 'g')) < 10 then raise exception 'BAD_FIELD:phone'; end if;
-  pickup := false; -- no local pickup: shipping address is always required
-  if not pickup then
-    if coalesce(btrim(c->>'address'), '') = '' then raise exception 'BAD_FIELD:address'; end if;
-    if coalesce(btrim(c->>'city'), '') = '' then raise exception 'BAD_FIELD:city'; end if;
-    if coalesce(c->>'state', '') !~ '^[A-Z]{2}$' then raise exception 'BAD_FIELD:state'; end if;
-    if coalesce(c->>'zip', '') !~ '^\d{5}(-\d{4})?$' then raise exception 'BAD_FIELD:zip'; end if;
-  end if;
+  -- street address must have a house number and a street name
+  if coalesce(btrim(c->>'address'), '') !~ '[0-9]' or coalesce(c->>'address', '') !~ '[A-Za-z]' then raise exception 'BAD_FIELD:address'; end if;
+  if coalesce(btrim(c->>'city'), '') = '' then raise exception 'BAD_FIELD:city'; end if;
+  if coalesce(c->>'state', '') !~ '^[A-Z]{2}$' then raise exception 'BAD_FIELD:state'; end if;
+  if coalesce(c->>'zip', '') !~ '^\d{5}(-\d{4})?$' then raise exception 'BAD_FIELD:zip'; end if;
+  if char_length(coalesce(c->>'address2', '')) > 100 then raise exception 'BAD_FIELD:address2'; end if;
   new.customer := c || jsonb_build_object('email', lower(btrim(c->>'email')));
 
   for it in select * from jsonb_array_elements(new.items) loop
@@ -102,7 +109,23 @@ begin
     out_items := out_items || jsonb_build_array(line);
     tot := tot + pr.price * q;
   end loop;
-  new.items := out_items; new.total := tot; new.status := 'new';
+
+  -- shipping & tax from Seller Central settings (store_settings.data)
+  select coalesce(s.data, '{}'::jsonb) into st from public.store_settings s where s.id = 1;
+  st := coalesce(st, '{}'::jsonb);
+  num := st->>'freeFrom';    v_free := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 0 end;
+  num := st->>'shipStandard'; v_std := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 12 end;
+  num := st->>'shipExpress';  v_exp := case when num ~ '^\d+(\.\d+)?$' then num::numeric else 25 end;
+  exp_on := coalesce(st->>'expressOn', '') in ('true', '1');
+  is_exp := exp_on and coalesce(c->>'delivery', '') ~* 'express';
+  if is_exp then ship := v_exp; dlabel := 'Express shipping (1–2 business days)';
+  else ship := case when v_free > 0 and tot >= v_free then 0 else v_std end; dlabel := 'Standard shipping (3–5 business days)'; end if;
+  num := st->'taxRates'->>(c->>'state');
+  rate := case when num ~ '^\d+(\.\d+)?$' then least(num::numeric, 20) else 0 end;
+  taxable := tot + case when coalesce(st->>'taxShipping', '') in ('true', '1') then ship else 0 end;
+  new.customer := new.customer || jsonb_build_object('delivery', dlabel);
+  new.items := out_items; new.subtotal := tot; new.shipping := ship; new.tax_rate := rate;
+  new.tax := round(taxable * rate / 100, 2); new.total := tot + ship + new.tax; new.status := 'new';
   new.carrier := null; new.tracking_number := null; new.shipped_at := null; new.delivery_eta := null; new.delivered_at := null; new.payment_status := 'unpaid'; new.payment_method := null; new.payment_ref := null; new.paid_amount := null; new.paid_at := null; new.refund_amount := null; new.refunded_at := null; new.admin_note := null;
   return new;
 end; $function$;

@@ -122,12 +122,12 @@ let lastFocus=null;
 function openLayer(id){closeLayers(true);lastFocus=document.activeElement;const el=$("#"+id);el.classList.add(id==="qv"?"show":"open");$("#overlay").classList.add("show");document.body.classList.add("locked");setTimeout(()=>{const f=el.querySelector("[data-autofocus]")||el.querySelector("button,a,input");f&&f.focus({preventScroll:true})},60)}
 function closeLayers(silent){["cartDrawer","filters"].forEach(i=>{const e=document.getElementById(i);e&&e.classList.remove("open")});const q=$("#qv");q&&q.classList.remove("show");$("#overlay").classList.remove("show");document.body.classList.remove("locked");if(!silent&&lastFocus&&lastFocus.focus)try{lastFocus.focus({preventScroll:true})}catch(e){}}
 function renderMini(){
- const L=cartLines(),tot=cartTotal(),ff=+S.settings.freeFrom||0,n=L.reduce((s,l)=>s+l.qty,0);
+ const L=cartLines(),tot=cartTotal(),ff=shipCfg().free,n=L.reduce((s,l)=>s+l.qty,0);
  $("#cartDrawer").innerHTML=`<div class="dhead"><h3>${t("yourCart")} <span class="muted">(${n})</span></h3><button class="iconbtn" data-act="closeall" aria-label="${t("close")}" data-autofocus>${X}</button></div>
  ${L.length?`<div class="dbody">${ff?`<div class="ship"><div>${tot>=ff?t("freeOk"):t("freeLeft")+"<b>"+money(ff-tot)+"</b>"}</div><div class="bar"><i style="width:${Math.min(100,Math.round(tot/ff*100))}%"></i></div></div>`:""}
  ${L.map(l=>`<div class="mline"><a href="#/product/${l.p.id}"><img src="${esc(img0(l.p))}" alt=""></a><div class="mi"><a href="#/product/${l.p.id}" class="mn">${esc(l.p.name)}</a>${l.opt?`<span class="optline">${esc(optStr(l.opt,l.p))}</span>`:""}${l.p.sku?`<span class="optline">Item # ${esc(l.p.sku)}</span>`:""}<span class="muted small">${money(l.p.price)}</span>
  <div class="mrow"><div class="qty sm"><button data-act="mq" data-d="-1" data-k="${esc(l.k)}" aria-label="−">−</button><span>${l.qty}</span><button data-act="mq" data-d="1" data-k="${esc(l.k)}" aria-label="+" ${l.qty>=lineMax(l)?"disabled":""}>+</button></div><button class="linkbtn" data-act="mrm" data-k="${esc(l.k)}">${t("remove")}</button></div></div><b class="mt">${money(l.p.price*l.qty)}</b></div>`).join("")}</div>
- <div class="dfoot"><div class="row total" style="margin:0 0 4px;border:0;padding-top:0"><span>${t("subtotal")}</span><span>${money(tot)}</span></div><p class="muted small" style="margin:0 0 14px">${t("shipping")}: ${ff&&tot>=ff?t("free"):t("shipCarrier")}</p>
+ <div class="dfoot"><div class="row total" style="margin:0 0 4px;border:0;padding-top:0"><span>${t("subtotal")}</span><span>${money(tot)}</span></div><p class="muted small" style="margin:0 0 14px">${t("shipping")}: ${shipCost(tot,false)?money(shipCost(tot,false)):t("free")} · tax calculated at checkout</p>
  <a class="btn primary block" href="#/checkout">${t("checkout")} →</a><a class="btn block" style="margin-top:8px" href="#/cart">${t("viewCart")}</a></div>`
  :`<div class="dbody"><div class="empty" style="border:0;padding:50px 10px"><b>${t("cartEmpty")}</b>${t("cartEmptyS")}<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div></div>`}`}
 function openCart(){renderMini();openLayer("cartDrawer")}
@@ -247,7 +247,7 @@ function viewProduct(id){
  <button class="btn primary" style="flex:1" data-act="addq" data-id="${p.id}" ${st==="out"?"disabled":""}>${ICON.bag.replace("<svg",'<svg width="18" height="18"')} ${st==="out"?t("notAvail"):t("addToCart")}</button>
  <button class="btn fav-inline ${favs.includes(p.id)?"on":""}" data-act="fav" data-id="${p.id}" aria-label="${t("favorites")}" style="padding:11px 13px">${ICON.heart.replace("<svg",'<svg width="20" height="20"')}</button></div>
  <button class="btn buynow block" data-act="buynow" data-id="${p.id}" data-scope="pdp" ${st==="out"?"hidden":""}>Buy now</button>
- <div class="infobox"><b>🚚 ${t("deliveryInfo")}</b>${esc((S.settings.deliveryOptions||"").split("\n").filter(Boolean).join(" · "))}${S.settings.freeFrom?`\n${t("freeOk").replace(" ✓","")} ${lang==="en"?"over":"від"} ${money(S.settings.freeFrom)}`:""}<span class="retnote">↺ Easy returns within 14 days · <a class="textlink" href="#/returns">Return policy</a></span></div></div></div>
+ <div class="infobox"><b>🚚 ${t("deliveryInfo")}</b>${esc(shipNote())}<span class="retnote">↺ Easy returns within ${shipCfg().days} days · <a class="textlink" href="#/returns">Return policy</a></span></div></div></div>
  <div class="tabsec">${p.desc?`<div><h2>${t("description")}</h2><div class="desc">${esc(p.desc)}</div></div>`:"<div></div>"}${specs.length?`<div><h2>${t("specs")}</h2><table class="specs">${specs.map(s=>`<tr><td>${esc(s[0])}</td><td>${esc(s[1])}</td></tr>`).join("")}</table></div>`:""}</div>
  ${reviewsHtml(p)}
  ${rel.length?`<section class="section" style="padding-top:10px"><div class="section-head"><h2>${t("related")}</h2></div><div class="grid">${rel.map(card).join("")}</div></section>`:""}</div>`}
@@ -257,12 +257,22 @@ function viewCart(){
  return `<div class="page-head"><div class="shell"><h1>${t("cart")}</h1></div></div><div class="shell cartgrid"><div>${L.map(l=>`<div class="line"><a href="#/product/${l.p.id}"><img src="${esc(img0(l.p))}" alt=""></a><div><h3><a href="#/product/${l.p.id}">${esc(l.p.name)}</a></h3>${l.opt?`<div class="optline">${esc(optStr(l.opt,l.p))}</div>`:""}${l.p.sku?`<div class="optline">Item # ${esc(l.p.sku)}</div>`:""}<div class="unit">${money(l.p.price)} / ${t("pcs")}</div><button class="linkbtn" data-act="rm" data-k="${esc(l.k)}">${t("remove")}</button></div>
  <div class="right"><div class="qty"><button data-act="cq" data-d="-1" data-k="${esc(l.k)}">−</button><input type="number" value="${l.qty}" min="1" max="${lineMax(l)}" data-act="cqi" data-k="${esc(l.k)}" aria-label="${t("qty")}"><button data-act="cq" data-d="1" data-k="${esc(l.k)}">+</button></div><b>${money(l.p.price*l.qty)}</b></div></div>`).join("")}
  <a class="textlink" href="#/shop">← ${t("continueShop")}</a></div>${summary(true)}</div>`}
-function summary(withBtn){
- const tot=withBtn?cartTotal():coTotal(),ff=+S.settings.freeFrom||0;
- return `<aside class="summary"><h3>${t("yourOrder")}</h3>${withBtn?"":coLines().map(l=>`<div class="row small"><span>${esc(l.p.name)}${l.opt?` <span class="muted">(${esc(optStr(l.opt,l.p))})</span>`:""} × ${l.qty}${l.p.sku?`<br><span class="muted">Item # ${esc(l.p.sku)}</span>`:""}</span><span>${money(l.p.price*l.qty)}</span></div>`).join("")}
- <div class="row"><span>${t("subtotal")}</span><b>${money(tot)}</b></div><div class="row"><span>${t("shipping")}</span><span class="muted">${ff&&tot>=ff?t("free"):t("shipCarrier")}</span></div>
- ${ff?`<div class="small" style="margin:6px 0;color:${tot>=ff?"#3f7a4d":"#8a5a45"}">${tot>=ff?t("freeOk"):t("freeLeft")+money(ff-tot)}</div>`:""}
- <div class="row total"><span>${t("total")}</span><span>${money(tot)}</span></div>${withBtn?`<a class="btn primary block" style="margin-top:14px" href="#/checkout">${t("checkout")} →</a>`:""}</aside>`}
+/* ===== shipping & sales tax (same rules as private.prepare_order in the database) ===== */
+function shipCfg(){const s=S.settings,n=(v,d)=>{const x=parseFloat(v);return isNaN(x)?d:x},on=v=>v===true||v==="1"||v==="true";
+ return{std:n(s.shipStandard,12),exp:n(s.shipExpress,25),expOn:on(s.expressOn),free:n(s.freeFrom,0),rates:s.taxRates&&typeof s.taxRates==="object"?s.taxRates:{},taxShip:on(s.taxShipping),days:n(s.returnDays,14)}}
+function deliveryOpts(){const c=shipCfg(),L=[{k:"standard",label:"Standard shipping (3–5 business days)",price:c.std}];if(c.expOn)L.push({k:"express",label:"Express shipping (1–2 business days)",price:c.exp});return L}
+function shipCost(sub,express){const c=shipCfg();return express&&c.expOn?c.exp:(c.free>0&&sub>=c.free?0:c.std)}
+function taxRate(st){const r=parseFloat(shipCfg().rates[st]);return isNaN(r)?0:Math.min(20,Math.max(0,r))}
+function calcTotals(sub,express,st){const c=shipCfg(),ship=shipCost(sub,express),rate=st?taxRate(st):0,tax=Math.round((sub+(c.taxShip?ship:0))*rate+1e-9)/100;
+ return{sub,ship,rate,tax,total:Math.round((sub+ship+tax)*100)/100,express:!!(express&&c.expOn)}}
+function shipNote(){const c=shipCfg();return `Standard (3–5 business days) — ${money(c.std)}${c.free?`, free on orders over ${money(c.free)}`:""}${c.expOn?` · Express (1–2 business days) — ${money(c.exp)}`:""}`}
+function summary(withBtn,st,express){
+ const sub=withBtn?cartTotal():coTotal(),ff=shipCfg().free,T=calcTotals(sub,express,st);
+ return `<aside class="summary" id="coSum"><h3>${t("yourOrder")}</h3>${withBtn?"":coLines().map(l=>`<div class="row small"><span>${esc(l.p.name)}${l.opt?` <span class="muted">(${esc(optStr(l.opt,l.p))})</span>`:""} × ${l.qty}${l.p.sku?`<br><span class="muted">Item # ${esc(l.p.sku)}</span>`:""}</span><span>${money(l.p.price*l.qty)}</span></div>`).join("")}
+ <div class="row"><span>${t("subtotal")}</span><b>${money(sub)}</b></div><div class="row"><span>${t("shipping")}${T.express?" (Express)":""}</span><span>${T.ship?money(T.ship):`<b style="color:#3f7a4d">${t("free")}</b>`}</span></div>
+ ${ff&&!T.express?`<div class="small" style="margin:6px 0;color:${sub>=ff?"#3f7a4d":"#8a5a45"}">${sub>=ff?t("freeOk"):t("freeLeft")+money(ff-sub)}</div>`:""}
+ <div class="row"><span>Estimated sales tax${!withBtn&&st&&T.rate?` <span class="muted small">(${esc(st)} ${+T.rate.toFixed(3)}%)</span>`:""}</span><span${withBtn||!st?' class="muted small"':""}>${withBtn?"Calculated at checkout":st?money(T.tax):"Select your state"}</span></div>
+ <div class="row total"><span>${withBtn?"Estimated total":t("total")}</span><span>${money(withBtn?T.sub+T.ship:T.total)}</span></div>${withBtn?`<a class="btn primary block" style="margin-top:14px" href="#/checkout">${t("checkout")} →</a>`:`<p class="small muted" style="margin:10px 0 0">Sales tax is based on your shipping state.</p>`}</aside>`}
 function viewCheckout(){
  if(!coLines().length){location.hash=/[?&]buy=1/.test(location.hash)?"#/":"#/cart";return""}
  const o=s=>(s||"").split("\n").map(x=>x.trim()).filter(Boolean);let d=LS.get("buyer",{});
@@ -274,24 +284,25 @@ function viewCheckout(){
  <div><label>${t("email")} <span class="req">*</span></label><input class="field" name="email" type="email" autocomplete="email" maxlength="200" value="${esc(d.email)}" required><div class="ferr" data-for="email"></div></div>
  <div><label>${t("phone")} <span class="req">*</span></label><input class="field" name="phone" type="tel" autocomplete="tel" maxlength="40" value="${esc(d.phone)}" placeholder="(555) 123-4567" required><div class="ferr" data-for="phone"></div></div>
  <p class="full help" style="margin:0">We’ll email your order confirmation and tracking number. Your phone is only used by the carrier for delivery.</p></div></div>
- <div class="panel"><h2>${t("deliveryM")}</h2><div class="radio">${o(S.settings.deliveryOptions).map((x,i)=>`<label><input type="radio" name="delivery" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>
- <h3 style="margin:20px 0 4px;font-size:16px">Shipping address</h3><div class="form" style="margin-top:10px"><div class="full"><label>${t("address")} <span class="req">*</span></label><input class="field" name="address" autocomplete="address-line1" maxlength="150" value="${esc(d.address)}" placeholder="123 Main St" required></div>
- <div class="full"><label>Apartment, suite, etc. <span class="muted small">(optional)</span></label><input class="field" name="address2" autocomplete="address-line2" maxlength="60" value="${esc(d.address2||"")}"></div>
+ <div class="panel"><h2>${t("deliveryM")}</h2><div class="radio">${deliveryOpts().map((x,i)=>{const p=x.k==="express"?x.price:shipCost(coTotal(),false);return `<label class="shipopt"><input type="radio" name="delivery" value="${esc(x.label)}" ${i?"":"checked"}><span>${esc(x.label)}</span><b>${p?money(p):t("free")}</b></label>`}).join("")}</div>
+ <h3 style="margin:20px 0 4px;font-size:16px">Shipping address</h3><div class="form" style="margin-top:10px"><div class="full"><label>Street address (house number and street) <span class="req">*</span></label><input class="field" name="address" autocomplete="address-line1" maxlength="150" value="${esc(d.address)}" placeholder="123 Main St" required><div class="ferr" data-for="address"></div></div>
+ <div class="full"><label>Apartment, suite, unit, floor <span class="muted small">(optional)</span></label><input class="field" name="address2" autocomplete="address-line2" maxlength="60" placeholder="Apt 4B" value="${esc(d.address2||"")}"></div>
  <div><label>${t("city")} <span class="req">*</span></label><input class="field" name="city" autocomplete="address-level2" maxlength="100" value="${esc(d.city)}" required></div>
  <div><label>State <span class="req">*</span></label><select class="field" name="state" autocomplete="address-level1" required><option value="">Select state</option>${US_STATES.map(([c,n])=>`<option value="${c}" ${stateCode(d.state)===c?"selected":""}>${n}</option>`).join("")}</select></div>
  <div><label>ZIP code <span class="req">*</span></label><input class="field" name="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" value="${esc(d.zip)}" placeholder="12345" required><div class="ferr" data-for="zip"></div></div>
  <div><label>Country</label><input class="field" value="United States" disabled></div></div></div>
  <div class="panel"><h2>${t("paymentM")}</h2><div class="radio">${o(S.settings.paymentOptions).map((x,i)=>`<label><input type="radio" name="payment" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>
  <div style="margin-top:14px"><label class="lbl">${t("comment")}</label><textarea class="field" name="comment"></textarea></div></div>
- <div id="coErr"></div><p class="small muted" style="margin:0">By placing your order, you agree to our <a class="textlink" href="#/terms" target="_blank">Terms of Service</a> and <a class="textlink" href="#/privacy" target="_blank">Privacy Policy</a>.</p><button class="btn primary block" style="padding:15px">${t("placeOrder")} →</button></form>${summary(false)}</div>`}
+ <div id="coErr"></div><p class="small muted" style="margin:0">By placing your order, you agree to our <a class="textlink" href="#/terms" target="_blank">Terms of Service</a> and <a class="textlink" href="#/privacy" target="_blank">Privacy Policy</a>.</p><button class="btn primary block" style="padding:15px">${t("placeOrder")} →</button></form>${summary(false,stateCode(d.state),false)}</div>`}
 function orderText(o){
  const L=o.lines.map(l=>`• ${l.name}${l.opt?" — "+optStr(l.opt,prod(l.id)):""}${l.sku?" ("+l.sku+")":""} × ${l.qty} = ${money(l.price*l.qty)}`).join("\n");
- return `${lang==="en"?"New order":"Нове замовлення"} ${o.no}\n\n${L}\n\n${t("total")}: ${money(o.total)}\n\n${t("name")}: ${o.c.name}\n${t("phone")}: ${o.c.phone}${o.c.email?"\n"+t("email")+": "+o.c.email:""}\n${t("deliveryM")}: ${o.c.delivery}\n${t("city")}: ${o.c.city}${o.c.address?", "+o.c.address:""}\n${t("paymentM")}: ${o.c.payment}${o.c.comment?"\n"+t("comment")+": "+o.c.comment:""}`}
+ return `${lang==="en"?"New order":"Нове замовлення"} ${o.no}\n\n${L}\n\n${o.sub!=null?`${t("subtotal")}: ${money(o.sub)}\n${t("shipping")}: ${o.ship?money(o.ship):t("free")}\nSales tax: ${money(o.tax||0)}\n`:""}${t("total")}: ${money(o.total)}\n\n${t("name")}: ${o.c.name}\n${t("phone")}: ${o.c.phone}${o.c.email?"\n"+t("email")+": "+o.c.email:""}\n${t("deliveryM")}: ${o.c.delivery}\n${t("city")}: ${o.c.city}${o.c.address?", "+o.c.address:""}\n${t("paymentM")}: ${o.c.payment}${o.c.comment?"\n"+t("comment")+": "+o.c.comment:""}`}
 function checkoutErrors(fd){
  const e={};["name","email","phone","address","city","state","zip"].forEach(k=>{if(!String(fd[k]||"").trim())e[k]="Required"});
  if(!e.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(fd.email).trim()))e.email="Please enter a valid email, e.g. name@example.com";
  if(!e.phone&&String(fd.phone).replace(/\D/g,"").length<10)e.phone="Please enter a 10-digit phone number";
  if(!e.zip&&!/^\d{5}(-\d{4})?$/.test(String(fd.zip).trim()))e.zip="ZIP code must be 5 digits";
+ if(!e.address&&!(/\d/.test(fd.address)&&/[a-z]/i.test(fd.address)))e.address="Please include the house number and street, e.g. 123 Main St";
  return e}
 async function placeOrder(f){
  const fd=Object.fromEntries(new FormData(f));["name","email","phone","address","address2","city","zip"].forEach(k=>fd[k]=String(fd[k]||"").trim());
@@ -302,7 +313,8 @@ async function placeOrder(f){
  $("#coErr").innerHTML="";fd.address=fd.address+(fd.address2?", "+fd.address2:"");
  const btn=f.querySelector("button:last-child");btn.disabled=true;
  const d=new Date(),no="CHV-"+String(d.getFullYear()).slice(2)+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+Math.floor(1000+Math.random()*9000);
- const o={no,date:d.toISOString(),lines:coLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),total:coTotal(),c:fd,sent:false};const bn=!!isBuyNow();
+ const o={no,date:d.toISOString(),lines:coLines().map(l=>({id:l.p.id,name:l.p.name,sku:l.p.sku,price:l.p.price,qty:l.qty,...(l.opt?{opt:l.opt}:{})})),c:fd,sent:false};
+ const T=calcTotals(coTotal(),/express/i.test(fd.delivery||""),fd.state);Object.assign(o,{sub:T.sub,ship:T.ship,tax:T.tax,rate:T.rate,total:T.total});const bn=!!isBuyNow();
  LS.set("buyer",{name:fd.name,phone:fd.phone,email:fd.email,city:fd.city,address:fd.address.replace(", "+fd.address2,"").replace(/, $/,""),address2:fd.address2,state:fd.state,zip:fd.zip});
  let res={ok:false};try{res=await saveOrderToDb(o)}catch(e){}
  if(res.stock){$("#coErr").innerHTML=`<div class="note">${esc(res.msg)} <a class="textlink" href="#/cart">Go to cart →</a></div>`;btn.disabled=false;refreshCatalog();return}
@@ -413,7 +425,7 @@ function notFound(){return `<div class="shell section"><div class="empty"><b>404
 let lastPath="";
 function render(){
  const h=location.hash.slice(1)||"/";const[path,qs]=h.split("?");const q=new URLSearchParams(qs||"");const parts=path.split("/").filter(Boolean);
- markNav(path);hsClose();hsSync(path,q);let html;
+ document.body.classList.toggle("invoice-mode",path.startsWith("/account/invoice"));markNav(path);hsClose();hsSync(path,q);let html;
  html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:viewOrder,favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
  if(path!==lastPath)window.scrollTo(0,0);lastPath=path;applySeo(parts,q);
@@ -455,11 +467,14 @@ document.addEventListener("click",e=>{
   mq:()=>{const l=lineByKey(el.dataset.k);if(!l)return;const mx=lineMax(l);l.qty+=+el.dataset.d;if(l.qty<1)cart=cart.filter(x=>x!==l);else l.qty=Math.min(mx,l.qty);setCart(cart);renderMini();if(/^#\/(cart|checkout)/.test(location.hash))render()},
   mrm:()=>{const k=el.dataset.k;setCart(cart.filter(l=>lkey(l)!==k));renderMini();if(/^#\/(cart|checkout)/.test(location.hash))render()},
   copyorder:()=>{copy($("#otext").value)},
+  retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
+  invprint:()=>window.print(),
   tg:()=>{copy($("#otext").value);window.open("https://t.me/"+el.dataset.u,"_blank")},
  };
  if(H[a])H[a]();
 });
 document.addEventListener("change",e=>{
+ {const f=e.target.form;if(f&&f.dataset.form==="checkout"&&(e.target.name==="state"||e.target.name==="delivery")){const sm=$("#coSum");if(sm)sm.outerHTML=summary(false,f.state.value,/express/i.test((f.querySelector("[name=delivery]:checked")||{}).value||""))}}
  const el=e.target;
  if(el.dataset.act==="sortchange"){const f=el.form;go(f)}
  else if(el.dataset.act==="fsort"){const raw=new URLSearchParams(location.hash.split("?")[1]||"").get("q");setParams({sort:el.value===(raw?"rel":"pop")?"":el.value})}
@@ -468,7 +483,7 @@ document.addEventListener("change",e=>{
  else if(el.dataset.act==="optpick"){const fs=el.closest(".optset");if(fs)fs.querySelector(".optval").textContent=el.value;const b=el.closest(".opts");b&&b.classList.remove("need")}
 });
 document.addEventListener("submit",e=>{const f=e.target;const k=f.dataset.form;if(!k)return;e.preventDefault();
- if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k.startsWith("ac"))acSubmit(k,f)});
+ if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k==="retreq")submitReturn(f);else if(k.startsWith("ac"))acSubmit(k,f)});
 function go(f){const cur=new URLSearchParams((location.hash.split("?")[1])||"");const n=new URLSearchParams();if(cur.get("cat"))n.set("cat",cur.get("cat"));const fd=new FormData(f);if(fd.get("q"))n.set("q",fd.get("q"));const sv=fd.get("sort"),def=fd.get("q")?"rel":"pop";if(sv&&sv!==def)n.set("sort",sv);if(fd.get("stock"))n.set("stock","1");location.hash="#/shop"+(n.toString()?"?"+n:"")}
 window.addEventListener("hashchange",()=>{closeLayers(true);closeAcct();closeLightbox();render()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAcct();if(e.key==="Escape"&&$("#overlay").classList.contains("show"))closeLayers()});

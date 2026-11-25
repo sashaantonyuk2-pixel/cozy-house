@@ -1,8 +1,8 @@
 /* ===== Seller Central · Seller Central core: menu, router, stock helpers, event handlers =====
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
-nav(cur){const L=[["","📊","Дашборд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["seo","🔎","SEO"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
- return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
+nav(cur){const L=[["","📊","Дашборд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["returns","🔁","Повернення"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["seo","🔎","SEO"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
+ return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="returns"?`<span class="navbadge" id="retBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
  if(k==="products")return this.wrap("products",this.products(q));
@@ -18,6 +18,7 @@ view(parts,q){const k=parts[1]||"";
  if(k==="reviews")return this.wrap("reviews",this.reviews(q));
  if(k==="seo")return this.wrap("seo",this.seo(q));
  if(k==="chat")return this.wrap("chat",this.chat(q));
+ if(k==="returns")return this.wrap("returns",this.returns(q));
  return this.wrap("",this.dash())},
 after(parts){
  const dz=$("#drop");if(dz){const fi=$("#imgFile");dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("over")});dz.addEventListener("dragleave",()=>dz.classList.remove("over"));dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("over");this.addFiles(e.dataTransfer.files)});fi.addEventListener("change",()=>{this.addFiles(fi.files);fi.value=""})}
@@ -86,6 +87,9 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  retForm:()=>{const r=$("#ret-"+id);if(r)r.hidden=!r.hidden},
  retCancel:()=>{const r=$("#ret-"+id);if(r)r.hidden=true},
  navToggle:()=>{const w=el.closest(".admin");if(!w)return;const off=!w.classList.contains("navoff");w.classList.toggle("navoff",off);LS.set("navOff",off);const f=w.querySelector(off?".navrail button":".navhide");f&&f.focus({preventScroll:true})},
+ retSet:()=>Admin.retSet(id,el.dataset.v,el),
+ reloadReturns:()=>Admin.fillReturns(new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"requested"),
+ custExport:()=>Admin.custExport(),
  dashP:()=>{const p=el.dataset.p;sessionStorage.setItem("dashP",p);if(p==="custom"&&!sessionStorage.getItem("dashFrom")){const d=new Date();sessionStorage.setItem("dashTo",Admin.dISO(d));d.setDate(d.getDate()-29);sessionStorage.setItem("dashFrom",Admin.dISO(d))}render()},
  msgStatus:()=>{const v=el.dataset.v;sb.from("messages").update({status:v}).eq("id",+id).then(({error})=>{if(error)return toast("⚠️ "+error.message);const m=Admin.msgData.find(x=>x.id===+id);if(m)m.status=v;Admin.renderMsgs();Admin.msgBadge()})},
  shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=tracking]").focus()}},
@@ -111,7 +115,11 @@ submit(k,f){
  if(k==="tgToken"){const tok=f.token.value.trim();const b=f.querySelector("button");b.disabled=true;sb.rpc("seller_set_telegram_token",{token:tok}).then(({data,error})=>{b.disabled=false;if(!error&&data==="same"){f.reset();toast("Цей токен уже збережено — підключення не змінилось");Admin.tgStatus();return}if(error)return toast(/BAD_TOKEN/.test(error.message)?"⚠️ Це не схоже на токен бота. Скопіюйте його з @BotFather повністю.":"⚠️ "+error.message);f.reset();toast("Токен збережено. Тепер крок 3.");Admin.tgStatus()});return}
  if(k==="aprodfilter"){const fd=new FormData(f),n=new URLSearchParams();fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"");return}
  if(k==="catadd"){const n=f.name.value.trim();if(!n)return;let id=translit(n)||uid();if(catOf(id))id+="-"+uid().slice(0,3);S.categories.push({id,name:n,image:""});save();chrome();render();toast("Категорію додано");return}
- if(k==="settings"){const fd=new FormData(f);for(const[key,v]of fd.entries())S.settings[key]=key==="freeFrom"?Number(v)||0:String(v);save();chrome();toast("Налаштування збережено ✓");return}
+ if(k==="settings"){const fd=new FormData(f),NUM={freeFrom:0,shipStandard:12,shipExpress:25,returnDays:14},R={};let bad="";
+  String(fd.get("taxRatesText")||"").split(/[\n;]+/).map(x=>x.trim()).filter(Boolean).forEach(x=>{const m=x.toUpperCase().match(/^([A-Z]{2})\s*[=:\s]\s*(\d+(?:[.,]\d+)?)\s*%?$/);const r=m&&+m[2].replace(",",".");if(!m||r>20)bad=bad||x;else R[m[1]]=r});
+  if(bad){const t=f.querySelector("[name=taxRatesText]");t&&t.focus();return toast("⚠️ Не зрозумів рядок податку «"+bad+"». Формат: FL=7 (до 20%). Нічого не збережено.")}
+  for(const[key,v]of fd.entries()){if(key==="taxRatesText")continue;if(key in NUM){const n=Number(String(v).replace(",","."));S.settings[key]=v===""||isNaN(n)||n<0?NUM[key]:n}else if(key==="expressOn"||key==="taxShipping")S.settings[key]=v==="1";else S.settings[key]=String(v)}
+  S.settings.taxRates=R;save();chrome();toast("Налаштування збережено ✓");return}
  if(k==="product"){const fd=new FormData(f);const name=String(fd.get("name")).trim(),price=fd.get("price");
   f.name.style.borderColor=name?"":"#c0563a";f.price.style.borderColor=price!==""?"":"#c0563a";
   if(!name||price===""){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Вкажіть назву й ціну</div>';return}

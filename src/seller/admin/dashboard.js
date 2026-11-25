@@ -36,7 +36,7 @@ dash(){const R=this.dRange(),h=new Date().getHours(),hi=h<5?"Доброї ноч
    <div class="dbreasons" id="dbReasons"></div></section>
  </div></div>`},
 async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISOString();
- const[O,RT,OP,UP,MN,ML,CT,RV,TG]=await Promise.all([
+ const[O,RT,OP,UP,MN,ML,CT,RV,TG,RQ]=await Promise.all([
   sb.from("orders").select("created_at,total,status,items,payment_status,paid_amount").gte("created_at",pf).lte("created_at",to).order("created_at").limit(5000),
   sb.from("orders").select("returned_at,refunded_at,total,items,status,return_reason,refund_amount").or(`returned_at.gte.${pf},refunded_at.gte.${pf}`).limit(2000),
   sb.from("orders").select("status,created_at").in("status",["new","confirmed","shipped"]).limit(2000),
@@ -45,7 +45,8 @@ async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISO
   sb.from("messages").select("name,body,created_at,status").in("status",["new","read"]).order("created_at",{ascending:false}).limit(3),
   sb.from("chat_threads").select("id,name,email,last_preview,last_at,last_customer_at,admin_seen_at").order("last_at",{ascending:false}).limit(50),
   sb.from("reviews").select("id,name,rating,body,created_at").eq("status","pending").order("created_at",{ascending:false}).limit(50),
-  sb.rpc("seller_telegram_status").then(r=>r,()=>({data:null}))]);
+  sb.rpc("seller_telegram_status").then(r=>r,()=>({data:null})),
+  sb.from("return_requests").select("id",{count:"exact",head:true}).eq("status","requested")]);
  if(!$("#tSum"))return;
  const err=[O,RT,OP,UP].find(x=>x.error);if(err){$("#dbActs").innerHTML=`<div class="note">Не вдалося завантажити: ${esc(err.error.message)}</div>`;return}
  const set=(id,v,s="",x="")=>{const e=$("#"+id);if(!e)return;e.querySelector(".dbv").innerHTML=v;e.querySelectorAll(".dbs,.dbrows,.dbd,.spark").forEach(n=>n.remove());e.insertAdjacentHTML("beforeend",(s?`<div class="dbs">${s}</div>`:"")+x)};
@@ -97,6 +98,7 @@ async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISO
  const ship=cnt("new")+cnt("confirmed"),A=[];
  if(ship)A.push(["hot","Відправити замовлення",`${ship} ${ship===1?"замовлення чекає":"замовлень чекають"} підтвердження або відправлення`,"#/admin/orders"]);
  if(unread.length)A.push(["hot","Відповісти в чаті",`${unread.length} ${unread.length===1?"розмова":"розмов"} без відповіді`,"#/admin/chat"]);
+ const rq=(RQ&&RQ.count)||0;if(rq)A.push(["hot","Заявки на повернення",`${rq} ${rq===1?"нова заявка":"нових заявок"} — перегляньте фото й вирішіть`,"#/admin/returns"]);
  if(nm)A.push(["","Нові повідомлення",`${nm} з форми «Contact us»`,"#/admin/messages"]);
  if(up.length)A.push(["warn","Очікує оплати",`${up.length} замовл. на ${money(sum(up))}`,"#/admin/orders?status=unpaid"]);
  if(pend)A.push(["","Відгуки на модерації",`${pend} ${pend===1?"новий відгук":"нових відгуків"}`,"#/admin/reviews"]);

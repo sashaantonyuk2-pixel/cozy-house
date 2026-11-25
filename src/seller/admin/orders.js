@@ -27,7 +27,7 @@ async fillOrder(id){
  <div class="acts"><button class="btn sm" data-act="a:slip" data-id="${o.id}">🖨 Пакувальний лист</button></div></div>
  <div class="ordgrid"><div class="stack">
  <div class="panel"><h2>Товари</h2>${items.map(x=>{const p=prod(x.id);return `<div class="oline"><img src="${esc(p?img0(p):"")}" alt=""><div><b>${p?`<a class="textlink" href="#/admin/product/${p.id}">${esc(x.name)}</a>`:esc(x.name)}</b>${x.opt?`<div class="small">${esc(optStr(x.opt,p))}</div>`:""}<div class="small muted">${x.sku?"SKU "+esc(x.sku):""}</div></div><div class="small">${+x.qty||0} × ${money(x.price)}</div><b>${money((+x.price||0)*(+x.qty||0))}</b></div>`}).join("")}
-  <div class="row" style="margin-top:10px"><span>Разом за товари</span><b>${money(sub)}</b></div><div class="row"><span>Доставка</span><span class="muted">${esc(c.delivery||"")}</span></div><div class="row total"><span>До оплати</span><span>${money(o.total)}</span></div></div>
+  <div class="row" style="margin-top:10px"><span>Разом за товари</span><b>${money(sub)}</b></div><div class="row"><span>Доставка <span class="muted small">· ${esc(c.delivery||"")}</span></span><span>${+o.shipping?money(o.shipping):"безкоштовно"}</span></div><div class="row"><span>Податок з продажів${+o.tax_rate?` <span class="muted small">(${esc(c.state||"")} ${+o.tax_rate}%)</span>`:""}</span><span>${money(o.tax||0)}</span></div><div class="row total"><span>До оплати</span><span>${money(o.total)}</span></div></div>
  <div class="panel"><h2>💳 Оплата</h2>
   ${ps==="unpaid"?`<div class="note" style="margin-bottom:12px">Оплату ще не отримано. Надішліть покупцю посилання на оплату й позначте замовлення оплаченим, коли гроші надійдуть.</div><div class="acts" style="margin-bottom:12px"><button class="btn primary sm" data-act="a:opaid" data-id="${o.id}">✓ Оплачено ${money(o.total)}</button><button class="btn sm" data-act="a:omail" data-t="pay" data-id="${o.id}">✉️ Лист із посиланням на оплату</button></div>`
   :`<div class="okbox" style="margin-bottom:12px">${this.PAY[ps]}${o.paid_amount!=null?`: ${money(o.paid_amount)}`:""}${o.payment_method?` · ${esc(o.payment_method)}`:""}${o.paid_at?` · ${dt(o.paid_at)}`:""}${o.payment_ref?`<br><span class="small">ID платежу: ${esc(o.payment_ref)}</span>`:""}${o.refund_amount?`<br><span class="small">Повернено: ${money(o.refund_amount)}${o.refunded_at?" · "+dt(o.refunded_at):""}</span>`:""}</div>`}
@@ -84,7 +84,7 @@ orders(q){const st=q.get("status")||"ship";
  <div class="shopbar"><label class="search">${ICON.search}<input id="ordSearch" placeholder="Пошук: номер, ім’я, телефон, email або код товару" autocomplete="off"></label></div>
  <div id="ordList"><p class="muted">Завантаження…</p></div>`},
 ST:{new:"Нове",confirmed:"Підтверджене",shipped:"Відправлене",completed:"Виконане",cancelled:"Скасоване",returned:"Повернення"},
-RREASONS:["Пошкоджено при доставці","Не той товар","Не відповідає опису","Передумав(ла)","Інше"],
+RREASONS:["Краща ціна","Товар у поганому стані","Бракований товар","Товарний вигляд (не як на фото)","Інше"],
 CARRIERS:["USPS","UPS","FedEx","DHL","Інший"],
 etaDefault(o){const c=o.customer||{},n=/express/i.test(c.delivery||"")?2:5,d=new Date();let k=0;while(k<n){d.setDate(d.getDate()+1);if(d.getDay()%6)k++}return d.toISOString().slice(0,10)},
 day(s){if(!s)return"";const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("uk-UA",{weekday:"short",day:"2-digit",month:"2-digit"})},

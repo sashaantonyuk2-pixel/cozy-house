@@ -46,9 +46,9 @@ end; $function$;
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 create trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_new_user();
 
--- Seller Central → Покупці: accounts + guest buyers grouped by email/phone (needs 01 and 04)
+-- Seller Central → Покупці (+ Excel export): accounts + guest buyers grouped by email/phone, with last known address (needs 01 and 04)
 create or replace function public.seller_customers()
- returns table(ckey text, name text, email text, phone text, city text, has_account boolean, orders_count bigint, spent numeric, last_order timestamp with time zone, joined timestamp with time zone)
+ returns table(ckey text, name text, email text, phone text, address text, city text, state text, zip text, has_account boolean, orders_count bigint, spent numeric, last_order timestamp with time zone, joined timestamp with time zone)
  language plpgsql
  stable security definer
  set search_path to ''
@@ -68,17 +68,23 @@ begin
       max(created_at) as last_at,
       (array_agg(c->>'name' order by created_at desc))[1] as nm,
       (array_agg(c->>'phone' order by created_at desc))[1] as ph,
+      (array_agg(c->>'address' order by created_at desc))[1] as ad,
       (array_agg(c->>'city' order by created_at desc))[1] as ct,
+      (array_agg(c->>'state' order by created_at desc))[1] as stt,
+      (array_agg(c->>'zip' order by created_at desc))[1] as zp,
       (array_agg(nullif(c->>'email', '') order by created_at desc))[1] as em
     from ord group by k),
   acc as (
-    select lower(u.email) as k, p.full_name, p.phone, p.city, u.created_at
+    select lower(u.email) as k, p.full_name, p.phone, p.address_line, p.city, p.state, p.zip, u.created_at
       from auth.users u left join public.profiles p on p.id = u.id)
   select coalesce(agg.k, acc.k),
          coalesce(nullif(acc.full_name, ''), agg.nm),
          coalesce(acc.k, agg.em, case when agg.k like 'tel:%' then null else agg.k end),
          coalesce(nullif(acc.phone, ''), agg.ph),
-         coalesce(nullif(acc.city, ''), agg.ct),
+         coalesce(agg.ad, nullif(acc.address_line, '')),
+         coalesce(agg.ct, nullif(acc.city, '')),
+         coalesce(agg.stt, nullif(acc.state, '')),
+         coalesce(agg.zp, nullif(acc.zip, '')),
          acc.k is not null,
          coalesce(agg.n, 0), coalesce(agg.spent, 0), agg.last_at, acc.created_at
     from agg full outer join acc on acc.k = agg.k
