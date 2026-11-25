@@ -25,10 +25,12 @@ _d=json.loads(snap)
 for p in _d['products']: p['images']=['photo:'+_inv[u] if u in _inv else u for u in p['images']]
 snap=json.dumps(_d).replace('<','\\u003c')
 body=open('store/body.html').read().replace('<script id="store-data" type="application/json">null</script>','<script id="store-data" type="application/json">'+snap+'</script>')
+# Seller Central sections (core first: it creates the Admin object the others extend)
+ADMIN=['core','dashboard','orders','products','excel','categories','customers','support','reviews','seo','settings','system']
 SHARED=['shared/i18n.js','shared/photos.js','shared/demo.js','shared/supabase.js','shared/core.js']
 store=open('store/head.html').read()+'\n'+css+body+js(SHARED+['store/account.js','store/chat.js','store/store.js'])+'</script>\n</body></html>'
 open('store.html','w').write(store)
-seller=open('seller/head.html').read()+'\n'+css+open('seller/body.html').read()+js(SHARED+['seller/admin.js','seller/seller.js','seller/main.js'])+'</script>\n</body></html>'
+seller=open('seller/head.html').read()+'\n'+css+open('seller/body.html').read()+js(SHARED+['seller/admin/'+f+'.js' for f in ADMIN]+['seller/seller.js','seller/main.js'])+'</script>\n</body></html>'
 open('seller.html','w').write(seller)
 for f in ['store.html','seller.html']:
     r=run_js("const s=readFile('%s');const ms=[...s.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];new Function(ms[ms.length-1][1]);print('%s syntax ok '+s.length)"%(f,f))

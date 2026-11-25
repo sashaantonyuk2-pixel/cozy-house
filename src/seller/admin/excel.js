@@ -1,0 +1,63 @@
+/* ===== Seller Central · Товари: імпорт / експорт Excel ===== */
+Object.assign(Admin,{
+/* ---- Excel import / export (SheetJS, loaded only when needed) ---- */
+XCOLS:["ID","SKU","Name","Category","Price","Old price","Stock","Active","Featured","Short description","Description","Specs","Options","Images"],
+loadXLSX(){if(window.XLSX)return Promise.resolve(window.XLSX);return new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";sc.integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw";sc.crossOrigin="anonymous";sc.onload=()=>res(window.XLSX);sc.onerror=()=>rej(new Error("Не вдалося завантажити модуль Excel. Перевірте інтернет."));document.head.appendChild(sc)})},
+xRow(p){const c=catOf(p.cat);return{"ID":p.id,"SKU":p.sku||"","Name":p.name,"Category":c?c.name:"","Price":+p.price||0,"Old price":p.oldPrice==null?"":+p.oldPrice,"Stock":+p.stock||0,"Active":p.active?"yes":"no","Featured":p.featured?"yes":"no","Short description":p.short||"","Description":p.desc||"","Specs":(p.specs||[]).filter(x=>x[0]||x[1]).map(x=>x[0]+": "+x[1]).join("; "),"Options":(p.options||[]).map(o=>o.name+": "+(o.values||[]).join(", ")).join(" | "),"Images":(p.images||[]).filter(u=>!String(u).startsWith("data:")).join(" ")}},
+xWidths(){return [10,12,34,18,9,10,8,8,9,40,60,45,40,60].map(w=>({wch:w}))},
+async xlsExport(){try{toast("Готую файл…");const X=await this.loadXLSX();const ws=X.utils.json_to_sheet(S.products.map(p=>this.xRow(p)),{header:this.XCOLS});ws["!cols"]=this.xWidths();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Products");X.writeFile(wb,"cozyhousevibe-products-"+new Date().toISOString().slice(0,10)+".xlsx");toast("Файл завантажено ✓")}catch(e){toast("⚠️ "+e.message)}},
+async xlsTemplate(){try{const X=await this.loadXLSX();const ex={"ID":"","SKU":"CHV-200","Name":"Linen Table Runner 14×72\"","Category":"Textiles","Price":34,"Old price":"","Stock":12,"Active":"yes","Featured":"no","Short description":"Stonewashed linen, soft and textured.","Description":"A natural linen runner that softens any table.","Specs":"Material: 100% linen; Size: 14 × 72 in; Care: Machine wash cold","Options":"Color: Natural, Sage, Terracotta","Images":"https://example.com/runner-1.jpg https://example.com/runner-2.jpg"};
+ const ws=X.utils.json_to_sheet([ex],{header:this.XCOLS});ws["!cols"]=this.xWidths();
+ const help=[["Колонка","Що вписувати"],["ID","Залиште порожнім для нових товарів. Для оновлення — не змінюйте (береться з експорту)."],["SKU","Артикул. Якщо ID порожній, товар шукається за артикулом; не знайдено — створюється новий."],["Name","Назва англійською. Обов'язково для нових."],["Category","Назва категорії, напр. Textiles. Якщо такої немає — буде створена."],["Price","Ціна в $, напр. 34 або 34.99. Обов'язково для нових."],["Old price","Стара ціна для знижки або порожньо."],["Stock","Залишок, шт."],["Active","yes / no — показувати на сайті (для нових за замовчуванням yes)."],["Featured","yes / no — хіт продажів на головній."],["Short description","Один рядок під назвою."],["Description","Повний опис."],["Specs","Характеристики через «;» у форматі Назва: значення. Напр.: Material: Ceramic; Height: 9.5 in"],["Options","Варіанти через «|», значення через кому. Напр.: Color: Sage, Oat | Size: S, M"],["Images","Посилання на фото (https://…) через пробіл. Перше — головне. Фото з комп'ютера додавайте в редакторі товару."],["",""],["Порожня клітинка","Для існуючих товарів порожня клітинка = не змінювати це поле."]];
+ const ws2=X.utils.aoa_to_sheet(help);ws2["!cols"]=[{wch:20},{wch:110}];const wb=X.utils.book_new();X.utils.book_append_sheet(wb,ws,"Products");X.utils.book_append_sheet(wb,ws2,"Інструкція");X.writeFile(wb,"cozyhousevibe-template.xlsx")}catch(e){toast("⚠️ "+e.message)}},
+impHelp(){const b=$("#impBox");if(b&&!this.impPlan)b.innerHTML=`<div class="panel impbox"><b>Імпорт товарів з Excel</b><p class="small" style="margin:6px 0 10px">Підходять файли .xlsx, .xls, .csv (Excel, Google Таблиці, Numbers). Найпростіше: зробіть «⬇ Експорт в Excel», змініть ціни чи залишки й завантажте файл назад. Для нових товарів — <button class="linkbtn" data-act="a:xlsTemplate">завантажте шаблон</button>. Перед збереженням ви побачите, що саме зміниться.</p><button class="btn sm ghost" data-act="a:impCancel">Закрити</button></div>`},
+async xlsImport(file){const box=$("#impBox");box.innerHTML=`<div class="panel impbox"><p class="muted">Читаю файл «${esc(file.name)}»…</p></div>`;
+ try{if(file.size>8*1024*1024)throw new Error("Файл завеликий (більше 8 МБ).");const X=await this.loadXLSX();const wb=X.read(await file.arrayBuffer(),{type:"array"});const ws=wb.Sheets[wb.SheetNames[0]];const rows=X.utils.sheet_to_json(ws,{defval:"",raw:true});
+  if(!rows.length)throw new Error("У першому аркуші немає рядків з товарами.");this.impPlan=this.impBuild(rows);this.impShow(file.name)}
+ catch(e){this.impPlan=null;box.innerHTML=`<div class="panel impbox"><div class="note">⚠️ ${esc(e.message||String(e))}</div><button class="btn sm" data-act="a:impCancel" style="margin-top:10px">Закрити</button></div>`}},
+impBuild(rows){
+ const A={id:["id"],sku:["sku","артикул"],name:["name","назва","title"],cat:["category","категорія","категория"],price:["price","ціна","цена"],oldPrice:["old price","oldprice","стара ціна","compare at price"],stock:["stock","залишок","кількість","qty","quantity"],active:["active","на сайті","visible","показувати"],featured:["featured","хіт","bestseller"],short:["short description","короткий опис","short"],desc:["description","опис","повний опис"],specs:["specs","характеристики","specifications"],options:["options","варіанти","variants"],images:["images","фото","image","photos"]};
+ const keys=Object.keys(rows[0]),col={};for(const f in A){const k=keys.find(h=>A[f].includes(String(h).trim().toLowerCase()));if(k!==undefined)col[f]=k}
+ if(!col.name&&!col.sku&&!col.id)throw new Error("Не знайдено колонок Name / SKU / ID. Використайте шаблон або файл експорту.");
+ const txt=v=>String(v??"").trim(),num=v=>{const s=txt(v).replace(/\s/g,"").replace(",",".").replace(/[^0-9.\-]/g,"");return s===""?null:Number(s)},bool=v=>{const s=txt(v).toLowerCase();if(!s)return undefined;if(["yes","y","так","true","1","+","да"].includes(s))return true;if(["no","n","ні","false","0","-","нет"].includes(s))return false;return undefined};
+ const plan={create:[],update:[],errors:[],newCats:[],skipped:0},catByName=n=>{n=n.toLowerCase();return S.categories.find(c=>c.name.toLowerCase()===n||c.id===n)||plan.newCats.find(c=>c.name.toLowerCase()===n)};
+ const seen=new Set();
+ rows.forEach((r,i)=>{const line=i+2,g=f=>col[f]!==undefined?r[col[f]]:"";
+  if(Object.values(r).every(v=>txt(v)==="")){plan.skipped++;return}
+  const id=txt(g("id")),sku=txt(g("sku"));let p=id?prod(id):null;if(!p&&sku)p=S.products.find(x=>(x.sku||"").toLowerCase()===sku.toLowerCase());
+  const key=p?p.id:"sku:"+sku.toLowerCase()+":"+line;if(p&&seen.has(p.id)){plan.errors.push(`Рядок ${line}: товар «${p.name}» уже є вище у файлі — рядок пропущено.`);return}if(p)seen.add(p.id);
+  const d={},err=[];
+  if(txt(g("name")))d.name=txt(g("name")).slice(0,200);
+  if(sku)d.sku=sku.slice(0,60);
+  const pr=num(g("price"));if(txt(g("price"))!==""){if(pr==null||isNaN(pr)||pr<0)err.push("неправильна ціна");else d.price=Math.round(pr*100)/100}
+  if(txt(g("oldPrice"))!==""){const op=num(g("oldPrice"));if(op==null||isNaN(op)||op<0)err.push("неправильна стара ціна");else d.oldPrice=Math.round(op*100)/100}
+  if(txt(g("stock"))!==""){const st=num(g("stock"));if(st==null||isNaN(st)||st<0)err.push("неправильний залишок");else d.stock=Math.round(st)}
+  const ac=bool(g("active"));if(ac!==undefined)d.active=ac;const fe=bool(g("featured"));if(fe!==undefined)d.featured=fe;
+  if(txt(g("short")))d.short=txt(g("short")).slice(0,180);if(txt(g("desc")))d.desc=txt(g("desc")).slice(0,20000);
+  if(txt(g("specs")))d.specs=txt(g("specs")).split(/[;\n]+/).map(x=>{const k=x.indexOf(":");return k<0?[x.trim(),""]:[x.slice(0,k).trim(),x.slice(k+1).trim()]}).filter(x=>x[0]||x[1]).slice(0,30);
+  if(txt(g("options")))d.options=txt(g("options")).split(/[|\n]+/).map(x=>{const k=x.indexOf(":");if(k<0)return null;return{name:x.slice(0,k).trim().slice(0,40),values:[...new Set(x.slice(k+1).split(",").map(v=>v.trim().slice(0,40)).filter(Boolean))].slice(0,20)}}).filter(o=>o&&o.name&&o.values.length).slice(0,5);
+  if(txt(g("images")))d.images=txt(g("images")).split(/[\s,]+/).filter(u=>/^(https?:\/\/|images\/)/.test(u)).slice(0,12);
+  const cn=txt(g("cat"));if(cn){let c=catByName(cn);if(!c){let cid=translit(cn)||uid();if(catOf(cid)||plan.newCats.some(x=>x.id===cid))cid+="-"+uid().slice(0,3);c={id:cid,name:cn.slice(0,80),image:""};plan.newCats.push(c)}d.cat=c.id}
+  if(!p){if(!d.name)err.push("немає назви (Name)");if(d.price==null)err.push("немає ціни (Price)")}
+  if(err.length){plan.errors.push(`Рядок ${line}${d.name||p?` («${esc(d.name||p.name)}»)`:""}: ${err.join(", ")} — рядок пропущено.`);return}
+  if(p){const ch=Object.keys(d).filter(k=>JSON.stringify(d[k])!==JSON.stringify(p[k]));if(ch.length)plan.update.push({id:p.id,line,data:Object.fromEntries(ch.map(k=>[k,d[k]])),name:p.name});else plan.skipped++}
+  else plan.create.push({line,data:d})});
+ plan.newCats=plan.newCats.filter(c=>plan.create.some(x=>x.data.cat===c.id)||plan.update.some(x=>x.data.cat===c.id));
+ return plan},
+impShow(fname){const P=this.impPlan,L={name:"назва",sku:"артикул",price:"ціна",oldPrice:"стара ціна",stock:"залишок",active:"на сайті",featured:"хіт",short:"короткий опис",desc:"опис",specs:"характеристики",options:"варіанти",images:"фото",cat:"категорія"};
+ const fmt=(k,v)=>k==="price"||k==="oldPrice"?(v==null?"—":money(v)):k==="active"||k==="featured"?(v?"так":"ні"):k==="cat"?esc((catOf(v)||P.newCats.find(c=>c.id===v)||{}).name||v):k==="specs"||k==="options"||k==="images"?(v.length+" шт."):esc(String(v).slice(0,40));
+ const ok=P.create.length+P.update.length;
+ $("#impBox").innerHTML=`<div class="panel impbox"><h2 style="margin:0 0 6px">Перевірка імпорту: ${esc(fname)}</h2>
+ <div class="impstats"><span class="okc">➕ Нових товарів: <b>${P.create.length}</b></span><span>✏️ Оновлень: <b>${P.update.length}</b></span>${P.newCats.length?`<span>🗂 Нових категорій: <b>${P.newCats.length}</b> (${P.newCats.map(c=>esc(c.name)).join(", ")})</span>`:""}<span class="muted">Без змін: ${P.skipped}</span>${P.errors.length?`<span class="errc">⚠️ Помилок: <b>${P.errors.length}</b></span>`:""}</div>
+ ${P.errors.length?`<div class="note" style="margin:10px 0"><b>Ці рядки не будуть імпортовані:</b><br>${P.errors.slice(0,30).join("<br>")}${P.errors.length>30?"<br>…":""}</div>`:""}
+ ${ok?`<div class="tablewrap" style="max-height:340px;overflow:auto;margin:10px 0"><table class="t"><thead><tr><th>Рядок</th><th>Дія</th><th>Товар</th><th>Що зміниться</th></tr></thead><tbody>
+ ${P.create.slice(0,200).map(x=>`<tr><td>${x.line}</td><td><span class="stk newp">новий</span></td><td><b>${esc(x.data.name)}</b></td><td class="small">${money(x.data.price)}${x.data.stock!=null?` · ${x.data.stock} шт.`:""}${x.data.cat?" · "+fmt("cat",x.data.cat):""}</td></tr>`).join("")}
+ ${P.update.slice(0,300).map(x=>{const p=prod(x.id);return `<tr><td>${x.line}</td><td><span class="stk upd">оновити</span></td><td><b>${esc(x.name)}</b></td><td class="small">${Object.keys(x.data).map(k=>`${L[k]||k}: ${["specs","options","images","desc","short"].includes(k)?fmt(k,x.data[k]):`${fmt(k,p[k])} → <b>${fmt(k,x.data[k])}</b>`}`).join("<br>")}</td></tr>`}).join("")}
+ </tbody></table></div>`:`<p class="muted">Немає змін для збереження.</p>`}
+ <div class="acts">${ok?`<button class="btn primary" data-act="a:impApply">Зберегти ${ok} ${ok===1?"зміну":"змін"}</button>`:""}<button class="btn" data-act="a:impCancel">Скасувати</button></div></div>`},
+impApply(){const P=this.impPlan;if(!P)return;
+ P.newCats.forEach(c=>{if(!catOf(c.id))S.categories.push(c)});
+ P.create.forEach(x=>S.products.push({id:uid(),created:Date.now(),sku:"",cat:"",oldPrice:null,stock:0,active:true,featured:false,short:"",desc:"",specs:[],options:[],images:[],...x.data}));
+ P.update.forEach(x=>{const p=prod(x.id);if(p)Object.assign(p,x.data)});
+ const n=P.create.length+P.update.length;this.impPlan=null;save();chrome();render();toast(`Імпортовано: ${n}. Зберігаю в базу…`)},
+});
