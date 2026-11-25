@@ -2,8 +2,8 @@
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
 nav(cur){const L=[["","📊","Дашборд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["seo","🔎","SEO"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
- return `<nav class="aside">${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
-wrap(cur,html){return `<div class="shell admin">${this.nav(cur)}<div>${html}</div></div>`},
+ return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
+wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
  if(k==="products")return this.wrap("products",this.products(q));
  if(k==="product")return this.wrap("products",this.editor(parts[2]));
@@ -85,6 +85,7 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  custOrders:()=>{sessionStorage.setItem("ordQ",el.dataset.q);location.hash="#/admin/orders?status=all"},
  retForm:()=>{const r=$("#ret-"+id);if(r)r.hidden=!r.hidden},
  retCancel:()=>{const r=$("#ret-"+id);if(r)r.hidden=true},
+ navToggle:()=>{const w=el.closest(".admin");if(!w)return;const off=!w.classList.contains("navoff");w.classList.toggle("navoff",off);LS.set("navOff",off);const f=w.querySelector(off?".navrail button":".navhide");f&&f.focus({preventScroll:true})},
  dashP:()=>{const p=el.dataset.p;sessionStorage.setItem("dashP",p);if(p==="custom"&&!sessionStorage.getItem("dashFrom")){const d=new Date();sessionStorage.setItem("dashTo",Admin.dISO(d));d.setDate(d.getDate()-29);sessionStorage.setItem("dashFrom",Admin.dISO(d))}render()},
  msgStatus:()=>{const v=el.dataset.v;sb.from("messages").update({status:v}).eq("id",+id).then(({error})=>{if(error)return toast("⚠️ "+error.message);const m=Admin.msgData.find(x=>x.id===+id);if(m)m.status=v;Admin.renderMsgs();Admin.msgBadge()})},
  shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=tracking]").focus()}},

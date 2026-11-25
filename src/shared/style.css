@@ -492,10 +492,12 @@ form[hidden],div[hidden]{display:none!important}
 .dbcm{display:block;padding:9px 0;border-bottom:1px solid #eef0ec;color:var(--ink)}
 .dbcm b{font-size:13.5px}.dbcm p{margin:2px 0;font-size:13px;color:#3d4741;overflow-wrap:anywhere}.dbcm small{color:var(--muted);font-size:11.5px}
 .dbcomm .dblink{display:inline-block;margin-top:8px}
-.dbtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-.dbtiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.dbt{padding:12px 16px;border-right:1px solid #e3e6e1;border-bottom:1px solid #e3e6e1;min-width:0}
-.dbtiles>.dbt:nth-child(4n){border-right:0}.dbtiles.three>.dbt:nth-child(4n){border-right:1px solid #e3e6e1}.dbtiles.three>.dbt:nth-child(3n){border-right:0}
+.dbtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#e3e6e1;border-bottom:1px solid #e3e6e1}
+.dbtiles.six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dbmain{container-type:inline-size}
+@container (min-width:860px){.dbtiles.six{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.dbt{padding:12px 14px;background:#fff;min-width:0;min-height:120px}
+.dbt.sm{min-height:0}
 .dbl{font-size:12.5px;font-weight:650;color:#3d4741}
 .dbv{font-size:23px;font-weight:750;margin:5px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dbs{font-size:12px;color:var(--muted)}.dbs a{color:#1d6b6b;font-weight:650}
@@ -510,6 +512,20 @@ form[hidden],div[hidden]{display:none!important}
 .dbreason{display:grid;grid-template-columns:minmax(120px,220px) 1fr 30px;gap:10px;align-items:center;font-size:13px;padding:3px 0}
 .dbreason .tbar{margin:0}.dbreason b{text-align:right}
 @media(max-width:1100px){.dbgrid{grid-template-columns:1fr}.dbside{grid-template-columns:1fr 1fr}}
-@media(max-width:760px){.dbside{grid-template-columns:1fr}.dbtiles,.dbtiles.three{grid-template-columns:repeat(2,minmax(0,1fr))}
- .dbtiles>.dbt:nth-child(n),.dbtiles.three>.dbt:nth-child(n){border-right:1px solid #e3e6e1}.dbtiles>.dbt:nth-child(2n),.dbtiles.three>.dbt:nth-child(2n){border-right:0}
+@media(max-width:760px){.dbside{grid-template-columns:1fr}.dbtiles,.dbtiles.six{grid-template-columns:repeat(2,minmax(0,1fr))}
  .dbper{margin-left:0}.dbreason{grid-template-columns:1fr 1fr 24px}}
+.dbhead h1{font:500 21px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif}
+.dbhint{font-size:12.5px;color:var(--muted)}
+.dbv .dbok{font-size:15px;color:#2f7d4a}.dbv .dboff{font-size:15px;color:var(--muted)}
+.dbt .spark{display:block;width:100%;height:30px;margin-top:6px}
+/* hide / show the Seller Central side menu */
+.navhide{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:6px 12px 8px;font-size:12.5px;font-weight:650;color:var(--muted);cursor:pointer;border-radius:8px}
+.navhide:hover{background:#f4f6f1;color:var(--ink)}
+.navrail{display:none}
+.navrail button{width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:19px;cursor:pointer;color:var(--ink);position:sticky;top:96px}
+.navrail button:hover{border-color:var(--forest)}
+.admin.navoff{grid-template-columns:42px minmax(0,1fr)}
+.admin.navoff .aside{display:none}.admin.navoff .navrail{display:block;align-self:stretch}
+@media (max-width:860px){.navhide span{display:none}.navhide{width:auto;flex:none;padding:10px 12px}
+ .admin.navoff{grid-template-columns:1fr}.navrail button{position:static}}
+.shell.admin.navoff{max-width:1480px}

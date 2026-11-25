@@ -494,10 +494,12 @@ form[hidden],div[hidden]{display:none!important}
 .dbcm{display:block;padding:9px 0;border-bottom:1px solid #eef0ec;color:var(--ink)}
 .dbcm b{font-size:13.5px}.dbcm p{margin:2px 0;font-size:13px;color:#3d4741;overflow-wrap:anywhere}.dbcm small{color:var(--muted);font-size:11.5px}
 .dbcomm .dblink{display:inline-block;margin-top:8px}
-.dbtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-.dbtiles.three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.dbt{padding:12px 16px;border-right:1px solid #e3e6e1;border-bottom:1px solid #e3e6e1;min-width:0}
-.dbtiles>.dbt:nth-child(4n){border-right:0}.dbtiles.three>.dbt:nth-child(4n){border-right:1px solid #e3e6e1}.dbtiles.three>.dbt:nth-child(3n){border-right:0}
+.dbtiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:#e3e6e1;border-bottom:1px solid #e3e6e1}
+.dbtiles.six{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dbmain{container-type:inline-size}
+@container (min-width:860px){.dbtiles.six{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.dbt{padding:12px 14px;background:#fff;min-width:0;min-height:120px}
+.dbt.sm{min-height:0}
 .dbl{font-size:12.5px;font-weight:650;color:#3d4741}
 .dbv{font-size:23px;font-weight:750;margin:5px 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dbs{font-size:12px;color:var(--muted)}.dbs a{color:#1d6b6b;font-weight:650}
@@ -512,9 +514,23 @@ form[hidden],div[hidden]{display:none!important}
 .dbreason{display:grid;grid-template-columns:minmax(120px,220px) 1fr 30px;gap:10px;align-items:center;font-size:13px;padding:3px 0}
 .dbreason .tbar{margin:0}.dbreason b{text-align:right}
 @media(max-width:1100px){.dbgrid{grid-template-columns:1fr}.dbside{grid-template-columns:1fr 1fr}}
-@media(max-width:760px){.dbside{grid-template-columns:1fr}.dbtiles,.dbtiles.three{grid-template-columns:repeat(2,minmax(0,1fr))}
- .dbtiles>.dbt:nth-child(n),.dbtiles.three>.dbt:nth-child(n){border-right:1px solid #e3e6e1}.dbtiles>.dbt:nth-child(2n),.dbtiles.three>.dbt:nth-child(2n){border-right:0}
+@media(max-width:760px){.dbside{grid-template-columns:1fr}.dbtiles,.dbtiles.six{grid-template-columns:repeat(2,minmax(0,1fr))}
  .dbper{margin-left:0}.dbreason{grid-template-columns:1fr 1fr 24px}}
+.dbhead h1{font:500 21px/1.3 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif}
+.dbhint{font-size:12.5px;color:var(--muted)}
+.dbv .dbok{font-size:15px;color:#2f7d4a}.dbv .dboff{font-size:15px;color:var(--muted)}
+.dbt .spark{display:block;width:100%;height:30px;margin-top:6px}
+/* hide / show the Seller Central side menu */
+.navhide{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:6px 12px 8px;font-size:12.5px;font-weight:650;color:var(--muted);cursor:pointer;border-radius:8px}
+.navhide:hover{background:#f4f6f1;color:var(--ink)}
+.navrail{display:none}
+.navrail button{width:42px;height:42px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:19px;cursor:pointer;color:var(--ink);position:sticky;top:96px}
+.navrail button:hover{border-color:var(--forest)}
+.admin.navoff{grid-template-columns:42px minmax(0,1fr)}
+.admin.navoff .aside{display:none}.admin.navoff .navrail{display:block;align-self:stretch}
+@media (max-width:860px){.navhide span{display:none}.navhide{width:auto;flex:none;padding:10px 12px}
+ .admin.navoff{grid-template-columns:1fr}.navrail button{position:static}}
+.shell.admin.navoff{max-width:1480px}
 .fav-inline.on svg{fill:var(--terra);stroke:var(--terra)}
 </style></head>
 <body><header class="header"><div class="shell headinner"><a class="brand" href="#/admin"><img src="data:image/jpeg;base64,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" alt=""><span><strong>CozyHouseVibe</strong><small>Seller Central</small></span></a><div class="sellerright" id="sellerRight"></div></div></header>
@@ -680,8 +696,8 @@ function trackUrl(c,n){n=encodeURIComponent(String(n||"").trim());if(!n)return""
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
 nav(cur){const L=[["","📊","Дашборд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["seo","🔎","SEO"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
- return `<nav class="aside">${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
-wrap(cur,html){return `<div class="shell admin">${this.nav(cur)}<div>${html}</div></div>`},
+ return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
+wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
  if(k==="products")return this.wrap("products",this.products(q));
  if(k==="product")return this.wrap("products",this.editor(parts[2]));
@@ -763,6 +779,7 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  custOrders:()=>{sessionStorage.setItem("ordQ",el.dataset.q);location.hash="#/admin/orders?status=all"},
  retForm:()=>{const r=$("#ret-"+id);if(r)r.hidden=!r.hidden},
  retCancel:()=>{const r=$("#ret-"+id);if(r)r.hidden=true},
+ navToggle:()=>{const w=el.closest(".admin");if(!w)return;const off=!w.classList.contains("navoff");w.classList.toggle("navoff",off);LS.set("navOff",off);const f=w.querySelector(off?".navrail button":".navhide");f&&f.focus({preventScroll:true})},
  dashP:()=>{const p=el.dataset.p;sessionStorage.setItem("dashP",p);if(p==="custom"&&!sessionStorage.getItem("dashFrom")){const d=new Date();sessionStorage.setItem("dashTo",Admin.dISO(d));d.setDate(d.getDate()-29);sessionStorage.setItem("dashFrom",Admin.dISO(d))}render()},
  msgStatus:()=>{const v=el.dataset.v;sb.from("messages").update({status:v}).eq("id",+id).then(({error})=>{if(error)return toast("⚠️ "+error.message);const m=Admin.msgData.find(x=>x.id===+id);if(m)m.status=v;Admin.renderMsgs();Admin.msgBadge()})},
  shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=tracking]").focus()}},
@@ -806,8 +823,8 @@ function translit(s){const m={а:"a",б:"b",в:"v",г:"h",ґ:"g",д:"d",е:"e",�
 document.addEventListener("keydown",e=>{const f=e.target.closest&&e.target.closest('[data-form="chatreply"]');if(f&&e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();f.requestSubmit()}});
 
 /* ===== Seller Central · Дашборд =====
-   Amazon-style home: what needs doing (Дії), latest customer contacts (Комунікації),
-   sales for a chosen period (сума / замовлення / товари), live status tiles, sales chart, returns statistics.
+   Amazon-style home (layout of the approved mockup): what needs doing (Дії), latest customer contacts (Комунікації),
+   one «Огляд показників» block with 12 tiles for the chosen period, sales chart, returns statistics.
    No product list here on purpose — products live in «Товари». */
 Object.assign(Admin,{
 DPRESETS:[["today","Сьогодні"],["7","7 днів"],["30","30 днів"],["90","90 днів"],["custom","Свій період"]],
@@ -825,8 +842,8 @@ dISO(d){const x=new Date(d);return x.getFullYear()+"-"+String(x.getMonth()+1).pa
 ago(at){const s=(Date.now()-Date.parse(at))/1000;if(isNaN(s))return"";if(s<3600)return Math.max(1,Math.round(s/60))+" хв тому";if(s<86400)return Math.round(s/3600)+" год тому";if(s<172800)return"вчора";return this.dFmt(at)},
 dash(){const R=this.dRange(),h=new Date().getHours(),hi=h<5?"Доброї ночі":h<12?"Доброго ранку":h<18?"Добрий день":"Добрий вечір";
  setTimeout(()=>this.fillDash(),0);
- const tile=(id,l)=>`<div class="dbt" id="${id}"><div class="dbl">${l}</div><div class="dbv">…</div></div>`;
- return `<div class="dbhead"><h1>Дашборд</h1><span class="dbhello">${hi}! Стан магазину: <span class="dbhealth" id="dbHealth">…</span></span>
+ const tile=(id,l,sm)=>`<div class="dbt${sm?" sm":""}" id="${id}"><div class="dbl">${l}</div><div class="dbv">…</div></div>`;
+ return `<div class="dbhead"><h1>${hi}! Стан магазину:</h1><span class="dbhealth" id="dbHealth">…</span><span class="dbhint" id="dbHint"></span>
  <div class="dbper"><div class="seg">${this.DPRESETS.map(([k,v])=>`<button class="${R.p===k?"on":""}" data-act="a:dashP" data-p="${k}">${v}</button>`).join("")}</div>
  <a class="btn primary sm" href="#/admin/product/new">${ICON.plus.replace("<svg",'<svg width="15"')} Додати товар</a></div></div>
  <form class="dbrange" data-form="dashrange" ${R.p==="custom"?"":"hidden"}><label>З <input class="field" type="date" name="from" value="${this.dISO(R.from)}" max="${this.dISO(new Date())}" required></label><label>по <input class="field" type="date" name="to" value="${this.dISO(R.to)}" max="${this.dISO(new Date())}" required></label><button class="btn sm primary">Показати</button></form>
@@ -834,17 +851,16 @@ dash(){const R=this.dRange(),h=new Date().getHours(),hi=h<5?"Доброї ноч
   <section class="dbcard"><h2>Дії <span class="dbn" id="dbActN">…</span></h2><div class="dbacts" id="dbActs"><p class="muted small">Завантаження…</p></div></section>
   <section class="dbcard"><h2>Комунікації</h2><div class="dbcomm" id="dbComm"><p class="muted small">Завантаження…</p></div></section>
  </div><div class="dbmain">
-  <section class="dbcard"><h2>Продажі <small>· ${esc(R.label)}</small></h2><div class="dbtiles">
-   ${tile("tSum","Сума замовлень")}${tile("tOrd","Кількість замовлень")}${tile("tUnits","Продано товарів")}${tile("tAvg","Середній чек")}</div>
-   <div class="dbchart chart" id="dbChart"><p class="muted small">Завантаження…</p></div></section>
-  <section class="dbcard"><h2>Зараз у магазині</h2><div class="dbtiles three">
-   ${tile("tOpen","Відкриті замовлення")}${tile("tPay","Оплати")}${tile("tStock","Склад")}${tile("tRev","Відгуки")}${tile("tMsg","Повідомлення покупців")}${tile("tCancel","Скасовано")}</div></section>
-  <section class="dbcard"><h2>Повернення <small>· ${esc(R.label)}</small><a class="dblink" href="#/admin/orders?status=returned">Усі повернення →</a></h2><div class="dbtiles">
+  <section class="dbcard"><h2>Огляд показників <small>· ${esc(R.label)}</small></h2><div class="dbtiles six">
+   ${tile("tSum","Продажі")}${tile("tOpen","Відкриті замовлення")}${tile("tMsg","Повідомлення покупців")}${tile("tRev","Відгуки")}${tile("tPay","Оплати")}${tile("tStock","Склад")}
+   ${tile("tOrd","Замовлення",1)}${tile("tUnits","Продано товарів",1)}${tile("tAvg","Середній чек",1)}${tile("tRet","Повернення",1)}${tile("tCancel","Скасовано",1)}${tile("tTg","Telegram",1)}</div></section>
+  <section class="dbcard"><h2>Продажі по днях <small>· наведіть на стовпчик, щоб побачити суму</small></h2><div class="dbchart chart" id="dbChart"><p class="muted small">Завантаження…</p></div></section>
+  <section class="dbcard"><h2>Статистика повернень <small>· ${esc(R.label)}</small><a class="dblink" href="#/admin/orders?status=returned">Усі повернення →</a></h2><div class="dbtiles four">
    ${tile("rN","Повернень")}${tile("rUnits","Повернено товарів")}${tile("rSum","Сума повернених замовлень")}${tile("rRate","Частка повернень")}</div>
    <div class="dbreasons" id="dbReasons"></div></section>
  </div></div>`},
 async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISOString();
- const[O,RT,OP,UP,MN,ML,CT,RV]=await Promise.all([
+ const[O,RT,OP,UP,MN,ML,CT,RV,TG]=await Promise.all([
   sb.from("orders").select("created_at,total,status,items,payment_status,paid_amount").gte("created_at",pf).lte("created_at",to).order("created_at").limit(5000),
   sb.from("orders").select("returned_at,refunded_at,total,items,status,return_reason,refund_amount").or(`returned_at.gte.${pf},refunded_at.gte.${pf}`).limit(2000),
   sb.from("orders").select("status,created_at").in("status",["new","confirmed","shipped"]).limit(2000),
@@ -852,41 +868,48 @@ async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISO
   sb.from("messages").select("id",{count:"exact",head:true}).eq("status","new"),
   sb.from("messages").select("name,body,created_at,status").in("status",["new","read"]).order("created_at",{ascending:false}).limit(3),
   sb.from("chat_threads").select("id,name,email,last_preview,last_at,last_customer_at,admin_seen_at").order("last_at",{ascending:false}).limit(50),
-  sb.from("reviews").select("id,name,rating,body,created_at").eq("status","pending").order("created_at",{ascending:false}).limit(50)]);
+  sb.from("reviews").select("id,name,rating,body,created_at").eq("status","pending").order("created_at",{ascending:false}).limit(50),
+  sb.rpc("seller_telegram_status").then(r=>r,()=>({data:null}))]);
  if(!$("#tSum"))return;
  const err=[O,RT,OP,UP].find(x=>x.error);if(err){$("#dbActs").innerHTML=`<div class="note">Не вдалося завантажити: ${esc(err.error.message)}</div>`;return}
- const set=(id,v,s="",x="")=>{const e=$("#"+id);if(!e)return;e.querySelector(".dbv").innerHTML=v;e.querySelectorAll(".dbs,.dbrows,.dbd").forEach(n=>n.remove());e.insertAdjacentHTML("beforeend",(s?`<div class="dbs">${s}</div>`:"")+x)};
- const delta=(v,p,inv)=>{if(!p)return v?`<div class="dbd">попереднього періоду немає</div>`:"";const c=Math.round((v-p)/p*100);const good=inv?c<=0:c>=0;return `<div class="dbd ${c===0?"":good?"up":"down"}">${c>0?"▲":c<0?"▼":"="} ${Math.abs(c)}% до попер. періоду</div>`};
+ const set=(id,v,s="",x="")=>{const e=$("#"+id);if(!e)return;e.querySelector(".dbv").innerHTML=v;e.querySelectorAll(".dbs,.dbrows,.dbd,.spark").forEach(n=>n.remove());e.insertAdjacentHTML("beforeend",(s?`<div class="dbs">${s}</div>`:"")+x)};
+ const delta=(v,p,inv,short)=>{if(!p)return v&&!short?`<div class="dbd">попереднього періоду немає</div>`:"";const c=Math.round((v-p)/p*100);const good=inv?c<=0:c>=0;return `<div class="dbd ${c===0?"":good?"up":"down"}">${c>0?"▲":c<0?"▼":"="} ${Math.abs(c)}%${short?"":" до попер. періоду"}</div>`};
  const t0=+R.from,inCur=d=>{const x=Date.parse(d);return x>=t0&&x<=+R.to},inPrev=d=>{const x=Date.parse(d);return x>=+R.prevFrom&&x<t0};
  const units=a=>a.reduce((s,o)=>s+(o.items||[]).reduce((x,i)=>x+(+i.qty||0),0),0),sum=(a,k="total")=>a.reduce((s,o)=>s+(+o[k]||0),0);
  /* --- sales (orders placed in the period, except cancelled) --- */
  const ord=O.data||[],live=o=>o.status!=="cancelled",cur=ord.filter(o=>live(o)&&inCur(o.created_at)),prev=ord.filter(o=>live(o)&&inPrev(o.created_at));
  const cs=sum(cur),ps=sum(prev),cu=units(cur),pu=units(prev);
- set("tSum",money(cs),"",delta(cs,ps));set("tOrd",String(cur.length),"",delta(cur.length,prev.length));
- set("tUnits",cu+" шт.","",delta(cu,pu));set("tAvg",money(cur.length?cs/cur.length:0),"",delta(cur.length?cs/cur.length:0,prev.length?ps/prev.length:0));
- const canc=ord.filter(o=>o.status==="cancelled"&&inCur(o.created_at));set("tCancel",String(canc.length),(canc.length?"на "+money(sum(canc))+" · ":"")+esc(R.label));
- /* --- chart: by hour for one day, by day up to 92 days, otherwise by week --- */
+ /* chart buckets: by hour for one day, by day up to 92 days, otherwise by week */
  const wk=R.days>92,nB=R.byHour?24:wk?Math.ceil(R.days/7):R.days,d0=new Date(R.from.getFullYear(),R.from.getMonth(),R.from.getDate()),B=[];
  for(let i=0;i<nB;i++)B.push({st:R.byHour?new Date(+R.from+i*3600000):new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()+(wk?i*7:i)),v:0,n:0,u:0});
  const key=d=>{const x=new Date(d);if(R.byHour)return x.getHours();const di=Math.round((new Date(x.getFullYear(),x.getMonth(),x.getDate())-d0)/86400000);return wk?Math.floor(di/7):di};
  cur.forEach(o=>{const b=B[key(o.created_at)];if(b){b.v+=+o.total||0;b.n++;b.u+=units([o])}});
  const mx=Math.max(1,...B.map(b=>b.v)),bl=b=>R.byHour?String(b.st.getHours()).padStart(2,"0")+":00":wk?"тиждень з "+this.dFmt(b.st):this.dFmt(b.st);
+ const sod=new Date();sod.setHours(0,0,0,0);const today=R.to>=sod?sum(cur.filter(o=>Date.parse(o.created_at)>=+sod)):null;
+ const spark=B.length>1?`<svg class="spark" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#385a46" stroke-width="2" vector-effect="non-scaling-stroke" points="${B.map((b,i)=>(i/(B.length-1)*120).toFixed(1)+","+(28-b.v/mx*26).toFixed(1)).join(" ")}"/></svg>`:"";
+ set("tSum",money(cs),today!==null&&!R.byHour?"сьогодні "+money(today):"",delta(cs,ps)+spark);
+ set("tOrd",String(cur.length),"",delta(cur.length,prev.length,false,1));
+ set("tUnits",cu+" шт.","",delta(cu,pu,false,1));
+ set("tAvg",money(cur.length?cs/cur.length:0),"",delta(cur.length?cs/cur.length:0,prev.length?ps/prev.length:0,false,1));
+ const canc=ord.filter(o=>o.status==="cancelled"&&inCur(o.created_at));set("tCancel",String(canc.length),canc.length?"на "+money(sum(canc)):"");
  $("#dbChart").innerHTML=cur.length?`<div class="bars">${B.map(b=>`<div class="cbar" title="${bl(b)}: ${money(b.v)} · ${b.n} замовл. · ${b.u} шт."><i style="height:${b.v?Math.max(3,Math.round(b.v/mx*100)):0}%"></i></div>`).join("")}</div><div class="barlbl"><span>${bl(B[0])}</span><span>макс. ${money(mx)} за ${R.byHour?"годину":wk?"тиждень":"день"}</span><span>${bl(B[B.length-1])}</span></div>`
   :`<div class="empty" style="padding:24px"><b>За цей період замовлень немає</b>Щойно з’являться замовлення, тут буде графік.</div>`;
  /* --- live status --- */
  const op=OP.data||[],cnt=s=>op.filter(o=>o.status===s).length;
- set("tOpen",String(cnt("new")+cnt("confirmed")),"чекають відправлення",`<div class="dbrows"><a href="#/admin/orders?status=new"><span>Нові</span><b>${cnt("new")}</b></a><a href="#/admin/orders?status=confirmed"><span>Підтверджені</span><b>${cnt("confirmed")}</b></a><a href="#/admin/orders?status=shipped"><span>У дорозі</span><b>${cnt("shipped")}</b></a></div>`);
+ set("tOpen",String(cnt("new")+cnt("confirmed")),"",`<div class="dbrows"><a href="#/admin/orders?status=new"><span>Нові</span><b>${cnt("new")}</b></a><a href="#/admin/orders?status=confirmed"><span>Підтверджені</span><b>${cnt("confirmed")}</b></a><a href="#/admin/orders?status=shipped"><span>У дорозі</span><b>${cnt("shipped")}</b></a></div>`);
  const up=UP.data||[],paidCur=ord.filter(o=>live(o)&&inCur(o.created_at)&&["paid","partially_refunded"].includes(o.payment_status));
- set("tPay",money(sum(paidCur,"paid_amount")),"отримано за замовлення періоду",`<div class="dbrows"><a href="#/admin/orders?status=unpaid"><span>Очікує оплати</span><b>${up.length?money(sum(up))+" · "+up.length:"—"}</b></a></div>`);
+ set("tPay",money(sum(paidCur,"paid_amount")),"отримано за період",`<div class="dbrows"><a href="#/admin/orders?status=unpaid"><span>Очікує оплати</span><b>${up.length?money(sum(up)):"—"}</b></a></div>`);
  const act=S.products.filter(p=>p.active),thr=this.lowN(),out=act.filter(p=>p.stock<=0).length,low=act.filter(p=>p.stock>0&&p.stock<=thr).length;
  set("tStock",String(act.length),"товарів на сайті",`<div class="dbrows"><a href="#/admin/products?stock=low"><span>Закінчуються</span><b class="${low?"warn":""}">${low}</b></a><a href="#/admin/products?stock=out"><span>Немає</span><b class="${out?"bad":""}">${out}</b></a></div>`);
  const rv=S.reviews||[],avg=rv.length?rv.reduce((s,r)=>s+(+r.rating||0),0)/rv.length:0,pend=(RV.data||[]).length;
- set("tRev",rv.length?`<span class="dbstars">${"★".repeat(Math.round(avg))}${"☆".repeat(5-Math.round(avg))}</span> ${avg.toFixed(1)}`:"—",rv.length+" опублік."+(pend?` · <a href="#/admin/reviews">${pend} чекає модерації</a>`:""));
+ set("tRev",rv.length?`<span class="dbstars">${"★".repeat(Math.round(avg))}${"☆".repeat(5-Math.round(avg))}</span> ${avg.toFixed(1)}`:"—",rv.length+" відгуків"+(pend?` · <a href="#/admin/reviews">${pend} чекає модерації</a>`:""));
  const th=CT.data||[],unread=th.filter(t=>this.chatUnread(t)),nm=MN.count||0;
- set("tMsg",String(unread.length+nm),"потребують відповіді",`<div class="dbrows"><a href="#/admin/chat"><span>Чат</span><b>${unread.length}</b></a><a href="#/admin/messages"><span>Форма «Contact us»</span><b>${nm}</b></a></div>`);
+ set("tMsg",String(unread.length+nm),"потребують відповіді",`<div class="dbrows"><a href="#/admin/chat"><span>Чат</span><b>${unread.length}</b></a><a href="#/admin/messages"><span>Форма</span><b>${nm}</b></a></div>`);
+ const tg=TG&&TG.data;set("tTg",tg&&tg.enabled?`<span class="dbok">● Підключено</span>`:`<span class="dboff">○ Вимкнено</span>`,tg&&tg.enabled?"сповіщення працюють":`<a href="#/admin/settings">підключити</a>`);
  /* --- returns (counted by the date the return was registered) --- */
  const rt=RT.data||[],isRet=o=>o.returned_at&&o.status==="returned",rc=rt.filter(o=>isRet(o)&&inCur(o.returned_at)),rp=rt.filter(o=>isRet(o)&&inPrev(o.returned_at));
  const refAmt=sum(rt.filter(o=>o.refunded_at&&inCur(o.refunded_at)),"refund_amount");
+ set("tRet",String(rc.length),rc.length?money(sum(rc)):"");
  set("rN",String(rc.length),"",delta(rc.length,rp.length,true));set("rUnits",units(rc)+" шт.",cu?"з "+cu+" проданих за період":"");
  set("rSum",money(sum(rc)),"відшкодовано покупцям: "+money(refAmt));
  const rate=cur.length?rc.length/cur.length*100:0,prate=prev.length?rp.length/prev.length*100:0;
@@ -909,7 +932,8 @@ async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISO
  const lateShip=op.filter(o=>["new","confirmed"].includes(o.status)&&old(o.created_at,48)).length;if(lateShip)issues.push(lateShip+" замовл. не відправлено понад 2 дні");
  const lateChat=unread.filter(t=>old(t.last_customer_at,24)).length;if(lateChat)issues.push(lateChat+" чат без відповіді понад добу");
  if(out)issues.push(out+" товарів немає в наявності");
- const hb=$("#dbHealth");if(hb){hb.className="dbhealth "+(issues.length?"warn":"ok");hb.textContent=issues.length?"Потребує уваги":"Добрий";hb.title=issues.join("\n")||"Нічого не прострочено"}
+ const hb=$("#dbHealth");if(hb){hb.className="dbhealth "+(issues.length?"warn":"ok");hb.textContent=issues.length?"Потребує уваги":"Добрий"}
+ const hn=$("#dbHint");if(hn)hn.textContent=issues.length?issues.join(" · "):"нічого не прострочено";
  /* --- communications --- */
  const C=[...th.filter(t=>t.last_preview).slice(0,3).map(t=>({at:t.last_at,i:"💬",n:t.name||t.email||"Відвідувач",b:t.last_preview,s:"Чат"+(this.chatUnread(t)?" · без відповіді":""),h:"#/admin/chat?t="+t.id})),
   ...(ML.data||[]).map(m=>({at:m.created_at,i:"✉️",n:m.name,b:m.body,s:"Форма"+(m.status==="new"?" · нове":""),h:"#/admin/messages"})),
