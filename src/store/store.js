@@ -44,7 +44,7 @@ function readOpts(p,scope){const L=optList(p);if(!L.length)return{ok:true,opt:nu
 const revsOf=id=>(S.reviews||[]).filter(r=>r.product_id===id);
 function rating(id){const R=revsOf(id);return R.length?{avg:R.reduce((s,r)=>s+(+r.rating||0),0)/R.length,n:R.length}:null}
 function stars(v,size){const pct=Math.max(0,Math.min(100,v/5*100));return `<span class="stars" role="img" aria-label="${(+v).toFixed(1)} out of 5 stars"${size?` style="font-size:${size}px"`:""}><span class="s-bg" aria-hidden="true">★★★★★</span><span class="s-fg" aria-hidden="true" style="width:${pct}%">★★★★★</span></span>`}
-function toggleFav(id){favs=favs.includes(id)?favs.filter(x=>x!==id):[...favs,id];LS.set("favs",favs);badges();document.querySelectorAll(`[data-act="fav"][data-id="${id}"]`).forEach(b=>b.classList.toggle("on",favs.includes(id)))}
+function toggleFav(id){const on=!favs.includes(id);favs=on?[...favs,id]:favs.filter(x=>x!==id);LS.set("favs",favs);badges();favRemote(id,on);document.querySelectorAll(`[data-act="fav"][data-id="${id}"]`).forEach(b=>b.classList.toggle("on",favs.includes(id)))}
 function badges(){$("#cartCount").textContent=cart.reduce((s,l)=>s+(prod(l.id)?l.qty:0),0)||"";$("#favCount").textContent=favs.filter(prod).length||""}
 
 /* ===== search (Amazon-style) ===== */
@@ -494,7 +494,7 @@ document.addEventListener("click",e=>{
   cart:()=>{e.preventDefault();openCart()},
   acctmenu:()=>{e.preventDefault();const w=$("#acctWrap"),o=!w.classList.contains("open");w.classList.toggle("open",o);el.setAttribute("aria-expanded",String(o))},
   pw:()=>{const i=el.parentNode.querySelector("input");i.type=i.type==="password"?"text":"password";el.textContent=i.type==="password"?"Show":"Hide"},
-  signout:async()=>{await sb.auth.signOut();profile=null;toast("Signed out");location.hash="#/account"},
+  signout:async()=>{await sb.auth.signOut();profile=null;favs=[];LS.set("favs",favs);badges();toast("Signed out");location.hash="#/account"},
   cologin:()=>{LS.set("afterLogin","#/checkout")},
   filters:()=>openLayer("filters"),
   more:()=>{shopShown+=12;render()},
@@ -508,6 +508,8 @@ document.addEventListener("click",e=>{
   cancelopen:()=>{const f=document.querySelector(`[data-form="cancelord"][data-no="${el.dataset.no}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("select").focus()}},
   retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   invprint:()=>window.print(),
+  buyagain:()=>buyAgain(+id),
+  delacct:()=>{const f=$('[data-form="delacct"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   oauth:()=>oauthLogin(el.dataset.p),
   invpdf:()=>downloadInvoice(el),
   tg:()=>{copy($("#otext").value);window.open("https://t.me/"+el.dataset.u,"_blank")},
@@ -525,7 +527,7 @@ document.addEventListener("change",e=>{
  else if(el.dataset.act==="optpick"){const fs=el.closest(".optset");if(fs)fs.querySelector(".optval").textContent=el.value;const b=el.closest(".opts");b&&b.classList.remove("need")}
 });
 document.addEventListener("submit",e=>{const f=e.target;const k=f.dataset.form;if(!k)return;e.preventDefault();
- if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k==="retreq")submitReturn(f);else if(k==="cancelord")submitCancel(f);else if(k.startsWith("ac"))acSubmit(k,f)});
+ if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k==="retreq")submitReturn(f);else if(k==="cancelord")submitCancel(f);else if(k==="delacct")deleteAccount(f);else if(k.startsWith("ac"))acSubmit(k,f)});
 function go(f){const cur=new URLSearchParams((location.hash.split("?")[1])||"");const n=new URLSearchParams();if(cur.get("cat"))n.set("cat",cur.get("cat"));const fd=new FormData(f);if(fd.get("q"))n.set("q",fd.get("q"));const sv=fd.get("sort"),def=fd.get("q")?"rel":"pop";if(sv&&sv!==def)n.set("sort",sv);if(fd.get("stock"))n.set("stock","1");location.hash="#/shop"+(n.toString()?"?"+n:"")}
 window.addEventListener("hashchange",()=>{closeLayers(true);closeAcct();closeLightbox();render()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAcct();if(e.key==="Escape"&&$("#overlay").classList.contains("show"))closeLayers()});

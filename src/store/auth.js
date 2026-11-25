@@ -6,10 +6,10 @@ function sbInit(){
  try{if(!window.supabase||!window.supabase.createClient)return;
   sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{flowType:"pkce",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   sb.auth.onAuthStateChange((ev,session)=>{const was=user&&user.id;user=session?session.user:null;if(!user)profile=null;
-   setTimeout(()=>{acctBadge();
+   setTimeout(()=>{acctBadge();if(user&&(was||null)!==user.id)syncFavs();
     if(ev==="PASSWORD_RECOVERY"){location.hash="#/account/reset";return}
     if((was||null)!==(user&&user.id||null)&&/^#\/(account|checkout|orders)/.test(location.hash))render()},0)});
-  sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;authReady=true;acctBadge();
+  sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;authReady=true;acctBadge();if(user)syncFavs();
    if(/[?&]code=|[?&]error/.test(location.search)){const next=(location.hash&&location.hash!=="#/"?location.hash:"")||LS.get("afterLogin","")||"#/account";LS.set("afterLogin","");history.replaceState(null,"",location.pathname+next);if(user)setTimeout(()=>{toast("Signed in");if(location.hash!==next)location.hash=next;else render()},0)}
    if(/^#\/(account|checkout|orders)/.test(location.hash))render()});
  }catch(e){sb=null}}

@@ -42,15 +42,17 @@ function retForm(o){const w=retWindow(o);return `<form class="retform" data-form
  <div class="retmsg"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary">Send return request</button><button type="button" class="btn" data-act="retopen" data-id="${o.id}">Cancel</button></div>
  <p class="small muted" style="margin:0">See our <a class="textlink" href="#/returns" target="_blank">Return policy</a>.</p></form>`}
 function orderTotals(o){const sub=o.subtotal!=null?+o.subtotal:+o.total;return `<div class="ototals"><div class="row small"><span>${t("subtotal")}</span><span>${money(sub)}</span></div><div class="row small"><span>${t("shipping")}</span><span>${+o.shipping?money(o.shipping):t("free")}</span></div><div class="row small"><span>Sales tax${+o.tax_rate?` (${esc(o.customer&&o.customer.state||"")} ${+o.tax_rate}%)`:""}</span><span>${money(o.tax||0)}</span></div><div class="row small"><b>${t("total")}</b><b>${money(o.total)}</b></div></div>`}
+let MY_ORDERS={};
 async function fillOrders(){const box=$("#acMain");if(!box)return;
  const[{data,error},rr]=await Promise.all([sb.from("orders").select("id,order_no,status,items,total,subtotal,shipping,tax,tax_rate,created_at,carrier,tracking_number,shipped_at,customer,delivery_eta,delivered_at,payment_status").order("created_at",{ascending:false}).limit(50),
   sb.from("return_requests").select("id,order_id,status,reason,free_return,created_at,seller_note").order("created_at",{ascending:false})]);
  if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
+ MY_ORDERS={};(data||[]).forEach(o=>MY_ORDERS[o.id]=o);
  const R={};(rr.data||[]).forEach(r=>{if(!R[r.order_id]||R[r.order_id].status==="rejected")R[r.order_id]=r});
  box.innerHTML=`<div class="panel"><h2>My orders</h2>${data.length?data.map(o=>{const r=R[o.id],paid=o.status!=="cancelled",canRet=canReturn(o)&&(!r||r.status==="rejected");
   return `<div class="oblock"><div class="ohead"><div><b>${esc(o.order_no)}</b><span class="muted small"> · ${fmtDate(o.created_at)} · ${o.items.reduce((s,i)=>s+(+i.qty||0),0)} items</span></div><b>${money(o.total)}</b></div>
  ${orderTracker(o)}${r?retStatus(r):""}
- <div class="oacts">${paid?`<a class="btn sm" href="#/account/invoice/${encodeURIComponent(o.order_no)}">🧾 Invoice</a>`:""}${canRet?`<button class="btn sm" data-act="retopen" data-id="${o.id}">↩ Return items</button>`:""}${canCancel(o)?`<button class="btn sm" data-act="cancelopen" data-no="${esc(o.order_no)}">✕ Cancel order</button>`:""}</div>${canRet?retForm(o):""}${canCancel(o)?cancelForm(o):""}${o.status==="shipped"?`<p class="small muted" style="margin:8px 0 0">Returns can be requested after delivery, within ${shipCfg().days} days.</p>`:""}
+ <div class="oacts">${["completed","shipped","cancelled","returned"].includes(o.status)?`<button class="btn sm" data-act="buyagain" data-id="${o.id}">🔁 Buy again</button>`:""}${paid?`<a class="btn sm" href="#/account/invoice/${encodeURIComponent(o.order_no)}">🧾 Invoice</a>`:""}${canRet?`<button class="btn sm" data-act="retopen" data-id="${o.id}">↩ Return items</button>`:""}${canCancel(o)?`<button class="btn sm" data-act="cancelopen" data-no="${esc(o.order_no)}">✕ Cancel order</button>`:""}</div>${canRet?retForm(o):""}${canCancel(o)?cancelForm(o):""}${o.status==="shipped"?`<p class="small muted" style="margin:8px 0 0">Returns can be requested after delivery, within ${shipCfg().days} days.</p>`:""}
  <details class="oitems"><summary>Items${o.customer&&o.customer.address?" & shipping address":""}</summary>${o.items.map(i=>`<div class="row small"><span>${esc(i.name)}${i.opt?` <span class="muted">(${esc(optStr(i.opt,prod(i.id)))})</span>`:""} × ${+i.qty||0}${i.sku?` <span class="muted">· Item # ${esc(i.sku)}</span>`:""}</span><span>${money((+i.price||0)*(+i.qty||0))}</span></div>`).join("")}${orderTotals(o)}${o.customer&&o.customer.address?`<p class="small muted" style="margin:8px 0 0">Ship to: ${esc([o.customer.name,o.customer.address,o.customer.city,[o.customer.state,o.customer.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "))}</p>`:""}</details></div>`}).join(""):`<div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div>`}</div>`}
 async function submitReturn(f){const msg=f.querySelector(".retmsg"),err=h=>{msg.innerHTML=`<div class="note">${h}</div>`};msg.innerHTML="";
  const idx=[...f.querySelectorAll("[name=ri]:checked")].map(x=>+x.value);if(!idx.length)return err("Please choose the item(s) you’d like to return.");
@@ -92,3 +94,16 @@ async function fillInvoice(no){const box=$("#invBox");if(!box)return;
  <table class="invtot"><tr><th>Subtotal</th><td>${money(sub)}</td></tr><tr><th>Shipping</th><td>${+o.shipping?money(o.shipping):"Free"}</td></tr><tr><th>Sales tax${+o.tax_rate?` (${esc(c.state||"")} ${+o.tax_rate}%)`:""}</th><td>${money(o.tax||0)}</td></tr><tr class="grand"><th>Total (USD)</th><td>${money(o.total)}</td></tr>
  ${isPaid?`<tr><th>Paid${o.paid_at?" "+d(o.paid_at):""}</th><td>${money(paidAmt)}</td></tr>`:""}${+o.refund_amount?`<tr><th>Refunded${o.refunded_at?" "+d(o.refunded_at):""}</th><td>−${money(o.refund_amount)}</td></tr>`:""}<tr class="${isPaid?"":"due"}"><th>Balance due</th><td>${money(Math.max(0,Math.round(((+o.total)-paidAmt)*100)/100))}</td></tr></table>${isPaid?"":`<p class="invnote">Payment is due upon receipt. We’ll email you a secure payment link — please include the order number ${esc(o.order_no)} with your payment.</p>`}
  <div class="invfoot">Thank you for shopping with ${esc(st.name)}! Returns are accepted within ${shipCfg().days} days of delivery — see ${esc(SITE_URL.replace(/^https?:\/\//,""))}#/returns. Questions? ${esc(st.email||"")}</div></article>`}
+/* ===== Buy again: adds the order's items that are still available and in stock ===== */
+function buyAgain(id){const o=MY_ORDERS[id];if(!o)return;let added=0;const miss=[];
+ (o.items||[]).forEach(i=>{const p=prod(i.id),nm=i.name||"An item";
+  if(!p||!p.active)return miss.push(nm+" (no longer available)");
+  if(p.stock<=0)return miss.push(nm+" (out of stock)");
+  let opt=null;if(optList(p).length){opt=i.opt&&typeof i.opt==="object"?i.opt:null;if(!opt||!optOk({opt},p))return miss.push(nm+" (options changed — please choose again)")}
+  const line={id:p.id,qty:0,...(opt?{opt}:{})},k=lkey(line);let l=lineByKey(k);if(!l){l=line;cart.push(l)}
+  const can=Math.min(+i.qty||1,lineMax(l));if(can<=0){if(!l.qty)cart=cart.filter(x=>x!==l);return miss.push(nm+" (no more in stock)")}
+  l.qty+=can;added+=can;if(can<(+i.qty||1))miss.push(`${nm} (only ${can} added)`)});
+ setCart(cart);
+ if(!added){toast(miss.length?"These items aren’t available right now":"Nothing to add");return}
+ openCart();const d=$("#cartDrawer .dbody");if(d&&miss.length)d.insertAdjacentHTML("afterbegin",`<div class="note small" style="margin-bottom:10px">Added ${added} item${added===1?"":"s"} from order ${esc(o.order_no)}. Not added: ${miss.map(esc).join("; ")}.</div>`);
+ toast(`Added ${added} item${added===1?"":"s"} to your cart`)}
