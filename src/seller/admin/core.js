@@ -1,7 +1,7 @@
 /* ===== Seller Central · Seller Central core: menu, router, stock helpers, event handlers =====
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
-nav(cur){const L=[["","📊","Дашборд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["returns","🔁","Повернення"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["seo","🔎","SEO"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
+nav(cur){const L=[["","📊","Дашборд"],["orders","🧾","Замовлення"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["customers","👥","Покупці"],["returns","🔁","Повернення"],["reviews","⭐","Відгуки"],["products","📦","Товари"],["suppliers","🏭","Постачальники"],["seo","🔎","SEO"],["categories","🗂","Категорії"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
  return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="returns"?`<span class="navbadge" id="retBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
@@ -19,6 +19,8 @@ view(parts,q){const k=parts[1]||"";
  if(k==="seo")return this.wrap("seo",this.seo(q));
  if(k==="chat")return this.wrap("chat",this.chat(q));
  if(k==="returns")return this.wrap("returns",this.returns(q));
+ if(k==="suppliers")return this.wrap("suppliers",this.suppliers(q));
+ if(k==="supplier")return this.wrap("suppliers",this.supplierEdit(parts[2]));
  return this.wrap("",this.dash())},
 after(parts){
  {const pf=document.querySelector('[data-form="product"]');if(pf){const u=()=>this.marginInfo();pf.cost&&pf.cost.addEventListener("input",u);pf.price&&pf.price.addEventListener("input",u);u()}}
@@ -37,7 +39,7 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
  else if((k==="active"||k==="featured")&&p){p[k]=el.checked;save();toast(el.checked?(k==="active"?"Показано на сайті":"Додано в хіти"):(k==="active"?"Приховано":"Прибрано з хітів"))}
  else if(k==="sel"){el.checked?this.sel.add(id):this.sel.delete(id);$("#selN").textContent="Вибрано: "+this.sel.size}
  else if(k==="selall"){document.querySelectorAll('[data-ach="sel"]').forEach(c=>{c.checked=el.checked;el.checked?this.sel.add(c.dataset.id):this.sel.delete(c.dataset.id)});$("#selN").textContent="Вибрано: "+this.sel.size}
- else if(k==="filtercat"){const f=el.form;const n=new URLSearchParams();const fd=new FormData(f);fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"")}
+ else if(k==="filtercat"){const f=el.form;const n=new URLSearchParams();const fd=new FormData(f);fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));fd.get("sup")&&n.set("sup",fd.get("sup"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"")}
  else if(k==="ostatus"){const v=el.value;el.disabled=true;sb.from("orders").update({status:v}).eq("id",+id).then(({error})=>{el.disabled=false;toast(error?"⚠️ "+error.message:"Статус: "+Admin.ST[v]+(v==="cancelled"?" · товари повернено на склад":""));if(!error){const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.status=v;refreshAdminCatalog();if($("#ordPage"))Admin.fillOrder(+id)}})}
  else if(k==="carrierpick"){const o=el.form.carrier_other;o.hidden=el.value!=="Other";if(!o.hidden)o.focus()}
  else if(k==="oeta"){const v=el.value||null;el.disabled=true;sb.from("orders").update({delivery_eta:v}).eq("id",+id).then(({error})=>{el.disabled=false;if(error)return toast("⚠️ "+error.message);const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.delivery_eta=v;toast(v?"Очікувана доставка: "+Admin.day(v):"Дату доставки прибрано")})}
@@ -88,6 +90,8 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  retForm:()=>{const r=$("#ret-"+id);if(r)r.hidden=!r.hidden},
  retCancel:()=>{const r=$("#ret-"+id);if(r)r.hidden=true},
  navToggle:()=>{const w=el.closest(".admin");if(!w)return;const off=!w.classList.contains("navoff");w.classList.toggle("navoff",off);LS.set("navOff",off);const f=w.querySelector(off?".navrail button":".navhide");f&&f.focus({preventScroll:true})},
+ supNewInline:()=>{e.preventDefault();Admin.supNewInline()},
+ supDel:()=>Admin.supplierDelete(id),
  retSet:()=>Admin.retSet(id,el.dataset.v,el),
  reloadReturns:()=>Admin.fillReturns(new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"requested"),
  custExport:()=>Admin.custExport(),
@@ -105,6 +109,7 @@ submit(k,f){
  if(k==="seosite"){S.settings.seoTitle=f.t.value.trim();S.settings.seoDescription=f.d.value.trim();save();toast("SEO головної збережено ✓");render();return}
  if(k==="dashrange")return this.dashRange(f);
  if(k==="supadd")return this.supAdd(f);
+ if(k==="supplier")return this.supplierSave(f);
  if(k==="opay"||k==="orefund"||k==="onote"||k==="oaddr")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
@@ -116,7 +121,7 @@ submit(k,f){
   const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("orders").update({status:"shipped",carrier,tracking_number:tracking||null,delivery_eta:eta}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Позначено відправленим"+(tracking?" · трек "+tracking:"")+(eta?" · доставка "+Admin.day(eta):""));this.afterOrderChange(id)});return}
  if(k==="tgToken"){const tok=f.token.value.trim();const b=f.querySelector("button");b.disabled=true;sb.rpc("seller_set_telegram_token",{token:tok}).then(({data,error})=>{b.disabled=false;if(!error&&data==="same"){f.reset();toast("Цей токен уже збережено — підключення не змінилось");Admin.tgStatus();return}if(error)return toast(/BAD_TOKEN/.test(error.message)?"⚠️ Це не схоже на токен бота. Скопіюйте його з @BotFather повністю.":"⚠️ "+error.message);f.reset();toast("Токен збережено. Тепер крок 3.");Admin.tgStatus()});return}
- if(k==="aprodfilter"){const fd=new FormData(f),n=new URLSearchParams();fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"");return}
+ if(k==="aprodfilter"){const fd=new FormData(f),n=new URLSearchParams();fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));fd.get("sup")&&n.set("sup",fd.get("sup"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"");return}
  if(k==="catadd"){const n=f.name.value.trim();if(!n)return;let id=translit(n)||uid();if(catOf(id))id+="-"+uid().slice(0,3);S.categories.push({id,name:n,image:""});save();chrome();render();toast("Категорію додано");return}
  if(k==="settings"){delete S.settings.freeFrom;const fd=new FormData(f),NUM={shipStandard:12,shipExpress:25,returnDays:14},R={};let bad="";
   String(fd.get("taxRatesText")||"").split(/[\n;]+/).map(x=>x.trim()).filter(Boolean).forEach(x=>{const m=x.toUpperCase().match(/^([A-Z]{2})\s*[=:\s]\s*(\d+(?:[.,]\d+)?)\s*%?$/);const r=m&&+m[2].replace(",",".");if(!m||r>20)bad=bad||x;else R[m[1]]=r});
@@ -129,9 +134,9 @@ submit(k,f){
   const sk=fd.getAll("sk"),sv=fd.getAll("sv"),on=fd.getAll("on"),ov=fd.getAll("ov");
   const options=on.map((n,i)=>({name:n.trim().slice(0,40),values:[...new Set(String(ov[i]||"").split(",").map(x=>x.trim().slice(0,40)).filter(Boolean))].slice(0,20)})).filter(o=>o.name&&o.values.length).slice(0,5);
   if(new Set(options.map(o=>o.name.toLowerCase())).size!==options.length){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Назви параметрів варіантів мають бути різними</div>';return}
-  const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),supplier:String(fd.get("supplier")||"").trim().slice(0,80),supplierSku:String(fd.get("supplierSku")||"").trim().slice(0,80),cost:fd.get("cost")===""||fd.get("cost")==null?null:Math.max(0,Math.round(Number(fd.get("cost"))*100)/100),supplierUrl:String(fd.get("supplierUrl")||"").trim().slice(0,500),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
+  const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),supplierId:String(fd.get("supplierId")||""),supplierSku:String(fd.get("supplierSku")||"").trim().slice(0,80),cost:fd.get("cost")===""||fd.get("cost")==null?null:Math.max(0,Math.round(Number(fd.get("cost"))*100)/100),supplierUrl:String(fd.get("supplierUrl")||"").trim().slice(0,500),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
   if(data.supplierUrl&&!/^https?:\/\//i.test(data.supplierUrl)){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Посилання на постачальника має починатися з https://</div>';return}
-  if(data.supplierSku){const dup=S.products.find(x=>x.id!==this.draft._for&&(x.supplierSku||"").toLowerCase()===data.supplierSku.toLowerCase()&&(x.supplier||"").toLowerCase()===data.supplier.toLowerCase());if(dup&&!confirm(`SKU постачальника «${data.supplierSku}» уже є в товарі «${dup.name}». Все одно зберегти?`))return}
+  if(data.supplierSku){const dup=S.products.find(x=>x.id!==this.draft._for&&(x.supplierSku||"").toLowerCase()===data.supplierSku.toLowerCase()&&(x.supplierId||"")===data.supplierId);if(dup&&!confirm(`SKU постачальника «${data.supplierSku}» уже є в товарі «${dup.name}». Все одно зберегти?`))return}
   const id=this.draft._for;if(id==="new"){S.products.push({id:uid(),created:Date.now(),...data})}else Object.assign(prod(id),data);
   this.draft=null;save();toast(id==="new"?"Товар створено ✓":"Зміни збережено ✓");location.hash="#/admin/products"}},
 };

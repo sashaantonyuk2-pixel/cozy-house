@@ -26,7 +26,7 @@ for p in _d['products']: p['images']=['photo:'+_inv[u] if u in _inv else u for u
 snap=json.dumps(_d).replace('<','\\u003c')
 body=open('store/body.html').read().replace('<script id="store-data" type="application/json">null</script>','<script id="store-data" type="application/json">'+snap+'</script>')
 # Seller Central sections (core first: it creates the Admin object the others extend)
-ADMIN=['core','dashboard','orders','products','excel','categories','customers','support','returns','reviews','seo','settings','system']
+ADMIN=['core','dashboard','orders','products','suppliers','excel','categories','customers','support','returns','reviews','seo','settings','system']
 SHARED=['shared/i18n.js','shared/photos.js','shared/demo.js','shared/supabase.js','shared/core.js']
 store=open('store/head.html').read()+'\n'+css+body+js(SHARED+['store/account.js','store/chat.js','store/store.js'])+'</script>\n</body></html>'
 open('store.html','w').write(store)

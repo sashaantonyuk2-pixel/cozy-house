@@ -78,8 +78,8 @@ async signOut(msg){
 snapshot(){this.synced={sp:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(supRow(p))])),p:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(toRow(p))])),c:Object.fromEntries(S.categories.map((c,i)=>[c.id,JSON.stringify({id:c.id,name:c.name,image:c.image||null,position:i})])),s:JSON.stringify(S.settings)}},
 pill(t,cls){const p=$("#syncPill");if(p){p.textContent=t;p.className="syncpill "+(cls||"")}},
 /* supplier data lives in its own admin-only table (product_suppliers) and is merged into S.products here */
-async loadSup(st){let m={};try{const{data,error}=await sb.from("product_suppliers").select("product_id,supplier,supplier_sku,cost_price,supplier_url");if(error)throw error;(data||[]).forEach(r=>m[r.product_id]=r)}catch(e){console.warn("suppliers load failed",e&&e.message)}
- st.products.forEach(p=>{const r=m[p.id]||{};p.supplier=r.supplier||"";p.supplierSku=r.supplier_sku||"";p.cost=r.cost_price==null?null:+r.cost_price;p.supplierUrl=r.supplier_url||""});return st},
+async loadSup(st){let m={};st.suppliers=[];try{const[a,b]=await Promise.all([sb.from("product_suppliers").select("product_id,supplier_id,supplier_sku,cost_price,supplier_url"),sb.from("suppliers").select("*").order("name")]);if(a.error)throw a.error;if(b.error)throw b.error;(a.data||[]).forEach(r=>m[r.product_id]=r);st.suppliers=b.data||[]}catch(e){console.warn("suppliers load failed",e&&e.message)}
+ st.products.forEach(p=>{const r=m[p.id]||{};p.supplierId=r.supplier_id||"";p.supplierSku=r.supplier_sku||"";p.cost=r.cost_price==null?null:+r.cost_price;p.supplierUrl=r.supplier_url||""});return st},
 queueSync(){if(this.state!=="ready")return;this.dirty=true;this.pill("Збереження…","busy");clearTimeout(this.tm);this.tm=setTimeout(()=>this.flush(),500)},
 async upload(dataUrl,prefix){
  const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==="image/png"?"png":blob.type==="image/webp"?"webp":"jpg";
@@ -120,8 +120,8 @@ Seller.refresh=async function(){
  if(this.state!=="ready"||this.dirty||this.syncing)return;
  try{const st=await this.loadSup(await fetchCatalog());if(this.dirty||this.syncing)return;const changed=JSON.stringify(st)!==JSON.stringify(S);S=st;this.snapshot();
   if(changed&&/^#\/admin(\/products|\/categories)?\/?(\?.*)?$/.test(location.hash)&&!document.activeElement.matches("input,textarea,select"))render()}catch(e){}};
-const supRow=p=>({product_id:p.id,supplier:String(p.supplier||"").trim()||null,supplier_sku:String(p.supplierSku||"").trim()||null,cost_price:p.cost==null||p.cost===""||isNaN(+p.cost)?null:Math.round(+p.cost*100)/100,supplier_url:String(p.supplierUrl||"").trim()||null});
-const hasSup=r=>!!(r.supplier||r.supplier_sku||r.cost_price!=null||r.supplier_url);
+const supRow=p=>({product_id:p.id,supplier_id:p.supplierId||null,supplier_sku:String(p.supplierSku||"").trim()||null,cost_price:p.cost==null||p.cost===""||isNaN(+p.cost)?null:Math.round(+p.cost*100)/100,supplier_url:String(p.supplierUrl||"").trim()||null});
+const hasSup=r=>!!(r.supplier_id||r.supplier_sku||r.cost_price!=null||r.supplier_url);
 window.Seller=Seller;
 function refreshAdminCatalog(){setTimeout(()=>Seller.refresh(),400)}
 setInterval(()=>{if(document.visibilityState==="visible")Seller.refresh()},60000);
