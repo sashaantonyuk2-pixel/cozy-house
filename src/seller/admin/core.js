@@ -21,6 +21,7 @@ view(parts,q){const k=parts[1]||"";
  if(k==="returns")return this.wrap("returns",this.returns(q));
  return this.wrap("",this.dash())},
 after(parts){
+ {const pf=document.querySelector('[data-form="product"]');if(pf){const u=()=>this.marginInfo();pf.cost&&pf.cost.addEventListener("input",u);pf.price&&pf.price.addEventListener("input",u);u()}}
  const dz=$("#drop");if(dz){const fi=$("#imgFile");dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("over")});dz.addEventListener("dragleave",()=>dz.classList.remove("over"));dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("over");this.addFiles(e.dataTransfer.files)});fi.addEventListener("change",()=>{this.addFiles(fi.files);fi.value=""})}
  document.querySelectorAll("input[type=file][data-up]").forEach(inp=>inp.addEventListener("change",async()=>{const f=inp.files[0];if(!f)return;const up=inp.dataset.up,url=await toDataURL(f,up==="hero"?2400:up==="heroMobile"?1200:900);if(up==="hero")S.settings.heroImage=url;else if(up==="heroMobile")S.settings.heroImageMobile=url;else{const c=catOf(inp.dataset.up);if(c)c.image=url}save();render();toast("Фото оновлено")}));
  const imp=$("#importFile");if(imp)imp.addEventListener("change",()=>this.importFile(imp.files[0]));
@@ -103,6 +104,7 @@ submit(k,f){
  if(k==="seoprod"){const p=prod(f.dataset.id);if(!p)return;p.seoTitle=f.t.value.trim();p.seoDesc=f.d.value.trim();p.imgAlt=f.a.value.trim();save();toast("SEO збережено ✓");render();return}
  if(k==="seosite"){S.settings.seoTitle=f.t.value.trim();S.settings.seoDescription=f.d.value.trim();save();toast("SEO головної збережено ✓");render();return}
  if(k==="dashrange")return this.dashRange(f);
+ if(k==="supadd")return this.supAdd(f);
  if(k==="opay"||k==="orefund"||k==="onote"||k==="oaddr")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
@@ -127,7 +129,9 @@ submit(k,f){
   const sk=fd.getAll("sk"),sv=fd.getAll("sv"),on=fd.getAll("on"),ov=fd.getAll("ov");
   const options=on.map((n,i)=>({name:n.trim().slice(0,40),values:[...new Set(String(ov[i]||"").split(",").map(x=>x.trim().slice(0,40)).filter(Boolean))].slice(0,20)})).filter(o=>o.name&&o.values.length).slice(0,5);
   if(new Set(options.map(o=>o.name.toLowerCase())).size!==options.length){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Назви параметрів варіантів мають бути різними</div>';return}
-  const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
+  const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),supplier:String(fd.get("supplier")||"").trim().slice(0,80),supplierSku:String(fd.get("supplierSku")||"").trim().slice(0,80),cost:fd.get("cost")===""||fd.get("cost")==null?null:Math.max(0,Math.round(Number(fd.get("cost"))*100)/100),supplierUrl:String(fd.get("supplierUrl")||"").trim().slice(0,500),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
+  if(data.supplierUrl&&!/^https?:\/\//i.test(data.supplierUrl)){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Посилання на постачальника має починатися з https://</div>';return}
+  if(data.supplierSku){const dup=S.products.find(x=>x.id!==this.draft._for&&(x.supplierSku||"").toLowerCase()===data.supplierSku.toLowerCase()&&(x.supplier||"").toLowerCase()===data.supplier.toLowerCase());if(dup&&!confirm(`SKU постачальника «${data.supplierSku}» уже є в товарі «${dup.name}». Все одно зберегти?`))return}
   const id=this.draft._for;if(id==="new"){S.products.push({id:uid(),created:Date.now(),...data})}else Object.assign(prod(id),data);
   this.draft=null;save();toast(id==="new"?"Товар створено ✓":"Зміни збережено ✓");location.hash="#/admin/products"}},
 };

@@ -16,7 +16,7 @@ async check(msg){
  if(error||!adm){this.state="noaccess";return this.render0()}
  const{data:aal}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
  if(aal&&aal.currentLevel==="aal2"){
-  try{S=await fetchCatalog();this.snapshot();this.state="ready";this.chrome();if(!/^#\/admin/.test(location.hash))location.hash="#/admin";else render()}
+  try{S=await this.loadSup(await fetchCatalog());this.snapshot();this.state="ready";this.chrome();if(!/^#\/admin/.test(location.hash))location.hash="#/admin";else render()}
   catch(e){this.state="error";this.msg=e.message;this.render0()}
   return}
  const{data:f}=await sb.auth.mfa.listFactors();
@@ -75,8 +75,11 @@ async signOut(msg){
  if(this.dirty||this.syncing){try{await this.flush()}catch(e){}}
  try{await sb.auth.signOut()}catch(e){}S=normalize(demoState());this.state="login";this.msg=typeof msg==="string"?msg:"";this.synced=null;location.hash="#/";this.render0()},
 /* ---- sync S → database ---- */
-snapshot(){this.synced={p:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(toRow(p))])),c:Object.fromEntries(S.categories.map((c,i)=>[c.id,JSON.stringify({id:c.id,name:c.name,image:c.image||null,position:i})])),s:JSON.stringify(S.settings)}},
+snapshot(){this.synced={sp:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(supRow(p))])),p:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(toRow(p))])),c:Object.fromEntries(S.categories.map((c,i)=>[c.id,JSON.stringify({id:c.id,name:c.name,image:c.image||null,position:i})])),s:JSON.stringify(S.settings)}},
 pill(t,cls){const p=$("#syncPill");if(p){p.textContent=t;p.className="syncpill "+(cls||"")}},
+/* supplier data lives in its own admin-only table (product_suppliers) and is merged into S.products here */
+async loadSup(st){let m={};try{const{data,error}=await sb.from("product_suppliers").select("product_id,supplier,supplier_sku,cost_price,supplier_url");if(error)throw error;(data||[]).forEach(r=>m[r.product_id]=r)}catch(e){console.warn("suppliers load failed",e&&e.message)}
+ st.products.forEach(p=>{const r=m[p.id]||{};p.supplier=r.supplier||"";p.supplierSku=r.supplier_sku||"";p.cost=r.cost_price==null?null:+r.cost_price;p.supplierUrl=r.supplier_url||""});return st},
 queueSync(){if(this.state!=="ready")return;this.dirty=true;this.pill("Збереження…","busy");clearTimeout(this.tm);this.tm=setTimeout(()=>this.flush(),500)},
 async upload(dataUrl,prefix){
  const blob=await (await fetch(dataUrl)).blob();const ext=blob.type==="image/png"?"png":blob.type==="image/webp"?"webp":"jpg";
@@ -100,6 +103,8 @@ async flush(){
   for(const r of rows){const prev=this.synced.p[r.id];if(!prev||prev===JSON.stringify(r))continue;
    const was=JSON.parse(prev),ch={};for(const k in r)if(JSON.stringify(r[k])!==JSON.stringify(was[k]))ch[k]=r[k];
    if(Object.keys(ch).length){const{error}=await sb.from("products").update(ch).eq("id",r.id);if(error)throw error}}
+  const sUp=S.products.map(supRow).filter(r=>{const prev=this.synced.sp[r.product_id];return prev!==JSON.stringify(r)&&(hasSup(r)||(prev&&hasSup(JSON.parse(prev))))});
+  if(sUp.length){const{error}=await sb.from("product_suppliers").upsert(sUp);if(error)throw error}
   const pDel=Object.keys(this.synced.p).filter(id=>!S.products.some(p=>p.id===id));
   if(pDel.length){const{error}=await sb.from("products").delete().in("id",pDel);if(error)throw error}
   const cDel=Object.keys(this.synced.c).filter(id=>!S.categories.some(c=>c.id===id));
@@ -113,8 +118,10 @@ async flush(){
 };
 Seller.refresh=async function(){
  if(this.state!=="ready"||this.dirty||this.syncing)return;
- try{const st=await fetchCatalog();if(this.dirty||this.syncing)return;const changed=JSON.stringify(st)!==JSON.stringify(S);S=st;this.snapshot();
+ try{const st=await this.loadSup(await fetchCatalog());if(this.dirty||this.syncing)return;const changed=JSON.stringify(st)!==JSON.stringify(S);S=st;this.snapshot();
   if(changed&&/^#\/admin(\/products|\/categories)?\/?(\?.*)?$/.test(location.hash)&&!document.activeElement.matches("input,textarea,select"))render()}catch(e){}};
+const supRow=p=>({product_id:p.id,supplier:String(p.supplier||"").trim()||null,supplier_sku:String(p.supplierSku||"").trim()||null,cost_price:p.cost==null||p.cost===""||isNaN(+p.cost)?null:Math.round(+p.cost*100)/100,supplier_url:String(p.supplierUrl||"").trim()||null});
+const hasSup=r=>!!(r.supplier||r.supplier_sku||r.cost_price!=null||r.supplier_url);
 window.Seller=Seller;
 function refreshAdminCatalog(){setTimeout(()=>Seller.refresh(),400)}
 setInterval(()=>{if(document.visibilityState==="visible")Seller.refresh()},60000);

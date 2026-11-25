@@ -567,3 +567,7 @@ form[hidden],div[hidden]{display:none!important}
 .invoice.pdfmode{border:0;border-radius:0;max-width:760px;padding:8px}.invitems tr{page-break-inside:avoid}
 .invtot tr.due th,.invtot tr.due td{font-weight:800;color:#a3412b}.invnote{margin:14px 0 0;padding:10px 12px;background:#fbeee7;border-radius:8px;font-size:13px;color:#7a3b26}
 @media (max-width:900px){.invparties{grid-template-columns:repeat(2,1fr)}}
+/* ===== Seller Central · supplier ===== */
+.supadd{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:0 0 14px}
+.supadd .field{width:auto;flex:1 1 160px;padding:8px 10px}.supadd b{font-size:14px}.supadd .help{flex-basis:100%;margin:0}
+small.supsku{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
