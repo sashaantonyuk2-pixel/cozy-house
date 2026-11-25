@@ -270,7 +270,7 @@ function summary(withBtn,st,express){
  const sub=withBtn?cartTotal():coTotal(),T=calcTotals(sub,express,st);
  return `<aside class="summary" id="coSum"><h3>${t("yourOrder")}</h3>${withBtn?"":coLines().map(l=>`<div class="row small"><span>${esc(l.p.name)}${l.opt?` <span class="muted">(${esc(optStr(l.opt,l.p))})</span>`:""} × ${l.qty}${l.p.sku?`<br><span class="muted">Item # ${esc(l.p.sku)}</span>`:""}</span><span>${money(l.p.price*l.qty)}</span></div>`).join("")}
  <div class="row"><span>${t("subtotal")}</span><b>${money(sub)}</b></div><div class="row"><span>${t("shipping")}${T.express?" (Express)":""}</span><span>${money(T.ship)}</span></div>
- <div class="row"><span>Estimated sales tax${!withBtn&&st&&T.rate?` <span class="muted small">(${esc(st)} ${+T.rate.toFixed(3)}%)</span>`:""}</span><span${withBtn||!st?' class="muted small"':""}>${withBtn?"Calculated at checkout":st?money(T.tax):"Select your state"}</span></div>
+ <div class="row"><span>Estimated sales tax${!withBtn&&st?` <span class="muted small">(${T.rate?esc(st)+" "+(+T.rate.toFixed(3))+"%":"no sales tax in "+esc(st)})</span>`:""}</span><span${withBtn||!st?' class="muted small"':""}>${withBtn?"Calculated at checkout":st?money(T.tax):"Select your state"}</span></div>
  <div class="row total"><span>${withBtn?"Estimated total":t("total")}</span><span>${money(withBtn?T.sub+T.ship:T.total)}</span></div>${withBtn?`<a class="btn primary block" style="margin-top:14px" href="#/checkout">${t("checkout")} →</a>`:`<p class="small muted" style="margin:10px 0 0">Sales tax is based on your shipping state.</p>`}</aside>`}
 function viewCheckout(){
  if(!coLines().length){location.hash=/[?&]buy=1/.test(location.hash)?"#/":"#/cart";return""}

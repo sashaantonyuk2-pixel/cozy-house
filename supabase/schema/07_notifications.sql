@@ -100,7 +100,7 @@ end; $function$;
 revoke execute on function public.seller_set_telegram_token(text), public.seller_link_telegram(), public.seller_telegram_status(), public.seller_disable_telegram() from public, anon;
 grant execute on function public.seller_set_telegram_token(text), public.seller_link_telegram(), public.seller_telegram_status(), public.seller_disable_telegram() to authenticated;
 
--- ---------- 🛒 New order ----------
+-- ---------- 🛒 New order (items / shipping / sales tax / total) ----------
 create or replace function private.notify_new_order()
  returns trigger
  language plpgsql
@@ -118,8 +118,13 @@ begin
            || ' × ' || (i->>'qty'), E'\n')
     into lines from jsonb_array_elements(new.items) i;
   msg := '🛒 Нове замовлення ' || new.order_no || E'\n\n' || coalesce(lines, '') ||
-         E'\n\nРазом: $' || to_char(new.total, 'FM999999990.00') ||
-         E'\n' || coalesce(new.customer->>'name', '') || ', ' || coalesce(new.customer->>'phone', '') ||
+         E'\n\nТовари: $' || to_char(coalesce(new.subtotal, new.total), 'FM999999990.00') ||
+         E'\nДоставка: $' || to_char(coalesce(new.shipping, 0), 'FM999999990.00') ||
+         E'\nПодаток' || case when coalesce(new.tax_rate, 0) > 0 then ' (' || coalesce(new.customer->>'state', '') || ' ' || trim(trailing '.' from trim(trailing '0' from new.tax_rate::text)) || '%)' else '' end ||
+         ': $' || to_char(coalesce(new.tax, 0), 'FM999999990.00') ||
+         E'\nРазом: $' || to_char(new.total, 'FM999999990.00') ||
+         E'\n\n' || coalesce(new.customer->>'name', '') || ', ' || coalesce(new.customer->>'phone', '') ||
+         E'\n' || coalesce(new.customer->>'city', '') || ', ' || coalesce(new.customer->>'state', '') ||
          E'\n' || coalesce(new.customer->>'delivery', '') ||
          E'\n\nhttps://sashaantonyuk2-pixel.github.io/cozy-house/seller/#/admin/orders';
   perform net.http_post(

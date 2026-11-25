@@ -20,7 +20,7 @@ const cats=[{id:"decor",name:"Home Décor"},{id:"lighting",name:"Lighting"},{id:
 const P=(id,name,cat,price,old,stock,feat,kind,bg,short,desc,specs,i)=>({id,name,sku:"CHV-"+(100+i),cat,price,oldPrice:old,stock,active:true,featured:feat,images:[PHOTO[kind]||art(kind,bg[0],bg[1])],short,desc,specs,created:now-(20+i)*86400000});
 return{version:2,
 settings:{name:"CozyHouseVibe",tagline:"Cozy things for your home",currency:"$",currencyPos:"before",lang:"en",
-promo:"Ships within 1–2 business days · 14-day returns",shipStandard:12,shipExpress:25,expressOn:false,taxRates:{FL:7},taxShipping:false,returnDays:14,
+promo:"Ships within 1–2 business days · 14-day returns",shipStandard:12,shipExpress:25,expressOn:false,taxRates:{AK:0.0,AL:9.46,AR:9.48,AZ:8.54,CA:9.03,CO:7.89,CT:6.35,DC:6.0,DE:0.0,FL:7.0,GA:7.56,HI:4.5,IA:6.94,ID:6.03,IL:8.98,IN:7.0,KS:8.71,KY:6.0,LA:10.13,MA:6.25,MD:6.0,ME:5.5,MI:6.0,MN:8.14,MO:8.44,MS:7.06,MT:0.0,NC:7.1,ND:7.09,NE:6.98,NH:0.0,NJ:6.625,NM:7.68,NV:8.24,NY:8.54,OH:7.29,OK:9.06,OR:0.0,PA:6.34,RI:7.0,SC:7.49,SD:6.11,TN:9.61,TX:8.2,UT:7.42,VA:5.77,VT:6.43,WA:9.57,WI:5.72,WV:6.6,WY:5.39},taxShipping:false,returnDays:14,
 heroEyebrow:"New season · New collection",heroTitle:"Comfort you can feel",heroText:"Ceramics, textiles and lighting for a home you love coming back to. Thoughtfully chosen pieces in warm, natural tones.",
 phone:"",email:"cozyhousevibe3@gmail.com",telegram:"",viber:"",instagram:"",hours:"Mon–Fri 9am–6pm",
 deliveryOptions:"Standard shipping (3–5 business days)\nExpress shipping (1–2 business days)",

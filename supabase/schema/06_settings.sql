@@ -2,7 +2,7 @@
 -- 06 · Store settings: one row (id = 1) with all settings as JSON
 -- (name, email, address, banner, shipping texts, legal pages, SEO, lowStock …)
 -- Shipping & tax keys read by private.prepare_order: shipStandard (12), expressOn (false), shipExpress (25),
--- taxRates ({"FL": 7} — percent by state), taxShipping (false); returnDays (14) is read by private.return_guard.
+-- taxRates (percent by destination state: state rate + average local rate, Tax Foundation July 1 2026; FL 7; AK/DE/MT/NH/OR 0), taxShipping (false); returnDays (14) is read by private.return_guard.
 -- =====================================================================
 
 create table if not exists public.store_settings (
