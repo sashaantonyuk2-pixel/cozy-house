@@ -8,6 +8,10 @@
 
 <!-- NEW ENTRIES BELOW -->
 
+### 25.11.2026 — Увімкнено вхід через Google
+- Створено застосунок Google (Google Cloud, проєкт «CozyHouseVibe», екран згоди з посиланнями на сайт, Privacy Policy і Terms) і ввімкнено провайдера Google у Supabase → Authentication. На сторінках Sign in і Create account з’явилася кнопка **«Continue with Google»**. Перевірено: Supabase правильно переадресовує на вхід Google і назад на сайт.
+- Facebook ще не підключено (кнопка з’явиться автоматично після ввімкнення — див. `docs/social-login.md`).
+
 ### 25.11.2026 — Вхід і реєстрація через Google та Facebook (готово, чекає ввімкнення)
 - На сторінках **Sign in** і **Create account** — кнопки «Continue / Sign up with Google» і «… with Facebook» (з логотипами). Вони з’являються автоматично, щойно провайдер увімкнено в Supabase (зараз увімкнено лише email, тому кнопок не видно).
 - Після входу через Google/Facebook покупець повертається туди, звідки почав (напр. на оформлення замовлення); профіль створюється автоматично з іменем з акаунта.
