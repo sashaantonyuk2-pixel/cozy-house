@@ -521,6 +521,21 @@ form[hidden],div[hidden]{display:none!important}
 .dbhint{font-size:12.5px;color:var(--muted)}
 .dbv .dbok{font-size:15px;color:#2f7d4a}.dbv .dboff{font-size:15px;color:var(--muted)}
 .dbt .spark{display:block;width:100%;height:30px;margin-top:6px}
+/* dashboard: nothing may stick out — big amounts shrink to fit their tile, long text wraps, the period switch fits narrow phones */
+.dbt{container-type:inline-size}
+.dbv{font-size:min(23px,max(15px,12.5cqi))}
+.dbl{overflow-wrap:anywhere}
+.dbs,.dbd{overflow-wrap:anywhere}
+.dbrows a{align-items:baseline}.dbrows a span{min-width:0;overflow-wrap:anywhere}.dbrows a b{flex:none;white-space:nowrap}
+.dbreason span,.dbreason>:first-child{min-width:0;overflow-wrap:anywhere}
+.dbact b,.dbact span{overflow-wrap:anywhere}
+.dbhead h1{min-width:0;overflow-wrap:anywhere}
+.dbper .seg{max-width:100%;overflow-x:auto;scrollbar-width:none}.dbper .seg::-webkit-scrollbar{display:none}
+.dbper .seg button{white-space:nowrap;flex:none}
+.dbchart{overflow:hidden}
+@media(max-width:760px){.dbper{width:100%}.dbper .seg{display:flex;width:100%}.dbper .seg button{flex:1 1 auto;padding:7px 6px;font-size:12.5px}.dbper .btn{width:100%;justify-content:center}
+ .dbrange{width:100%}.dbrange label{flex:1 1 140px}.dbrange .field{width:100%;min-width:0}.dbhead h1{font-size:19px}}
+@media(max-width:400px){.dbper .seg{flex-wrap:wrap;overflow:visible}.dbper .seg button{flex:1 1 30%}.dbt{padding:10px 10px}.dbreason{grid-template-columns:1fr 60px 24px}}
 /* hide / show the Seller Central side menu */
 .navhide{display:flex;align-items:center;gap:6px;width:100%;border:0;background:none;padding:6px 12px 8px;font-size:12.5px;font-weight:650;color:var(--muted);cursor:pointer;border-radius:8px}
 .navhide:hover{background:#f4f6f1;color:var(--ink)}
@@ -532,6 +547,9 @@ form[hidden],div[hidden]{display:none!important}
 @media (max-width:860px){.navhide span{display:none}.navhide{width:auto;flex:none;padding:10px 12px}
  .admin.navoff{grid-template-columns:1fr}.navrail button{position:static}}
 .shell.admin.navoff{max-width:1480px}
+/* .admin sets padding:28px 0 60px, which wiped the side padding of .shell — content (e.g. «Додати товар») touched the window edge, most visibly with the menu hidden */
+.shell.admin{padding-left:24px;padding-right:24px}
+@media(max-width:860px){.shell.admin{padding-left:16px;padding-right:16px}}
 /* ===== checkout: shipping options ===== */
 .radio label.shipopt{display:flex;align-items:center;gap:10px}.shipopt span{flex:1}.shipopt b{white-space:nowrap}
 /* ===== My orders: actions, totals, returns ===== */
