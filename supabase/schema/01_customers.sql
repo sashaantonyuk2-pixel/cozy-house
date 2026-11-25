@@ -7,6 +7,7 @@ create table if not exists public.profiles (
   full_name text,
   phone text,
   address_line text,
+  address_line2 text,
   city text,
   state text,
   zip text,
@@ -15,6 +16,7 @@ create table if not exists public.profiles (
   constraint profiles_pkey primary key (id),
   constraint profiles_id_fkey foreign key (id) references auth.users(id) on delete cascade,
   constraint profiles_address_line_check check ((char_length(address_line) <= 200)),
+  constraint profiles_address_line2_check check ((char_length(address_line2) <= 60)),
   constraint profiles_city_check check ((char_length(city) <= 100)),
   constraint profiles_full_name_check check ((char_length(full_name) <= 120)),
   constraint profiles_phone_check check ((char_length(phone) <= 40)),
@@ -75,7 +77,7 @@ begin
       (array_agg(nullif(c->>'email', '') order by created_at desc))[1] as em
     from ord group by k),
   acc as (
-    select lower(u.email) as k, p.full_name, p.phone, p.address_line, p.city, p.state, p.zip, u.created_at
+    select lower(u.email) as k, p.full_name, p.phone, concat_ws(', ', nullif(p.address_line, ''), nullif(p.address_line2, '')) as address_line, p.city, p.state, p.zip, u.created_at
       from auth.users u left join public.profiles p on p.id = u.id)
   select coalesce(agg.k, acc.k),
          coalesce(nullif(acc.full_name, ''), agg.nm),

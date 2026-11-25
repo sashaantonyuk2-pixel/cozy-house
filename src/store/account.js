@@ -9,14 +9,33 @@ function viewAccount(parts){
   <div id="acMain"><p class="muted">Loading…</p></div></div></div>`;
  setTimeout(()=>sub==="orders"?fillOrders():fillProfile(),0);
  return el}
+/* signed in with email + password (not only Google / Facebook) */
+function hasPw(){const u=user||{};return (u.identities||[]).some(i=>i.provider==="email")||((u.app_metadata||{}).providers||[]).includes("email")}
+const pwf=(k,l,ac,full)=>`<div class="${full?"full":""}"><label>${l}</label><div class="pw"><input class="field" name="${k}" type="password" autocomplete="${ac}" maxlength="72" required><button type="button" class="pwtoggle" data-act="pw">Show</button></div></div>`;
 async function fillProfile(){const box=$("#acMain");if(!box)return;const p=await loadProfile()||{};
- const f=(k,l,o={})=>`<div class="${o.full?"full":""}"><label>${l}</label><input class="field" name="${k}" value="${esc(p[k]||"")}" autocomplete="${o.ac||"off"}" maxlength="${o.max||100}" ${o.type?`type="${o.type}"`:""}></div>`;
+ const f=(k,l,o={})=>`<div class="${o.full?"full":""}"><label>${l}</label><input class="field" name="${k}" value="${esc(p[k]||"")}" autocomplete="${o.ac||"off"}" maxlength="${o.max||100}" ${o.type?`type="${o.type}"`:""}${o.ph?` placeholder="${o.ph}"`:""}></div>`;
  box.innerHTML=`<form class="panel" data-form="acProfile"><h2>Profile</h2><div class="form">${f("full_name","Full name",{full:true,ac:"name",max:120})}${f("phone","Phone",{ac:"tel",type:"tel",max:40})}<div><label>Email</label><input class="field" value="${esc(user.email)}" disabled></div>
-  ${f("address_line","Street address",{full:true,ac:"street-address",max:200})}${f("city","City",{ac:"address-level2"})}${f("state","State",{ac:"address-level1",max:60})}${f("zip","ZIP code",{ac:"postal-code",max:20})}</div>
-  <p class="help">We’ll fill these in for you at checkout.</p><div id="acMsg"></div><button class="btn primary" style="margin-top:8px">Save changes</button></form>
+  ${f("address_line","Street address",{full:true,ac:"address-line1",max:200,ph:"123 Main St"})}${f("address_line2","Apartment, suite, unit, floor <span class=\"muted small\">(optional)</span>",{full:true,ac:"address-line2",max:60,ph:"Apt 4B"})}${f("city","City",{ac:"address-level2"})}${f("state","State",{ac:"address-level1",max:60})}${f("zip","ZIP code",{ac:"postal-code",max:20})}</div>
+  <p class="help">We’ll fill these in for you at checkout.</p><div id="acMsg"></div><button class="btn primary" style="margin-top:8px">Save changes</button></form>${hasPw()?`<form class="panel" data-form="acPassword" novalidate><h2>Change password</h2><div class="form">
+  ${pwf("current","Current password","current-password",true)}${pwf("password","New password","new-password")}${pwf("password2","Repeat new password","new-password")}</div>
+  <p class="help">At least 8 characters. <a class="textlink" href="#/account/forgot">Forgot your current password?</a></p><div class="pwmsg"></div><button class="btn" style="margin-top:8px">Update password</button></form>`:""}
   <div class="panel dangerzone"><h2>Delete account</h2><p class="small" style="margin:0 0 10px">Permanently delete your account, saved details and wishlist. Past orders stay in our records for tax and accounting, but will no longer be linked to you. This can’t be undone.</p>
   <button class="btn danger sm" data-act="delacct">Delete my account</button>
   <form class="stack" data-form="delacct" hidden style="margin-top:12px"><label class="lbl">Type <b>DELETE</b> to confirm</label><input class="field" name="confirm" autocomplete="off" placeholder="DELETE" style="max-width:220px"><div class="delmsg"></div><div><button class="btn danger">Permanently delete account</button></div></form></div>`}
+/* ===== change password (email accounts): check the current password first, then set the new one ===== */
+async function changePassword(f){const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button:not(.pwtoggle)"),box=f.querySelector(".pwmsg");
+ const say=(t,ok)=>{box.innerHTML=`<div class="${ok?"okbox":"note"}" style="margin-bottom:4px">${t}</div>`};
+ if(!fd.current)return say("Enter your current password.");
+ if(String(fd.password).length<8)return say("New password must be at least 8 characters.");
+ if(fd.password!==fd.password2)return say("New passwords don’t match.");
+ if(fd.password===fd.current)return say("New password must be different from the current one.");
+ btn.disabled=true;try{
+  const chk=await sb.auth.signInWithPassword({email:user.email,password:fd.current});
+  if(chk.error){btn.disabled=false;return say(/invalid/i.test(chk.error.message)?"Current password is incorrect.":esc(authErr(chk.error)))}
+  const{error}=await sb.auth.updateUser({password:fd.password});btn.disabled=false;
+  if(error)return say(esc(authErr(error)));
+  f.reset();say("Password updated ✓",true);toast("Password updated")}
+ catch(e){btn.disabled=false;say(esc(authErr(e)))}}
 /* ===== wishlist saved in the account (same list on every device) ===== */
 async function syncFavs(){if(!sb||!user)return;try{
  const{data,error}=await sb.from("wishlists").select("product_id");if(error)throw error;
@@ -34,10 +53,11 @@ async function deleteAccount(f){const msg=f.querySelector(".delmsg"),btn=f.query
  try{await sb.auth.signOut({scope:"local"})}catch(e){}
  user=null;profile=null;favs=[];LS.set("favs",favs);LS.set("buyer",{});badges();acctBadge();toast("Your account has been deleted");location.hash="#/"}
 async function acSubmit(k,f){
+ if(k==="acPassword")return changePassword(f);
  if(k!=="acProfile")return authSubmit(k,f);
  const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button.primary");const busy=b=>{btn.disabled=b};
  try{
- if(k==="acProfile"){busy(true);const row={id:user.id};["full_name","phone","address_line","city","state","zip"].forEach(x=>row[x]=String(fd[x]||"").trim()||null);
+ if(k==="acProfile"){busy(true);const row={id:user.id};["full_name","phone","address_line","address_line2","city","state","zip"].forEach(x=>row[x]=String(fd[x]||"").trim()||null);
   const{data,error}=await sb.from("profiles").upsert(row).select().maybeSingle();busy(false);if(error)return acMsg(esc(authErr(error)));profile=data;
   if(row.full_name)sb.auth.updateUser({data:{full_name:row.full_name}}).catch(()=>{});const n=$("#acName");if(n)n.textContent=row.full_name||"";acMsg("Saved ✓",true);return}
  }catch(e){busy(false);acMsg(esc(authErr(e)))}}

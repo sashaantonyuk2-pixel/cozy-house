@@ -278,7 +278,7 @@ function viewCheckout(){
  if(!coLines().length){location.hash=/[?&]buy=1/.test(location.hash)?"#/":"#/cart";return""}
  const o=s=>(s||"").split("\n").map(x=>x.trim()).filter(Boolean);let d=LS.get("buyer",{});
  if(user&&!profile){loadProfile().then(()=>{if(location.hash.startsWith("#/checkout"))render()})}
- if(user&&profile)d={...d,name:profile.full_name||d.name,phone:profile.phone||d.phone,email:user.email,city:profile.city||d.city,address:profile.address_line||d.address,state:profile.state||d.state,zip:profile.zip||d.zip};
+ if(user&&profile)d={...d,name:profile.full_name||d.name,phone:profile.phone||d.phone,email:user.email,city:profile.city||d.city,address:profile.address_line||d.address,address2:profile.address_line?(profile.address_line2||""):d.address2,state:profile.state||d.state,zip:profile.zip||d.zip};
  return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/cart">${t("cart")}</a> / ${t("checkout")}</div><h1>${t("checkoutT")}</h1></div></div>
  <div class="shell cartgrid"><form class="stack" data-form="checkout" novalidate>${isBuyNow()?`<div class="signhint buynowbar">⚡ <b>Buy now:</b> you’re checking out just this item.${cartLines().length?` Your cart (${cartLines().reduce((s,l)=>s+l.qty,0)}) is saved — <a class="textlink" href="#/cart">go to cart</a>.`:""}</div>`:""}${sb&&!user?`<div class="signhint">Have an account? <a class="textlink" href="#/account" data-act="cologin">Sign in</a> for faster checkout — or continue as a guest.</div>`:""}<div class="panel"><h2>${t("contactsT")}</h2><div class="form">
  <div class="full"><label>Full name <span class="req">*</span></label><input class="field" name="name" autocomplete="name" maxlength="120" value="${esc(d.name)}" required></div>
