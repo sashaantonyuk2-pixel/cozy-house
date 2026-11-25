@@ -8,6 +8,10 @@
 
 <!-- NEW ENTRIES BELOW -->
 
+### 25.11.2026 — Seller Central: Analytics section (anonymous visit stats, funnel, sources, home blocks, products, search) + dashboard card, privacy policy update (авто)
+- Змінені файли: `index.html`, `seller/index.html`, `src/build.py`, `src/seller/admin/analytics.js`, `src/seller/admin/core.js`, `src/seller/admin/dashboard.js`, `src/seller/seller.js`, `src/shared/demo.js`, `src/shared/style.css`, `src/store/orders.js`, `src/store/store.js`, `src/store/track.js`, `supabase/schema/13_analytics.sql`
+- Коміт: [26d218d](https://github.com/sashaantonyuk2-pixel/cozy-house/commit/26d218d341c1ea87774d9ad8ad953b3ef65cb21a)
+
 ### 25.11.2026 — Кабінет продавця: дашборд адаптовано під різні екрани
 - **Відступи по краях:** вміст кабінету більше не впирається в край вікна — найпомітніше було при схованому лівому меню (кнопка «Додати товар» стояла впритул до краю). Тепер 24 px з кожного боку (16 px на телефоні).
 - **Плитки показників:** великі суми (напр. $1,363,596.96) більше не обрізаються «…» — шрифт автоматично зменшується під ширину плитки.
