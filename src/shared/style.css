@@ -548,7 +548,7 @@ form[hidden],div[hidden]{display:none!important}
 .invfrom{display:flex;gap:12px;align-items:flex-start}.invfrom img{border-radius:10px}.invname{font:22px Georgia,serif}.invfrom p{margin:4px 0 0;color:#555;font-size:13px}
 .invmeta h1{font:600 28px/1 Georgia,serif;margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em;text-align:right}
 .invmeta table{border-collapse:collapse;font-size:13px}.invmeta th{text-align:left;color:#666;font-weight:600;padding:2px 14px 2px 0}.invmeta td{text-align:right;padding:2px 0}
-.invparties{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:20px 0}.invparties h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#777;margin:0 0 4px}.invparties p{margin:0;font-size:13.5px}
+.invparties{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:20px 0}.invparties h3{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#777;margin:0 0 4px}.invparties p{margin:0;font-size:13.5px}
 .invitems{width:100%;border-collapse:collapse}.invitems th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#666;border-bottom:1px solid #ccc;padding:8px 6px}
 .invitems td{border-bottom:1px solid #eee;padding:9px 6px;vertical-align:top}.invitems .num{text-align:right;white-space:nowrap}.invitems small{color:#777}
 .invtot{margin:14px 0 0 auto;border-collapse:collapse;min-width:300px}.invtot th{text-align:left;font-weight:500;color:#555;padding:4px 20px 4px 0}.invtot td{text-align:right;padding:4px 0;white-space:nowrap}
@@ -566,3 +566,4 @@ form[hidden],div[hidden]{display:none!important}
 @media (max-width:760px){.retgrid{grid-template-columns:1fr}}
 .invoice.pdfmode{border:0;border-radius:0;max-width:760px;padding:8px}.invitems tr{page-break-inside:avoid}
 .invtot tr.due th,.invtot tr.due td{font-weight:800;color:#a3412b}.invnote{margin:14px 0 0;padding:10px 12px;background:#fbeee7;border-radius:8px;font-size:13px;color:#7a3b26}
+@media (max-width:900px){.invparties{grid-template-columns:repeat(2,1fr)}}
