@@ -187,3 +187,48 @@ as $function$
 $function$;
 revoke execute on function public.track_order(text, text) from public;
 grant execute on function public.track_order(text, text) to anon, authenticated;
+
+-- Customer cancels an order before it ships (signed-in owner, or guest with order number + email).
+-- Stock goes back via private.order_status_change; the seller gets a Telegram alert (refund reminder if it was paid).
+create or replace function public.cancel_order(p_no text, p_email text default null, p_reason text default null)
+ returns jsonb
+ language plpgsql
+ security definer
+ set search_path to ''
+as $function$
+declare o public.orders%rowtype; uid uuid := auth.uid(); why text; s record; tok text; paid boolean;
+begin
+  select * into o from public.orders where order_no = upper(btrim(coalesce(p_no, ''))) for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if not ((uid is not null and o.user_id = uid)
+          or (btrim(coalesce(p_email, '')) <> '' and lower(btrim(coalesce(o.customer->>'email', ''))) = lower(btrim(p_email)))) then
+    raise exception 'NOT_FOUND';
+  end if;
+  if o.status = 'cancelled' then raise exception 'ALREADY_CANCELLED'; end if;
+  if o.status not in ('new', 'confirmed') then raise exception 'ALREADY_SHIPPED'; end if;
+  why := nullif(left(btrim(coalesce(p_reason, '')), 200), '');
+  paid := o.payment_status in ('paid', 'partially_refunded');
+  update public.orders
+     set status = 'cancelled',
+         admin_note = left(concat_ws(E'\n', nullif(admin_note, ''), 'Cancelled by customer ' || to_char(now() at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI') || coalesce(': ' || why, '')), 4000)
+   where id = o.id;
+  begin
+    select * into s from private.notify_settings where id = 1;
+    select decrypted_secret into tok from vault.decrypted_secrets where name = 'telegram_bot_token';
+    if coalesce(s.enabled, false) and s.telegram_chat_id is not null and tok is not null then
+      perform net.http_post(
+        url := 'https://api.telegram.org/bot' || tok || '/sendMessage',
+        body := jsonb_build_object('chat_id', s.telegram_chat_id, 'disable_web_page_preview', true,
+          'text', '❌ Покупець скасував замовлення ' || o.order_no || ' ($' || to_char(o.total, 'FM999999990.00') || ')' ||
+                  coalesce(E'\nПричина: ' || why, '') ||
+                  case when paid then E'\n💳 Замовлення було оплачене — поверніть кошти покупцю.' else '' end ||
+                  E'\nТовар повернувся на склад.' ||
+                  E'\n\nhttps://sashaantonyuk2-pixel.github.io/cozy-house/seller/#/admin/order/' || o.id),
+        headers := '{"Content-Type":"application/json"}'::jsonb, timeout_milliseconds := 15000);
+    end if;
+  exception when others then null;
+  end;
+  return jsonb_build_object('order_no', o.order_no, 'status', 'cancelled', 'refund_due', paid);
+end; $function$;
+revoke execute on function public.cancel_order(text, text, text) from public;
+grant execute on function public.cancel_order(text, text, text) to anon, authenticated;

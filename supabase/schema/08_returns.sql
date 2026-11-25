@@ -1,5 +1,6 @@
 -- =====================================================================
 -- 08 · Returns: customer return requests with photos / video (needs 00, 04, 06, 07)
+-- Only for delivered orders (status 'completed'), within returnDays of delivery. Before shipping the customer cancels instead (public.cancel_order).
 -- Flow: requested → approved / rejected → received (stock back) → refunded
 -- Free return shipping for "defective" and "poor_condition"; the customer pays for the others.
 -- =====================================================================
@@ -53,10 +54,10 @@ declare o record; base timestamptz; days int; num text; it jsonb; oi jsonb; idx 
 begin
   select * into o from public.orders where id = new.order_id;
   if not found or o.user_id is null or o.user_id is distinct from auth.uid() then raise exception 'NOT_YOUR_ORDER'; end if;
-  if o.status not in ('shipped', 'completed') then raise exception 'NOT_RETURNABLE'; end if;
+  if o.status <> 'completed' then raise exception 'NOT_DELIVERED'; end if;   -- returns only after delivery
   select s.data->>'returnDays' into num from public.store_settings s where s.id = 1;
   days := case when num ~ '^\d{1,3}$' then num::int else 14 end;
-  base := coalesce(o.delivered_at, o.shipped_at + interval '7 days', o.created_at + interval '10 days');
+  base := coalesce(o.delivered_at, now());
   if now() > base + make_interval(days => days) then raise exception 'RETURN_WINDOW_CLOSED'; end if;
   if exists (select 1 from public.return_requests r where r.order_id = new.order_id and r.status <> 'rejected') then raise exception 'ALREADY_REQUESTED'; end if;
   if jsonb_typeof(new.items) <> 'array' or jsonb_array_length(new.items) = 0 then raise exception 'NO_ITEMS'; end if;

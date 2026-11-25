@@ -344,7 +344,7 @@ function stateCode(v){v=String(v||"").trim();if(!v)return"";const u=v.toUpperCas
 const fmtDay=s=>{if(!s)return"";const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})};
 function payLine(o){const k=o.payment_status;if(!k||o.status==="cancelled")return"";return k==="unpaid"?`<div class="otrk-pay unpaid">💳 Awaiting payment — we’ll email you a secure payment link. Questions? <a class="textlink" href="#/contacts">Contact us</a>.</div>`:k==="paid"?`<div class="otrk-pay paid">💳 Payment received — thank you!</div>`:`<div class="otrk-pay">💳 ${k==="refunded"?"Refunded":"Partially refunded"}. Refunds can take 5–10 business days to appear.</div>`}
 function orderTracker(o){
- if(o.status==="cancelled"||o.status==="returned")return payLine(o)+ `<div class="otrk-off">${o.status==="cancelled"?"This order was cancelled.":"This order was returned."}${o.status==="returned"?" Your refund is being processed.":""}</div>`;
+ if(o.status==="cancelled"||o.status==="returned")return payLine(o)+ `<div class="otrk-off">${o.status==="cancelled"?"This order was cancelled."+(["paid","partially_refunded"].includes(o.payment_status)?" Your payment will be refunded to the original payment method within 5 business days.":""):"This order was returned."}${o.status==="returned"?" Your refund is being processed.":""}</div>`;
  const steps=[["new","Order placed"],["confirmed","Confirmed"],["shipped","Shipped"],["completed","Delivered"]],idx=Math.max(0,steps.findIndex(s=>s[0]===o.status));
  const tu=o.tracking_number?trackUrl(o.carrier,o.tracking_number):"";
  return payLine(o)+`<ol class="otrk" aria-label="Order progress">${steps.map(([k,l],i)=>`<li class="${i<idx?"done":i===idx?"cur":""}"${i===idx?' aria-current="step"':""}><span class="dot" aria-hidden="true">${i<idx||(i===idx&&k==="completed")?"✓":""}</span><b>${l}</b>${k==="new"&&o.created_at?`<small>${fmtDate(o.created_at)}</small>`:k==="shipped"&&o.shipped_at?`<small>${fmtDate(o.shipped_at)}</small>`:k==="completed"&&o.delivered_at?`<small>${fmtDate(o.delivered_at)}</small>`:k==="completed"&&o.delivery_eta?`<small>Expected ${fmtDay(o.delivery_eta)}</small>`:""}</li>`).join("")}</ol>
@@ -364,6 +364,7 @@ async function trackSubmit(f){
  if(error||!data){box.innerHTML=`<div class="note" style="margin-top:14px">We couldn’t find an order with that number and email. Please check both — the order number is in your confirmation and starts with CHV-.</div>`;return}
  box.innerHTML=`<div class="panel" style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><span class="eyebrow">Order ${esc(data.order_no)}</span><div class="muted small">Placed ${fmtDate(data.created_at)}${data.delivery?" · "+esc(data.delivery):""}</div></div><b>${money(data.total)}</b></div>
  ${orderTracker(data)}<div class="otrk-items">${(data.items||[]).map(i=>`<div class="row small"><span>${esc(i.name)}${i.opt?` <span class="muted">(${esc(optStr(i.opt,prod(i.id)))})</span>`:""} × ${+i.qty||0}${(prod(i.id)||{}).sku?` <span class="muted">· Item # ${esc(prod(i.id).sku)}</span>`:""}</span><span>${money((+i.price||0)*(+i.qty||0))}</span></div>`).join("")}</div>
+ ${canCancel(data)?`<div class="oacts"><button class="btn sm" data-act="cancelopen" data-no="${esc(data.order_no)}">✕ Cancel order</button></div>${cancelForm(data,email)}`:data.status==="shipped"?`<p class="small muted" style="margin:10px 0 0">Returns can be requested after delivery, within ${shipCfg().days} days.</p>`:""}
  <p class="small muted" style="margin:12px 0 0">Questions about this order? <a class="textlink" href="#/contacts">Contact us</a> and include your order number.</p></div>`}
 /* ===== reviews on the product page ===== */
 function reviewsHtml(p){
@@ -466,6 +467,7 @@ document.addEventListener("click",e=>{
   mq:()=>{const l=lineByKey(el.dataset.k);if(!l)return;const mx=lineMax(l);l.qty+=+el.dataset.d;if(l.qty<1)cart=cart.filter(x=>x!==l);else l.qty=Math.min(mx,l.qty);setCart(cart);renderMini();if(/^#\/(cart|checkout)/.test(location.hash))render()},
   mrm:()=>{const k=el.dataset.k;setCart(cart.filter(l=>lkey(l)!==k));renderMini();if(/^#\/(cart|checkout)/.test(location.hash))render()},
   copyorder:()=>{copy($("#otext").value)},
+  cancelopen:()=>{const f=document.querySelector(`[data-form="cancelord"][data-no="${el.dataset.no}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("select").focus()}},
   retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   invprint:()=>window.print(),
   invpdf:()=>downloadInvoice(el),
@@ -474,6 +476,7 @@ document.addEventListener("click",e=>{
  if(H[a])H[a]();
 });
 document.addEventListener("change",e=>{
+ if(e.target.matches&&e.target.matches(".filepick input[type=file]")){const n=[...e.target.files].map(x=>x.name),s=e.target.parentNode.querySelector(".filenames");if(s)s.textContent=n.length?(n.length===1?n[0]:n.length+" files: "+n.join(", ")):"No files selected"}
  {const f=e.target.form;if(f&&f.dataset.form==="checkout"&&(e.target.name==="state"||e.target.name==="delivery")){const sm=$("#coSum");if(sm)sm.outerHTML=summary(false,f.state.value,/express/i.test((f.querySelector("[name=delivery]:checked")||{}).value||""))}}
  const el=e.target;
  if(el.dataset.act==="sortchange"){const f=el.form;go(f)}
@@ -483,7 +486,7 @@ document.addEventListener("change",e=>{
  else if(el.dataset.act==="optpick"){const fs=el.closest(".optset");if(fs)fs.querySelector(".optval").textContent=el.value;const b=el.closest(".opts");b&&b.classList.remove("need")}
 });
 document.addEventListener("submit",e=>{const f=e.target;const k=f.dataset.form;if(!k)return;e.preventDefault();
- if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k==="retreq")submitReturn(f);else if(k.startsWith("ac"))acSubmit(k,f)});
+ if(k==="shopsearch")go(f);else if(k==="price"){const mn=f.min.value.trim(),mx=f.max.value.trim();let lo=mn===""?"":Math.max(0,+mn),hi=mx===""?"":Math.max(0,+mx);if(lo!==""&&hi!==""&&lo>hi)[lo,hi]=[hi,lo];closeLayers(true);setParams({min:lo,max:hi})}else if(k==="checkout")placeOrder(f);else if(k==="contact")sendContact(f);else if(k==="review")submitReview(f);else if(k==="track")trackSubmit(f);else if(k==="retreq")submitReturn(f);else if(k==="cancelord")submitCancel(f);else if(k.startsWith("ac"))acSubmit(k,f)});
 function go(f){const cur=new URLSearchParams((location.hash.split("?")[1])||"");const n=new URLSearchParams();if(cur.get("cat"))n.set("cat",cur.get("cat"));const fd=new FormData(f);if(fd.get("q"))n.set("q",fd.get("q"));const sv=fd.get("sort"),def=fd.get("q")?"rel":"pop";if(sv&&sv!==def)n.set("sort",sv);if(fd.get("stock"))n.set("stock","1");location.hash="#/shop"+(n.toString()?"?"+n:"")}
 window.addEventListener("hashchange",()=>{closeLayers(true);closeAcct();closeLightbox();render()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeAcct();if(e.key==="Escape"&&$("#overlay").classList.contains("show"))closeLayers()});
