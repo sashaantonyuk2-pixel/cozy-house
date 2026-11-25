@@ -496,6 +496,7 @@ document.addEventListener("click",e=>{
   cancelopen:()=>{const f=document.querySelector(`[data-form="cancelord"][data-no="${el.dataset.no}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("select").focus()}},
   retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   invprint:()=>window.print(),
+  oauth:()=>oauthLogin(el.dataset.p),
   invpdf:()=>downloadInvoice(el),
   tg:()=>{copy($("#otext").value);window.open("https://t.me/"+el.dataset.u,"_blank")},
  };
