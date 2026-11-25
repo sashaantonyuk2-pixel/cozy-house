@@ -5,8 +5,9 @@
 Online store for cozy home goods: ceramics, textiles, lighting and décor.
 
 - `index.html` — the live storefront (English). Served by GitHub Pages.
-
-The admin panel is kept separately and is not part of this repository.
+- `seller/` — Seller Central (admin panel, sign-in with 2FA, hidden from search engines).
+- `src/` — source code (`shared/`, `store/`, `seller/`), built with `src/build.py`.
+- `supabase/` — database structure (tables, access rules, triggers), split by area. No data, no secrets.
 
 ## Як оновлювати сайт
 
