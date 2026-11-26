@@ -49,15 +49,16 @@ const oItemImg=i=>{const p=prod(i.id);return p?img0(p):art("basket","#efece4","#
 const oItemLink=i=>{const p=prod(i.id);return p&&p.active?"#/product/"+encodeURIComponent(p.id):""};
 const oUrl=(o,act)=>"#/account/orders/"+encodeURIComponent(o.order_no)+(act?"?act="+act:"");
 const RET_SHORT={requested:"Return requested",approved:"Return approved",received:"Return received",refunded:"Refund issued"};
+/* order status as shown to the customer (Amazon-style): Pending · Unshipped · Shipped · Delivered · Cancelled · Returned */
+const isPending=o=>o.status==="new"&&o.payment_status!=="paid"&&o.payment_status!=="partially_refunded";
 function oStatus(o){
- if(o.status==="cancelled")return{k:"off",pill:"Cancelled",head:"Order cancelled"};
- if(o.status==="returned")return{k:"off",pill:"Returned",head:"Order returned"};
- if(o.status==="completed")return{k:"del",pill:"Delivered",head:o.delivered_at?fmtDate(o.delivered_at):"Delivered",sub:canReturn(o)?"Returns open until "+fmtDate(retWindow(o).until):""};
- if(o.status==="shipped"&&o.delayed_at)return{k:"late",pill:"Delayed",head:o.delivery_eta?"Now arriving "+fmtDay(o.delivery_eta):"Running late",sub:o.delay_reason||""};
- if(o.status==="shipped")return{k:"ship",pill:"Shipped",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"On its way"};
- if(o.payment_status==="unpaid")return{k:"new",pill:"Awaiting payment",head:"We’ll email you a secure payment link"};
- if(o.status==="confirmed")return{k:"new",pill:"Confirmed",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"Preparing to ship"};
- return{k:"new",pill:"Order placed",head:"Preparing your order"}}
+ if(o.status==="cancelled")return{k:"off",pill:"Cancelled",head:"Order cancelled",desc:"This order was cancelled."};
+ if(o.status==="returned")return{k:"off",pill:"Returned",head:"Order returned",desc:"Your return was processed."};
+ if(o.status==="completed")return{k:"del",pill:"Delivered",head:o.delivered_at?fmtDate(o.delivered_at):"Delivered",sub:canReturn(o)?"Returns open until "+fmtDate(retWindow(o).until):"",desc:"Your order was delivered."};
+ if(o.status==="shipped"&&o.delayed_at)return{k:"late",pill:"Shipped",head:o.delivery_eta?"Delayed — now arriving "+fmtDay(o.delivery_eta):"Delayed",sub:o.delay_reason||"",desc:"Your order is on its way."};
+ if(o.status==="shipped")return{k:"ship",pill:"Shipped",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"On its way",desc:"Your order is on its way."};
+ if(isPending(o))return{k:"new",pill:"Pending",head:"Payment is being verified",desc:"We’ll email you a secure payment link. Your order is processed once payment is confirmed."};
+ return{k:"prep",pill:"Unshipped",head:o.delivery_eta?"Preparing · arriving "+fmtDay(o.delivery_eta):"We’re preparing your order",desc:"Your order is ready for processing and will ship soon."}}
 function oBar(o,inList){const c=o.customer||{};return `<div class="ocbar"><div><small>Order placed</small>${fmtDate(o.created_at)}</div><div><small>Total</small>${money(o.total)}</div>
  ${c.name?`<div class="ocship"><small>Ship to</small><details class="ocaddr"><summary>${esc(c.name)}</summary><div>${esc(c.name)}<br>${esc(c.address||"")}<br>${esc([c.city,[c.state,c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "))}<br>United States</div></details></div>`:"<div></div>"}
  <div class="ocno"><small>Order # ${esc(o.order_no)}</small>${inList?`<a href="${oUrl(o)}">View order details</a>`:""}${inList&&o.status!=="cancelled"?`<span aria-hidden="true"> · </span><a href="#/account/invoice/${encodeURIComponent(o.order_no)}">Invoice</a>`:""}</div></div>`}
@@ -68,7 +69,7 @@ function oCard(o){const r=MY_RETURNS[o.id],st=oStatus(o),items=o.items||[],shown
  else if(canCancel(o))acts.push(`<a class="btn sm" href="${oUrl(o,"cancel")}">Cancel order</a>`);
  if(acts.length<3&&["completed","shipped","cancelled","returned"].includes(o.status))acts.push(`<button class="btn sm" data-act="buyagain" data-id="${o.id}">Buy it again</button>`);
  return `<article class="ocard">${oBar(o,true)}<div class="ocbody"><div class="ocmain">
- <div class="ocstat"><span class="opill o-${st.k}">${st.pill}</span><b>${esc(st.head)}</b>${st.sub&&!(r&&RET_SHORT[r.status])?`<span class="muted small">${esc(st.sub)}</span>`:""}${r&&RET_SHORT[r.status]?`<span class="opill o-ret">${RET_SHORT[r.status]}</span>`:""}</div>
+ <div class="ocstat"><span class="opill o-${st.k}" title="${esc(st.desc||"")}">${st.pill}</span><b>${esc(st.head)}</b>${st.sub&&!(r&&RET_SHORT[r.status])?`<span class="muted small">${esc(st.sub)}</span>`:""}${r&&RET_SHORT[r.status]?`<span class="opill o-ret">${RET_SHORT[r.status]}</span>`:""}</div>
  ${shown.map(i=>{const h=oItemLink(i);return `<div class="ocitem">${h?`<a href="${h}" tabindex="-1">`:"<span>"}<img src="${esc(oItemImg(i))}" alt="" loading="lazy">${h?"</a>":"</span>"}<div>${h?`<a class="ocname" href="${h}">${esc(i.name)}</a>`:`<span class="ocname">${esc(i.name)}</span>`}<span class="muted small">${i.opt?esc(optStr(i.opt,prod(i.id)))+" · ":""}Qty ${+i.qty||1}</span></div></div>`}).join("")}
  ${items.length>shown.length?`<a class="textlink small" href="${oUrl(o)}">+ ${items.length-shown.length} more item${items.length-shown.length===1?"":"s"}</a>`:""}
  </div><div class="ocacts">${acts.join("")}</div></div></article>`}
