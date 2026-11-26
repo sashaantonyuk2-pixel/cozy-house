@@ -8,19 +8,20 @@
 
 <!-- NEW ENTRIES BELOW -->
 
+### 26.11.2026 — Add studio-style category photos (Unsplash License) (авто)
+- Змінені файли: `images/categories/garden-outdoor-studio.webp`, `images/categories/home-kitchen-studio.webp`, `images/categories/office-products-studio.webp`, `images/categories/pet-supplies-studio.webp`, `images/categories/sports-outdoors-studio.webp`, `images/categories/tools-home-improvement-studio.webp`, `images/categories/toys-games-studio.webp`
+- Коміт: [a9fcc6d](https://github.com/sashaantonyuk2-pixel/cozy-house/commit/a9fcc6d2141dcd91715a68f12b6ea00168cd562d)
+
 ### 26.11.2026 — Головна: без кількості товарів у категоріях
 - У блоці «Shop by category» під назвою категорії більше не показується кількість товарів («2 items»); відступ під назвою вирівняно.
 
-
 ### 26.11.2026 — Категорії: легке наближення фото
 - На комп'ютері фото категорії плавно наближується (на 7%) при наведенні мишки; на телефоні — один раз, коли картка з'являється на екрані. Для людей із вимкненими анімаціями в системі (reduced motion) ефект вимкнено.
-
 
 ### 26.11.2026 — Фото категорій
 - Для всіх 7 категорій поставлено «живі» інтер'єрні фото з Unsplash (Unsplash License — безкоштовно для магазину, підпис автора не потрібен), вибрані власником: подвір'я з рослинами (Garden & Outdoor), дерев'яна кухня (Home & Kitchen), робоче місце (Office Products), собака на лежанці (Pet Supplies), людина з рюкзаком у лісі (Sports & Outdoors), майстерня з інструментами (Tools & Home Improvement), дерев'яні іграшки біля вікна (Toys & Games).
 - Файли: `images/categories/*.webp`, 800×800, 87–231 KB.
 - Supabase: у `categories.image` прописано повні адреси цих файлів на GitHub Pages (для категорій, де фото ще не було). Змінити фото можна як і раніше — у кабінеті, «Категорії» → «Фото».
-
 
 ### 26.11.2026 — Add category photos (Unsplash License) (авто)
 - Змінені файли: `images/categories/garden-outdoor.webp`, `images/categories/home-kitchen.webp`, `images/categories/office-products.webp`, `images/categories/pet-supplies.webp`, `images/categories/sports-outdoors.webp`, `images/categories/tools-home-improvement.webp`, `images/categories/toys-games.webp`
