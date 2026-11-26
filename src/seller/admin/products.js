@@ -1,5 +1,7 @@
 /* ===== Seller Central · Товари: список, порядок, редактор товару, фото ===== */
 Object.assign(Admin,{
+/* ---- tabs at the top of «Товари»: product list | characteristics ---- */
+prodTabs(cur){return `<nav class="subtabs" aria-label="Розділ «Товари»"><a href="#/admin/products" class="${cur==="list"?"on":""}">📦 Список товарів <span class="muted">${S.products.length}</span></a><a href="#/admin/attrs" class="${cur==="attrs"?"on":""}">🏷 Характеристики <span class="muted">${FILTERS().length}</span></a></nav>`},
 /* ---- product editor: list of changes shown before saving («Назва: A → B») ---- */
 prodDiff(p,d){const L={name:"Назва",sku:"Код (SKU)",price:"Ціна",oldPrice:"Стара ціна",stock:"Залишок",cat:"Категорія",active:"На сайті",featured:"Хіт",short:"Короткий опис",desc:"Опис",specs:"Характеристики",options:"Варіанти",images:"Фото",supplierId:"Постачальник",supplierSku:"SKU постачальника",cost:"Собівартість",supplierUrl:"Посилання постачальника",attrs:"Характеристики"};
  const show=(k,v)=>v==null||v===""?"—":k==="price"||k==="oldPrice"||k==="cost"?money(v):k==="cat"?(catLabel(catOf(v))||"без категорії"):k==="active"||k==="featured"?(v?"так":"ні"):k==="supplierId"?(this.supName(v)||"—"):String(v);

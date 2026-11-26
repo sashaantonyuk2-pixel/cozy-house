@@ -2,15 +2,15 @@
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
 nav(cur){/* menu groups: daily work on top, analysis and system at the bottom; ["#","Name"] = group label (hidden on phones) */
- const L=[["","📊","Дашборд"],["#","Продажі"],["orders","🧾","Замовлення"],["returns","🔁","Повернення"],["#","Спілкування"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["reviews","⭐","Відгуки"],["#","Каталог"],["products","📦","Товари"],["categories","🗂","Категорії"],["attrs","🏷","Характеристики"],["suppliers","🏭","Постачальники"],["#","Аналіз і маркетинг"],["analytics","📈","Аналітика"],["customers","👥","Покупці"],["seo","🔎","SEO"],["#","Система"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
+ const L=[["","📊","Дашборд"],["#","Продажі"],["orders","🧾","Замовлення"],["returns","🔁","Повернення"],["#","Спілкування"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["reviews","⭐","Відгуки"],["#","Каталог"],["products","📦","Товари"],["categories","🗂","Категорії"],["suppliers","🏭","Постачальники"],["#","Аналіз і маркетинг"],["analytics","📈","Аналітика"],["customers","👥","Покупці"],["seo","🔎","SEO"],["#","Система"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
  return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>k==="#"?`<div class="navgrp">${i}</div>`:`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="returns"?`<span class="navbadge" id="retBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
  if(k!=="products"&&this.pendIds&&this.pendIds().length){const n=this.pendIds().length;if(confirm(`У таблиці товарів є незбережені зміни (${n}). Зберегти їх?\n\nOK — зберегти, «Скасувати» — відкинути зміни.`))this.pendSave();else{this.pendDiscard();toast("Незбережені зміни відкинуто")}}
- if(k==="products")return this.wrap("products",this.products(q));
+ if(k==="products")return this.wrap("products",this.prodTabs("list")+this.products(q));
  if(k==="product")return this.wrap("products",this.editor(parts[2]));
  if(k==="categories")return this.wrap("categories",this.categories());
- if(k==="attrs")return this.wrap("attrs",this.attrs());
+ if(k==="attrs")return this.wrap("products",this.prodTabs("attrs")+this.attrs());
  if(k==="settings")return this.wrap("settings",this.settings());
  if(k==="backup")return this.wrap("backup",this.backup());
  if(k==="orders")return this.wrap("orders",this.orders(q));
