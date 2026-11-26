@@ -102,9 +102,21 @@ function hsSetup(){
 }
 function hsSync(path,q){if(path==="/shop"){hsIn().value=q.get("q")||"";hsCat().value=q.get("cat")||""}else if(path==="/"){hsIn().value="";hsCat().value=""}}
 
+/* ===== home: «Shop by category» mosaic. Lays out any number of categories without a lonely tile:
+   5, 7, 9–11 → a big first tile + 4 or 6 small ones (+ one stretched row); otherwise rows (≤4 → one row, 6 → 3+3, else rows of 4);
+   an incomplete last row stretches to full width. Phone: big tile full width, then 2 per row, odd last tile full width. ===== */
+function catMosaic(L){const n=L.length;if(!n)return"";
+ const tile=(c,cls)=>`<a class="ctile ${cls||""}" href="#/shop?cat=${c.id}"><img src="${esc(catImg(c))}" alt="" loading="lazy"><span class="ctname">${esc(c.name)}<em aria-hidden="true">→</em></span></a>`;
+ const big=[5,7,9,10,11].includes(n),k=n===5?4:6;let html="",rest=L,idx=0;
+ const oddLast=i=>{const small=big?n-1:n;return small%2===1&&i===n-1?"wide-m":""};
+ if(big){html+=`<div class="cm-top cm-k${k}">${tile(L[0],"big")}<div class="cm-small">${L.slice(1,1+k).map((c,j)=>tile(c,oddLast(1+j))).join("")}</div></div>`;rest=L.slice(1+k);idx=1+k}
+ /* balanced rows of up to 4: 6 → 3+3, 13 → 4+3+3+3 — never a row with a single tile */
+ const m=rest.length,r=Math.ceil(m/4),sizes=Array.from({length:r},(_,i)=>Math.floor(m/r)+(i<m%r?1:0));let i=0;
+ sizes.forEach(sz=>{html+=`<div class="cm-row">${rest.slice(i,i+sz).map((c,j)=>tile(c,oddLast(idx+i+j))).join("")}</div>`;i+=sz});
+ return `<div class="catmosaic">${html}</div>`}
 /* ===== category photos: gentle zoom — on hover (mouse) and once when the card scrolls into view (touch screens) ===== */
 let catIO=null;
-function catZoom(){const L=document.querySelectorAll(".cat:not(.zin)");if(!L.length)return;
+function catZoom(){const L=document.querySelectorAll(".cat:not(.zin),.ctile:not(.zin)");if(!L.length)return;
  if(!("IntersectionObserver" in window)||!matchMedia("(hover:none)").matches)return;
  catIO=catIO||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("zin");catIO.unobserve(e.target)}}),{threshold:.55});
  L.forEach(c=>catIO.observe(c))}
@@ -235,7 +247,7 @@ function viewHome(){
  ${st.heroButtons==="1"?`<div class="hero-cta"><a class="btn hero-btn" href="${esc(link)}">${esc(st.heroBtnText||t("shopNow"))} →</a><a class="btn hero-btn2" href="#/about">Our story</a></div>`:""}</div></div>${st.heroButtons==="1"?"":`<a class="hero2-link" href="${esc(link)}" aria-label="${esc(st.heroBtnText||t("shopNow"))}"></a>`}</section>
  <div class="shell perks" data-track="perks">${PERKS.map(([ic,k,h])=>{const inner=`<i aria-hidden="true">${PERK_SVG[ic]}</i><span><b>${t(k)}</b>${t(k+"s")}</span><em class="perkarr" aria-hidden="true">›</em>`;return h?`<a class="perk" href="${h}">${inner}</a>`:`<button type="button" class="perk" data-act="perkchat">${inner}</button>`}).join("")}</div>
  <section class="section" style="padding-top:20px" data-track="categories"><div class="shell"><div class="section-head"><div><span class="eyebrow">${t("categories")}</span><h2>${lang==="en"?"Shop by category":"Оберіть категорію"}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div>
- <div class="grid cats">${topCats().map(c=>`<a class="cat" href="#/shop?cat=${c.id}"><div class="ph"><img src="${esc(catImg(c))}" alt="" loading="lazy"></div><b>${esc(c.name)}</b></a>`).join("")}</div></div></section>
+ ${catMosaic(topCats())}</div></section>
  <section class="section alt" data-track="featured"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Our favourites":"Обирають найчастіше"}</span><h2>${t("featured")}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div><div class="grid">${feat.slice(0,4).map(card).join("")}</div></div></section>
  <section class="section" data-track="new"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Just in":"Щойно надійшли"}</span><h2>${t("newArrivals")}</h2></div><a class="textlink" href="#/shop?sort=new">${t("viewAll")}</a></div><div class="grid">${fresh.map(card).join("")}</div></div></section>`}
 let shopShown=12,shopKey="";
