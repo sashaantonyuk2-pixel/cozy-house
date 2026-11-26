@@ -6,6 +6,7 @@ nav(cur){/* menu groups: daily work on top, analysis and system at the bottom; [
  return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>k==="#"?`<div class="navgrp">${i}</div>`:`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="returns"?`<span class="navbadge" id="retBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
+ if(k!=="products"&&this.pendIds&&this.pendIds().length){const n=this.pendIds().length;if(confirm(`У таблиці товарів є незбережені зміни (${n}). Зберегти їх?\n\nOK — зберегти, «Скасувати» — відкинути зміни.`))this.pendSave();else{this.pendDiscard();toast("Незбережені зміни відкинуто")}}
  if(k==="products")return this.wrap("products",this.products(q));
  if(k==="product")return this.wrap("products",this.editor(parts[2]));
  if(k==="categories")return this.wrap("categories",this.categories());
@@ -36,9 +37,9 @@ stockCls(p){return p.stock<=0?"st-out":p.stock<=this.lowN()?"st-low":""},
 lowList(){const t=this.lowN();return S.products.filter(p=>p.active&&p.stock<=t)},
 /* ---- handlers ---- */
 change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
- if(k==="sku"&&p){const v=el.value.trim().slice(0,60);if(v&&S.products.some(x=>x!==p&&(x.sku||"").toLowerCase()===v.toLowerCase())){el.value=p.sku||"";return toast("⚠️ Код "+v+" уже є в іншого товару")}p.sku=v;save();toast("Код збережено ✓")}
- else if(["price","oldPrice","stock"].includes(k)&&p){let v=el.value===""?null:Number(el.value);if(k==="price"&&(v==null||v<0)){el.value=p.price;return toast("Ціна не може бути порожньою")}if(k==="stock")v=Math.max(0,Math.round(v||0));p[k]=v;save();toast("Збережено ✓")}
- else if((k==="active"||k==="featured")&&p){p[k]=el.checked;save();toast(el.checked?(k==="active"?"Показано на сайті":"Додано в хіти"):(k==="active"?"Приховано":"Прибрано з хітів"))}
+ if(k==="sku"&&p){const v=el.value.trim().slice(0,60);if(v&&S.products.some(x=>x!==p&&(x.sku||"").toLowerCase()===v.toLowerCase())){el.value=p.sku||"";return toast("⚠️ Код "+v+" уже є в іншого товару")}this.pendTouch(p);p.sku=v;this.pendRefresh()}
+ else if(["price","oldPrice","stock"].includes(k)&&p){let v=el.value===""?null:Number(el.value);if(k==="price"&&(v==null||v<0)){el.value=p.price;return toast("Ціна не може бути порожньою")}if(k==="stock"){v=Math.max(0,Math.round(v||0));el.value=v}this.pendTouch(p);p[k]=v;this.pendRefresh()}
+ else if((k==="active"||k==="featured")&&p){this.pendTouch(p);p[k]=el.checked;this.pendRefresh()}
  else if(k==="sel"){el.checked?this.sel.add(id):this.sel.delete(id);$("#selN").textContent="Вибрано: "+this.sel.size}
  else if(k==="selall"){document.querySelectorAll('[data-ach="sel"]').forEach(c=>{c.checked=el.checked;el.checked?this.sel.add(c.dataset.id):this.sel.delete(c.dataset.id)});$("#selN").textContent="Вибрано: "+this.sel.size}
  else if(k==="filtercat"){const f=el.form;const n=new URLSearchParams();const fd=new FormData(f);fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));fd.get("sup")&&n.set("sup",fd.get("sup"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"")}
@@ -49,15 +50,17 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
  else if(k==="catname"){const c=catOf(id);if(c&&el.value.trim()){c.name=el.value.trim();save();chrome();toast("Збережено ✓")}}},
 click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("Спочатку виберіть товари галочками");return false}return true};
  const H={
- del:()=>{const p=prod(id);if(confirm(`Видалити «${p.name}»? Це не можна скасувати.`)){S.products=S.products.filter(x=>x.id!==id);save();toast("Товар видалено");location.hash="#/admin/products";render()}},
- dup:()=>{const p=prod(id);const c=JSON.parse(JSON.stringify(p));c.id=uid();c.name=p.name+" (копія)";c.active=false;c.created=Date.now();S.products.push(c);save();toast("Створено копію (прихована)");render()},
- pct:()=>{if(!need())return;const pc=Number($("#pct").value)||0,s=+el.dataset.s;if(!pc)return;if(!confirm(`${s>0?"Підняти":"Знизити"} ціну на ${pc}% для ${this.sel.size} товарів?`))return;this.sel.forEach(i=>{const p=prod(i);p.price=Math.max(0,Math.round(p.price*(1+s*pc/100)))});save();toast("Ціни оновлено");render()},
- vis:()=>{if(!need())return;this.sel.forEach(i=>prod(i).active=el.dataset.v==="1");save();render();toast("Готово")},
- bulkdel:()=>{if(!need())return;if(confirm(`Видалити ${this.sel.size} товарів? Це не можна скасувати.`)){S.products=S.products.filter(p=>!this.sel.has(p.id));this.sel.clear();save();render();toast("Видалено")}},
+ pendSave:()=>this.pendSave(),
+ pendUndo:()=>{this.pendDiscard();render();toast("Зміни скасовано")},
+ del:()=>{if(this.pendBlock())return;const p=prod(id);if(confirm(`Видалити «${p.name}»? Це не можна скасувати.`)){S.products=S.products.filter(x=>x.id!==id);save();toast("Товар видалено");location.hash="#/admin/products";render()}},
+ dup:()=>{if(this.pendBlock())return;const p=prod(id);const c=JSON.parse(JSON.stringify(p));c.id=uid();c.name=p.name+" (копія)";c.active=false;c.created=Date.now();S.products.push(c);save();toast("Створено копію (прихована)");render()},
+ pct:()=>{if(this.pendBlock()||!need())return;const pc=Number($("#pct").value)||0,s=+el.dataset.s;if(!pc)return;if(!confirm(`${s>0?"Підняти":"Знизити"} ціну на ${pc}% для ${this.sel.size} товарів?`))return;this.sel.forEach(i=>{const p=prod(i);p.price=Math.max(0,Math.round(p.price*(1+s*pc/100)))});save();toast("Ціни оновлено");render()},
+ vis:()=>{if(this.pendBlock()||!need())return;if(!confirm(`${el.dataset.v==="1"?"Показати на сайті":"Приховати з сайту"} ${this.sel.size} товарів?`))return;this.sel.forEach(i=>prod(i).active=el.dataset.v==="1");save();render();toast("Готово")},
+ bulkdel:()=>{if(this.pendBlock()||!need())return;if(confirm(`Видалити ${this.sel.size} товарів? Це не можна скасувати.`)){S.products=S.products.filter(p=>!this.sel.has(p.id));this.sel.clear();save();render();toast("Видалено")}},
  imgmv:()=>{const I=this.draft.images,i=+el.dataset.i,j=i+ +el.dataset.d;if(j<0||j>=I.length)return;[I[i],I[j]]=[I[j],I[i]];$("#imgs").innerHTML=this.imgsHtml()},
  imgdel:()=>{this.draft.images.splice(+el.dataset.i,1);$("#imgs").innerHTML=this.imgsHtml()},
  imgurl:()=>{const u=$("#imgUrl").value.trim();if(!/^https?:\/\//.test(u))return toast("Вставте посилання, що починається з https://");this.draft.images.push(u);$("#imgUrl").value="";$("#imgs").innerHTML=this.imgsHtml()},
- posmv:()=>{const L=S.products.slice().sort(this.PSORT.manual);L.forEach((x,i)=>x.position=i+1);const i=L.findIndex(x=>x.id===id),j=i+ +el.dataset.d;if(j<0||j>=L.length)return;[L[i].position,L[j].position]=[L[j].position,L[i].position];save();render()},
+ posmv:()=>{const L=S.products.slice().sort(this.PSORT.manual);const i=L.findIndex(x=>x.id===id),j=i+ +el.dataset.d;if(j<0||j>=L.length)return;L.forEach(x=>this.pendTouch(x));L.forEach((x,k)=>x.position=k+1);[L[i].position,L[j].position]=[L[j].position,L[i].position];render()},
  seoopen:()=>{const r=$("#seo-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("input").focus()}},
  xlsExport:()=>this.xlsExport(),
  xlsTemplate:()=>this.xlsTemplate(),

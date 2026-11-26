@@ -117,12 +117,13 @@ async flush(){
  finally{this.syncing=false;if(this.again){this.again=false;this.flush()}}}
 };
 Seller.refresh=async function(){
- if(this.state!=="ready"||this.dirty||this.syncing)return;
+ if(this.state!=="ready"||this.dirty||this.syncing||(window.Admin&&Admin.pendIds&&Admin.pendIds().length))return;
  try{const st=await this.loadSup(await fetchCatalog());if(this.dirty||this.syncing)return;const changed=JSON.stringify(st)!==JSON.stringify(S);S=st;this.snapshot();
   if(changed&&/^#\/admin(\/products|\/categories)?\/?(\?.*)?$/.test(location.hash)&&!document.activeElement.matches("input,textarea,select"))render()}catch(e){}};
 const supRow=p=>({product_id:p.id,supplier_id:p.supplierId||null,supplier_sku:String(p.supplierSku||"").trim()||null,cost_price:p.cost==null||p.cost===""||isNaN(+p.cost)?null:Math.round(+p.cost*100)/100,supplier_url:String(p.supplierUrl||"").trim()||null});
 const hasSup=r=>!!(r.supplier_id||r.supplier_sku||r.cost_price!=null||r.supplier_url);
 window.Seller=Seller;
+addEventListener("beforeunload",e=>{if(window.Admin&&Admin.pendIds&&Admin.pendIds().length){e.preventDefault();e.returnValue=""}});
 function refreshAdminCatalog(){setTimeout(()=>Seller.refresh(),400)}
 setInterval(()=>{if(document.visibilityState==="visible")Seller.refresh()},60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")Seller.refresh()});
