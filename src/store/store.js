@@ -189,6 +189,27 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&NavDrop.el&&NavDrop
 addEventListener("scroll",()=>{if(NavDrop.el&&NavDrop.el.classList.contains("on"))NavDrop.hide(0)},{passive:true});
 addEventListener("resize",()=>NavDrop.hide(0));
 
+/* ===== product page: Amazon-style zoom (desktop). A lens follows the mouse over the photo and a large window beside it
+   shows that area magnified. Touch screens keep tap-to-open full screen. ===== */
+const PZoom={Z:2.3,lens:null,pane:null,img:null,
+ ok(){return matchMedia("(hover:hover) and (pointer:fine) and (min-width:900px)").matches},
+ start(img){const pdp=img.closest(".pdp"),car=img.closest(".car");if(!pdp||!car)return false;this.img=img;
+  if(!this.lens){this.lens=document.createElement("div");this.lens.className="zlens";this.pane=document.createElement("div");this.pane.className="zpane";this.pane.setAttribute("aria-hidden","true")}
+  car.appendChild(this.lens);pdp.appendChild(this.pane);
+  const ir=img.getBoundingClientRect(),pr=pdp.getBoundingClientRect(),gr=img.closest(".gallery").getBoundingClientRect(),left=gr.right-pr.left+24,w=Math.min(pr.right-pr.left-left,ir.width*1.15),h=ir.height;
+  if(w<240)return false;
+  Object.assign(this.pane.style,{left:left+"px",top:(ir.top-pr.top)+"px",width:w+"px",height:h+"px",backgroundImage:`url("${String(img.currentSrc||img.src).replace(/"/g,"%22")}")`,backgroundSize:`${ir.width*this.Z}px ${ir.height*this.Z}px`});
+  Object.assign(this.lens.style,{width:Math.min(ir.width,w/this.Z)+"px",height:Math.min(ir.height,h/this.Z)+"px"});
+  this.lens.classList.add("on");this.pane.classList.add("on");return true},
+ move(e){const img=this.img;if(!img)return;const ir=img.getBoundingClientRect(),cr=img.closest(".car").getBoundingClientRect(),lw=this.lens.offsetWidth,lh=this.lens.offsetHeight;
+  const x=Math.max(0,Math.min(ir.width-lw,e.clientX-ir.left-lw/2)),y=Math.max(0,Math.min(ir.height-lh,e.clientY-ir.top-lh/2));
+  this.lens.style.left=(ir.left-cr.left+x)+"px";this.lens.style.top=(ir.top-cr.top+y)+"px";this.pane.style.backgroundPosition=`-${x*this.Z}px -${y*this.Z}px`},
+ stop(){this.img=null;if(this.lens)this.lens.classList.remove("on");if(this.pane)this.pane.classList.remove("on")}};
+document.addEventListener("mousemove",e=>{const img=e.target.closest&&e.target.closest(".pdp .carslide img");
+ if(!img){if(PZoom.img)PZoom.stop();return}if(!PZoom.ok())return;if(PZoom.img!==img&&!PZoom.start(img))return;PZoom.move(e)});
+document.addEventListener("mouseleave",()=>PZoom.stop());addEventListener("scroll",()=>PZoom.img&&PZoom.stop(),{passive:true});addEventListener("hashchange",()=>PZoom.stop());
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest('[data-act="carmove"],[data-act="cargo"],[data-act="lbopen"]'))PZoom.stop()},true);
+
 /* ===== product card: large hover preview (desktop). Rest the mouse on a card photo ~0.7 s → a big photo with all the
    product's photos pops up beside the card; hover a thumbnail to switch; click opens the product. ===== */
 const CardPrev={el:null,t:null,h:null,cur:null,
@@ -344,7 +365,7 @@ function viewProduct(id){
  const c=catOf(p.cat),cp=catParent(c),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  const rel=visible().filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
  const specs=[...filtFor(p.cat).filter(f=>pAttr(p,f.id).length).map(f=>[f.name,pAttr(p,f.id).join(", ")]),...(p.specs||[]).filter(s=>(s[0]||s[1])&&!filtFor(p.cat).some(f=>pAttr(p,f.id).length&&f.name.toLowerCase()===String(s[0]).trim().toLowerCase()))];
- return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}</div>
+ return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}<p class="zoomhint">🔍 Roll over image to zoom in · Click to open expanded view</p></div>
  <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${cp?` / <a href="#/shop?cat=${cp.id}">${esc(cp.name)}</a>`:""}${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
  ${!p.active?`<div class="note">Hidden product — customers can’t see it.</div>`:""}
  <h1>${esc(p.name)}</h1>${(()=>{const r=rating(p.id);return r?`<button class="crate rlink" data-act="toreviews">${stars(r.avg,17)}<span>${r.avg.toFixed(1)} · ${r.n} ${r.n===1?"review":"reviews"}</span></button>`:`<button class="crate rlink none" data-act="toreviews">${stars(0,17)}<span>No reviews yet · Write a review</span></button>`})()}<span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>${p.sku?` <span class="muted small" style="margin-left:12px">Item # <b>${esc(p.sku)}</b></span>`:""}
