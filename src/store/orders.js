@@ -87,22 +87,50 @@ function oDetail(o){const r=MY_RETURNS[o.id],c=o.customer||{},canRet=canReturn(o
  ${canRet||canCancel(o)||again?`<div class="panel odacts">${canRet?`<button class="btn block" data-act="retopen" data-id="${o.id}">↩ Return items</button>`:""}${canCancel(o)?`<button class="btn block" data-act="cancelopen" data-no="${esc(o.order_no)}">✕ Cancel order</button>`:""}${again?`<button class="btn block" data-act="buyagain" data-id="${o.id}">🔁 Buy whole order again</button>`:""}
  ${["new","confirmed","shipped"].includes(o.status)?`<p class="small muted" style="margin:0">↩ Returns open once your order is delivered — within ${shipCfg().days} days of delivery.</p>`:""}</div>`:""}</aside></div>
  ${canRet?retForm(o):""}${canCancel(o)?cancelForm(o):""}`}
+const ORDER_COLS="id,order_no,status,items,total,subtotal,shipping,tax,tax_rate,created_at,carrier,tracking_number,shipped_at,customer,delivery_eta,delivered_at,payment_status,delay_reason,delayed_at",ORD_PAGE=10;
+/* period for «My orders»: 30d / 3m (default) / 6m / a year / all / custom (from–to) → [from ISO or null, to ISO or null, label] */
+function ordPeriod(q){const per=q.get("period")||"3m",now=new Date(),ago=d=>new Date(now.getTime()-d*864e5).toISOString();
+ if(per==="30d")return[ago(30),null,"the last 30 days"];if(per==="6m")return[ago(182),null,"the last 6 months"];if(per==="all")return[null,null,"all time"];
+ if(/^\d{4}$/.test(per))return[new Date(+per,0,1).toISOString(),new Date(+per+1,0,1).toISOString(),per];
+ if(per==="custom"){const f=q.get("from"),t=q.get("to");const ok=s=>/^\d{4}-\d{2}-\d{2}$/.test(s||"");
+  return[ok(f)?new Date(f+"T00:00:00").toISOString():null,ok(t)?new Date(new Date(t+"T00:00:00").getTime()+864e5).toISOString():null,ok(f)||ok(t)?`${ok(f)?fmtDate(f+"T12:00:00"):"…"} – ${ok(t)?fmtDate(t+"T12:00:00"):"today"}`:"all time"]}
+ return[ago(91),null,"the last 3 months"]}
+const ordLink=o=>{const q=new URLSearchParams((location.hash.split("?")[1])||"");Object.entries(o).forEach(([k,v])=>v===""||v==null?q.delete(k):q.set(k,v));const s=q.toString();return "#/account/orders"+(s?"?"+s:"")};
+async function loadReturns(ids){MY_RETURNS={};if(!ids.length)return;const{data}=await sb.from("return_requests").select("id,order_id,status,reason,free_return,created_at,seller_note").in("order_id",ids).order("created_at",{ascending:false});
+ (data||[]).forEach(r=>{if(!MY_RETURNS[r.order_id]||MY_RETURNS[r.order_id].status==="rejected")MY_RETURNS[r.order_id]=r})}
 async function fillOrders(){const box=$("#acMain");if(!box)return;
- const h=location.hash.slice(1).split("?"),no=decodeURIComponent((h[0].split("/")[3])||""),act=new URLSearchParams(h[1]||"").get("act");
- const[{data,error},rr]=await Promise.all([sb.from("orders").select("id,order_no,status,items,total,subtotal,shipping,tax,tax_rate,created_at,carrier,tracking_number,shipped_at,customer,delivery_eta,delivered_at,payment_status,delay_reason,delayed_at").order("created_at",{ascending:false}).limit(50),
-  sb.from("return_requests").select("id,order_id,status,reason,free_return,created_at,seller_note").order("created_at",{ascending:false})]);
- if(!$("#acMain"))return;
- if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
- MY_ORDERS={};MY_RETURNS={};(data||[]).forEach(o=>MY_ORDERS[o.id]=o);
- (rr.data||[]).forEach(r=>{if(!MY_RETURNS[r.order_id]||MY_RETURNS[r.order_id].status==="rejected")MY_RETURNS[r.order_id]=r});
- if(no){const o=(data||[]).find(x=>x.order_no===no);
+ const h=location.hash.slice(1).split("?"),no=decodeURIComponent((h[0].split("/")[3])||""),q=new URLSearchParams(h[1]||""),act=q.get("act");
+ MY_ORDERS={};
+ /* one order's page: load just that order */
+ if(no){const{data,error}=await sb.from("orders").select(ORDER_COLS).eq("order_no",no).limit(1);if(!$("#acMain"))return;
+  if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
+  const o=(data||[])[0];
   if(!o){box.innerHTML=`<div class="panel"><div class="empty" style="border:0;padding:30px 0"><b>Order not found</b>We couldn’t find order ${esc(no)} in your account.<br><br><a class="btn" href="#/account/orders">← My orders</a></div></div>`;return}
+  MY_ORDERS[o.id]=o;await loadReturns([o.id]);if(!$("#acMain"))return;
   box.innerHTML=oDetail(o);
   if(act==="return"||act==="cancel"){const f=act==="return"?$(`[data-form="retreq"][data-id="${o.id}"]`):$(`[data-form="cancelord"][data-no="${o.order_no}"]`);if(f){f.hidden=false;setTimeout(()=>{f.scrollIntoView({block:"center"});const x=f.querySelector("input,select");x&&x.focus({preventScroll:true})},60)}}
   else if(act==="review"){const it=$(".oditems");it&&setTimeout(()=>it.scrollIntoView({block:"start"}),60)}
   return}
- box.innerHTML=`<div class="odhead" style="margin-bottom:14px"><h2 style="margin:0">My orders</h2>${data.length?`<span class="muted small">${data.length} order${data.length===1?"":"s"}</span>`:""}</div>
- ${data.length?data.map(oCard).join(""):`<div class="panel"><div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div></div>`}`}
+ /* list: one page (10) of the chosen period */
+ const[from,to,label]=ordPeriod(q),page=Math.max(1,parseInt(q.get("page"))||1);
+ let qq=sb.from("orders").select(ORDER_COLS,{count:"exact"}).order("created_at",{ascending:false}).range((page-1)*ORD_PAGE,page*ORD_PAGE-1);
+ if(from)qq=qq.gte("created_at",from);if(to)qq=qq.lt("created_at",to);
+ const[{data,error,count},first]=await Promise.all([qq,sb.from("orders").select("created_at").order("created_at",{ascending:true}).limit(1)]);
+ if(!$("#acMain"))return;
+ if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
+ (data||[]).forEach(o=>MY_ORDERS[o.id]=o);await loadReturns((data||[]).map(o=>o.id));if(!$("#acMain"))return;
+ const key=(q.get("period")||"")+"|"+page+"|"+(q.get("from")||"")+"|"+(q.get("to")||""),moved=fillOrders.last!=null&&fillOrders.last!==key;fillOrders.last=key;
+ const total=count||0,pages=Math.max(1,Math.ceil(total/ORD_PAGE)),per=q.get("period")||"3m",y0=new Date().getFullYear(),y1=first.data&&first.data[0]?new Date(first.data[0].created_at).getFullYear():y0;
+ const years=[];for(let y=y0;y>=Math.min(y1,y0);y--)years.push(String(y));
+ const opts=[["30d","Last 30 days"],["3m","Last 3 months"],["6m","Last 6 months"],...years.map(y=>[y,y]),["all","All time"],["custom","Custom dates…"]];
+ const pager=pages>1?`<nav class="opager" aria-label="Order pages">${page>1?`<a class="btn sm" href="${ordLink({page:page-1})}">← Previous</a>`:`<span class="btn sm" aria-disabled="true">← Previous</span>`}
+  <span class="opnums">${Array.from({length:pages},(_,i)=>i+1).filter(n=>pages<=7||n===1||n===pages||Math.abs(n-page)<=1).map((n,i,a)=>(i&&n-a[i-1]>1?'<span class="muted">…</span>':"")+(n===page?`<b aria-current="page">${n}</b>`:`<a href="${ordLink({page:n})}">${n}</a>`)).join("")}</span>
+  ${page<pages?`<a class="btn sm" href="${ordLink({page:page+1})}">Next →</a>`:`<span class="btn sm" aria-disabled="true">Next →</span>`}</nav>`:"";
+ box.innerHTML=`<div class="odhead" style="margin-bottom:6px"><h2 style="margin:0">My orders</h2></div>
+ <form class="operiod" data-form="acPeriod"><span><b>${total}</b> order${total===1?"":"s"} placed in</span><select class="field" name="period" aria-label="Period">${opts.map(([v,l])=>`<option value="${v}" ${per===v?"selected":""}>${l}</option>`).join("")}</select>
+  <span class="ocustom" ${per==="custom"?"":"hidden"}><input class="field" type="date" name="from" value="${esc(q.get("from")||"")}" aria-label="From"><span>–</span><input class="field" type="date" name="to" value="${esc(q.get("to")||"")}" aria-label="To"><button class="btn sm primary">Show</button></span></form>
+ ${data.length?data.map(oCard).join("")+pager:`<div class="panel"><div class="empty" style="border:0;padding:30px 0"><b>No orders in ${esc(label)}</b>${per==="all"?"Your orders will show up here.":"Try a longer period — older orders are kept in your archive."}<br><br>${per==="all"?`<a class="btn primary" href="#/shop">${t("shopNow")} →</a>`:`<a class="btn" href="${ordLink({period:"all",page:"",from:"",to:""})}">Show all orders</a>`}</div></div>`}`;
+ if(moved){const hb=(document.querySelector(".header")||{offsetHeight:0}).offsetHeight;window.scrollTo({top:Math.max(0,box.getBoundingClientRect().top+scrollY-hb-12),behavior:"smooth"})}}
 async function submitReturn(f){const msg=f.querySelector(".retmsg"),err=h=>{msg.innerHTML=`<div class="note">${h}</div>`};msg.innerHTML="";
  const idx=[...f.querySelectorAll("[name=ri]:checked")].map(x=>+x.value);if(!idx.length)return err("Please choose the item(s) you’d like to return.");
  const reason=(f.querySelector("[name=reason]:checked")||{}).value;if(!reason)return err("Please choose a reason.");

@@ -833,3 +833,13 @@ footer .copy{padding-bottom:84px}
 .cpinfo b{font-size:15px;line-height:1.3}
 .cpinfo .price{font-weight:800}
 @media (prefers-reduced-motion:reduce){.cprev,.cprev.on{animation:none;transition:none}}
+/* My orders: period («archive») + pages */
+.operiod{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:0 0 16px;font-size:14.5px}
+.operiod select.field{width:auto;padding:7px 34px 7px 12px}
+.ocustom{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}.ocustom .field{width:auto;padding:6px 8px}
+.opager{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px 0 4px}
+.opager [aria-disabled]{opacity:.4;pointer-events:none}
+.opnums{display:flex;gap:4px;align-items:center}
+.opnums a,.opnums b{min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;font-size:14px}
+.opnums a{color:var(--forest)}.opnums a:hover{background:var(--sage2)}
+.opnums b{background:var(--forest);color:#fff}

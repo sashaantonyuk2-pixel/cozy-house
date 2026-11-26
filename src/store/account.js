@@ -57,6 +57,7 @@ async function deleteAccount(f){const msg=f.querySelector(".delmsg"),btn=f.query
  try{await sb.auth.signOut({scope:"local"})}catch(e){}
  user=null;profile=null;favs=[];LS.set("favs",favs);LS.set("buyer",{});badges();acctBadge();toast("Your account has been deleted");location.hash="#/"}
 async function acSubmit(k,f){
+ if(k==="acPeriod"){const per=f.period.value;if(per==="custom"){if(!f.from.value&&!f.to.value){f.from.focus();return}if(f.from.value&&f.to.value&&f.from.value>f.to.value){const x=f.from.value;f.from.value=f.to.value;f.to.value=x}location.hash=ordLink({period:"custom",from:f.from.value,to:f.to.value,page:""});return}location.hash=ordLink({period:per,page:"",from:"",to:""});return}
  if(k==="acPassword")return changePassword(f);
  if(k!=="acProfile")return authSubmit(k,f);
  const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button.primary");const busy=b=>{btn.disabled=b};
@@ -65,3 +66,6 @@ async function acSubmit(k,f){
   const{data,error}=await sb.from("profiles").upsert(row).select().maybeSingle();busy(false);if(error)return acMsg(esc(authErr(error)));profile=data;
   if(row.full_name)sb.auth.updateUser({data:{full_name:row.full_name}}).catch(()=>{});const n=$("#acName");if(n)n.textContent=row.full_name||"";acMsg("Saved ✓",true);return}
  }catch(e){busy(false);acMsg(esc(authErr(e)))}}
+/* My orders: choosing a period applies at once (custom dates — after «Show») */
+document.addEventListener("change",e=>{const t=e.target;if(!t.matches||!t.matches('[data-form="acPeriod"] [name=period]'))return;const c=t.form.querySelector(".ocustom");
+ if(t.value==="custom"){c.hidden=false;t.form.from.focus();return}c.hidden=true;t.form.requestSubmit()});
