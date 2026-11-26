@@ -721,3 +721,5 @@ footer .copy{padding-bottom:84px}
 @media (hover:hover){.cat:hover .ph img,.cat:focus-visible .ph img{transform:scale(1.07)}}
 @media (hover:none){.cat .ph img{transition-duration:2.4s}.cat.zin .ph img{transform:scale(1.06)}}
 @media (prefers-reduced-motion:reduce){.cat .ph img{transition:none;transform:none!important}}
+.retform,.cancelform{grid-template-columns:minmax(0,1fr)}.retform>*,.retform fieldset>*,.cancelform>*{min-width:0}.filepick{flex-wrap:wrap;max-width:100%}.filepick .filenames{min-width:0;overflow-wrap:anywhere}
+.retform .check,.cancelform .check{white-space:normal;align-items:flex-start;line-height:1.45}.retform .check input{margin-top:2px;flex:none}
