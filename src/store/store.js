@@ -102,6 +102,12 @@ function hsSetup(){
 }
 function hsSync(path,q){if(path==="/shop"){hsIn().value=q.get("q")||"";hsCat().value=q.get("cat")||""}else if(path==="/"){hsIn().value="";hsCat().value=""}}
 
+/* ===== category photos: gentle zoom — on hover (mouse) and once when the card scrolls into view (touch screens) ===== */
+let catIO=null;
+function catZoom(){const L=document.querySelectorAll(".cat:not(.zin)");if(!L.length)return;
+ if(!("IntersectionObserver" in window)||!matchMedia("(hover:none)").matches)return;
+ catIO=catIO||new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("zin");catIO.unobserve(e.target)}}),{threshold:.55});
+ L.forEach(c=>catIO.observe(c))}
 /* ===== home: perks row under the banner — compact link cards with line icons (support opens the chat) ===== */
 const PERK_SVG=Object.fromEntries(Object.entries({
  truck:'<path d="M3 6.5h10.5v10H3z"/><path d="M13.5 10H18l3 3.2v3.3h-7.5"/><circle cx="7" cy="17.6" r="1.9"/><circle cx="17.2" cy="17.6" r="1.9"/>',
@@ -510,7 +516,7 @@ function render(){
  document.body.classList.toggle("invoice-mode",path.startsWith("/account/invoice"));markNav(path);hsClose();hsSync(path,q);let html;
  html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:()=>viewOrder(q),favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
- if(path!==lastPath)window.scrollTo(0,0);lastPath=path;if(parts[0]==="product"&&q.get("review")==="1")setTimeout(()=>{const r=$("#reviews");r&&r.scrollIntoView({behavior:"smooth"})},120);applySeo(parts,q);Trk.page(parts);
+ catZoom(); if(path!==lastPath)window.scrollTo(0,0);lastPath=path;if(parts[0]==="product"&&q.get("review")==="1")setTimeout(()=>{const r=$("#reviews");r&&r.scrollIntoView({behavior:"smooth"})},120);applySeo(parts,q);Trk.page(parts);
 }
 
 /* ===== events ===== */

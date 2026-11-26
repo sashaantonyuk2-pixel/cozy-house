@@ -715,3 +715,9 @@ footer .copy{padding-bottom:84px}
  .ocitem img,.oditem img{width:60px;height:60px}.oditem{grid-template-columns:60px minmax(0,1fr)}.odprice{grid-column:2}
  .odtrack{padding:4px 12px 14px}}
 @media (max-width:860px){.shell.perks{padding-top:12px;padding-bottom:4px}}
+/* category photos: slow gentle zoom on hover; on touch screens once when the card comes into view */
+.cat .ph{overflow:hidden}
+.cat .ph img{transition:transform 1.1s cubic-bezier(.2,.7,.2,1);transform-origin:50% 60%}
+@media (hover:hover){.cat:hover .ph img,.cat:focus-visible .ph img{transform:scale(1.07)}}
+@media (hover:none){.cat .ph img{transition-duration:2.4s}.cat.zin .ph img{transform:scale(1.06)}}
+@media (prefers-reduced-motion:reduce){.cat .ph img{transition:none;transform:none!important}}
