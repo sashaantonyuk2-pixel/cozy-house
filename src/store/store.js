@@ -102,6 +102,14 @@ function hsSetup(){
 }
 function hsSync(path,q){if(path==="/shop"){hsIn().value=q.get("q")||"";hsCat().value=q.get("cat")||""}else if(path==="/"){hsIn().value="";hsCat().value=""}}
 
+/* ===== home: perks row under the banner — compact link cards with line icons (support opens the chat) ===== */
+const PERK_SVG=Object.fromEntries(Object.entries({
+ truck:'<path d="M3 6.5h10.5v10H3z"/><path d="M13.5 10H18l3 3.2v3.3h-7.5"/><circle cx="7" cy="17.6" r="1.9"/><circle cx="17.2" cy="17.6" r="1.9"/>',
+ shield:'<path d="M12 3l7.5 3v5.6c0 4.4-3.2 7.8-7.5 9.4-4.3-1.6-7.5-5-7.5-9.4V6z"/><rect x="9" y="11" width="6" height="4.8" rx="1"/><path d="M10.2 11V9.6a1.8 1.8 0 0 1 3.6 0V11"/>',
+ back:'<path d="M9 14.5 4 9.5l5-5"/><path d="M4 9.5h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+ chat:'<path d="M21 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.9A8 8 0 1 1 21 11.5z"/><path d="M8.5 11.6h.01M12 11.6h.01M15.5 11.6h.01"/>'
+}).map(([k,d])=>[k,`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`]));
+const PERKS=[["truck","perk1","#/delivery"],["shield","perk2","#/delivery"],["back","perk3","#/returns"],["chat","perk4",""]];
 /* ===== footer: payment method badges (drawn in code, no external images): Mastercard, Visa, PayPal, Apple Pay, Google Pay ===== */
 const PAY_SVG={
  visa:`<svg viewBox="0 0 38 24" role="img" aria-label="Visa"><rect width="38" height="24" rx="4" fill="#fff"/><text x="19" y="16.2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="900" font-style="italic" fill="#1a1f71" letter-spacing=".3">VISA</text></svg>`,
@@ -219,7 +227,7 @@ function viewHome(){
  return `<section class="hero2" data-track="hero" aria-label="${esc(st.heroTitle||st.name)}"><picture>${st.heroImageMobile?`<source media="(max-width:700px)" srcset="${esc(heroMob)}">`:""}<img src="${esc(heroImg)}" alt="" fetchpriority="high" style="object-position:${esc(pos)}"></picture>
  <div class="shell hero2-in"><div class="hero2-box">${st.heroEyebrow?`<span class="eyebrow">${esc(st.heroEyebrow)}</span>`:""}<h1>${esc(st.heroTitle)}</h1>${st.heroText?`<p>${esc(st.heroText)}</p>`:""}
  ${st.heroButtons==="1"?`<div class="hero-cta"><a class="btn hero-btn" href="${esc(link)}">${esc(st.heroBtnText||t("shopNow"))} →</a><a class="btn hero-btn2" href="#/about">Our story</a></div>`:""}</div></div>${st.heroButtons==="1"?"":`<a class="hero2-link" href="${esc(link)}" aria-label="${esc(st.heroBtnText||t("shopNow"))}"></a>`}</section>
- <div class="shell perks" data-track="perks">${[["🚚","perk1"],["💳","perk2"],["↺","perk3"],["💬","perk4"]].map(([i,k])=>`<div class="perk"><i>${i}</i><span><b>${t(k)}</b>${t(k+"s")}</span></div>`).join("")}</div>
+ <div class="shell perks" data-track="perks">${PERKS.map(([ic,k,h])=>{const inner=`<i aria-hidden="true">${PERK_SVG[ic]}</i><span><b>${t(k)}</b>${t(k+"s")}</span><em class="perkarr" aria-hidden="true">›</em>`;return h?`<a class="perk" href="${h}">${inner}</a>`:`<button type="button" class="perk" data-act="perkchat">${inner}</button>`}).join("")}</div>
  <section class="section" style="padding-top:20px" data-track="categories"><div class="shell"><div class="section-head"><div><span class="eyebrow">${t("categories")}</span><h2>${lang==="en"?"Shop by category":"Оберіть категорію"}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div>
  <div class="grid cats">${topCats().map(c=>`<a class="cat" href="#/shop?cat=${c.id}"><div class="ph"><img src="${esc(catImg(c))}" alt="" loading="lazy"></div><b>${esc(c.name)}</b><small>${nItems(vis.filter(p=>inCat(p,c.id)).length)}</small></a>`).join("")}</div></div></section>
  <section class="section alt" data-track="featured"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Our favourites":"Обирають найчастіше"}</span><h2>${t("featured")}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div><div class="grid">${feat.slice(0,4).map(card).join("")}</div></div></section>
@@ -545,6 +553,7 @@ document.addEventListener("click",e=>{
   cancelopen:()=>{const f=document.querySelector(`[data-form="cancelord"][data-no="${el.dataset.no}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("select").focus()}},
   retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   invprint:()=>window.print(),
+  perkchat:()=>{if(typeof Chat!=="undefined"&&$("#chatPanel"))Chat.toggle(true);else location.hash="#/contacts"},
   buyagain:()=>buyAgain(+id,el.dataset.ix==null?null:+el.dataset.ix),
   delacct:()=>{const f=$('[data-form="delacct"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   oauth:()=>oauthLogin(el.dataset.p),
