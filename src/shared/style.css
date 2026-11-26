@@ -917,3 +917,18 @@ footer .copy{padding-bottom:84px}
 .owarn,.odelay{padding:3px 0 3px 8px;background:none;border-radius:0;border-left:2px solid currentColor;font-size:12px;line-height:1.4;margin-top:6px}
 .owarn{color:#9a5a3f}.odelay{color:#8a5a0b}
 .t tr.ordrow select[data-ach="ostatus"]{width:auto!important;min-width:162px}
+/* ===== Seller Central tables: Amazon-like — white, clear row dividers, content aligned to the top ===== */
+.admin .tablewrap{border-color:#d5d9d9;border-radius:10px}
+.admin .tablewrap .t th{background:#fff;color:#0f1111;font-size:12.5px;font-weight:700;letter-spacing:0;text-transform:none;padding:12px;border-bottom:1px solid #d5d9d9;vertical-align:bottom}
+.admin .tablewrap .t td{border-bottom:1px solid #e3e6e6;padding:14px 12px;vertical-align:top}
+.admin .tablewrap .t tbody tr:last-child td{border-bottom:0}
+.admin .tablewrap .t tbody tr:hover>td{background:#fafaf8}
+.admin .tablewrap .t td .acts{justify-content:flex-start}
+/* orders: status as a coloured word (no row tint, no side bar) */
+.t tr.ordrow>td{background:#fff}
+.t tr.ordrow>td:first-child{box-shadow:none}
+.t tr.ordrow:hover>td{background:#fafaf8}
+.ostword{display:block;font-weight:700;font-size:13.5px;color:var(--sc);margin:0 0 6px}
+.t tr.ordrow select[data-ach="ostatus"]{background-image:none;padding:5px 26px 5px 10px;font-size:12.5px;color:#3d4540;min-width:150px}
+.ostlegend i{border-radius:2px;width:9px;height:3px}
+.admin .tablewrap .t td.nm{min-width:210px}.admin .tablewrap .t td.nm b{font-weight:700;color:var(--forest)}
