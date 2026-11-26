@@ -8,9 +8,10 @@
 
 <!-- NEW ENTRIES BELOW -->
 
-### 26.11.2026 — Add studio-style category photos (Unsplash License) (авто)
-- Змінені файли: `images/categories/garden-outdoor-studio.webp`, `images/categories/home-kitchen-studio.webp`, `images/categories/office-products-studio.webp`, `images/categories/pet-supplies-studio.webp`, `images/categories/sports-outdoors-studio.webp`, `images/categories/tools-home-improvement-studio.webp`, `images/categories/toys-games-studio.webp`
-- Коміт: [a9fcc6d](https://github.com/sashaantonyuk2-pixel/cozy-house/commit/a9fcc6d2141dcd91715a68f12b6ea00168cd562d)
+### 26.11.2026 — Фото категорій: студійний стиль
+- Інтер'єрні фото категорій замінено на студійні (один предмет на світлому/теплому тлі, як були попередні демо-фото), вибрані власником, з Unsplash (Unsplash License): рослина в білому горщику, керамічний чайник, блокнот, цуценя з коробками, кросівок, молоток, дерев'яний кубик.
+- Файли `images/categories/*-studio.webp`, 800×800, 10–155 KB; Supabase: `categories.image` переведено на ці файли. Попередні інтер'єрні фото видалено з репозиторію.
+
 
 ### 26.11.2026 — Головна: без кількості товарів у категоріях
 - У блоці «Shop by category» під назвою категорії більше не показується кількість товарів («2 items»); відступ під назвою вирівняно.
