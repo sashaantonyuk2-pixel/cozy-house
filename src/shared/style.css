@@ -972,3 +972,9 @@ footer .copy{padding-bottom:84px}
 .oeta{display:inline-block;margin-left:8px;font-size:12px;color:#4a564c;vertical-align:middle}
 .t tr.ordrow td>div.small{max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .t tr.ordrow td.oitemscell{max-width:140px}
+/* ===== Seller Central: full width — menu near the left edge, more room for work ===== */
+@media (min-width:861px){
+ .shell.admin,.shell.admin.navoff{max-width:none;padding-left:16px;padding-right:28px;gap:24px}
+ .sellerhead{max-width:none;padding-left:16px;padding-right:28px}
+}
+@media (min-width:1500px){.t tr.ordrow td.oitemscell{max-width:300px}}@media (min-width:1800px){.t tr.ordrow td.oitemscell{max-width:420px}}
