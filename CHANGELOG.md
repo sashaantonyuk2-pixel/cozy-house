@@ -8,6 +8,11 @@
 
 <!-- NEW ENTRIES BELOW -->
 
+### 27.11.2026 — Оформлення замовлення: заглушки Apple Pay, Google Pay і картки
+- У блоці «Payment method» (поки онлайн-оплата Stripe вимкнена) показуються неактивні варіанти: кнопки Apple Pay і Google Pay та поля картки (номер, MM / YY, CVC) з позначкою «Coming soon». Поля вимкнені й без назв — нічого не збирається і не надсилається. Під ними: «For now: we’ll email you a secure payment link…». Замовлення оформлюється, як і раніше, зі способом «Card — we’ll email you a secure payment link».
+- Виправлено: кошик і оформлення замовлення на екранах, вужчих за ~1270px, впирались у лівий край вікна (правило `.cartgrid` обнуляло бічні відступи).
+
+
 ### 27.11.2026 — Оплата: прибрано банківський переказ
 - Supabase (`store_settings`): зі способів оплати прибрано «Bank transfer» — при оформленні лишилась лише «Card — we’ll email you a secure payment link»; у тексті «Shipping & payment» тепер «Payment: by card via a secure payment link.»
 - Картка переваги під банером: «Secure payment — card payments» замість «card or bank transfer». Те саме у значеннях за замовчуванням (demo.js).

@@ -128,6 +128,19 @@ const PERK_SVG=Object.fromEntries(Object.entries({
  chat:'<path d="M21 11.5a8 8 0 0 1-11.6 7.1L4 20l1.4-4.9A8 8 0 1 1 21 11.5z"/><path d="M8.5 11.6h.01M12 11.6h.01M15.5 11.6h.01"/>'
 }).map(([k,d])=>[k,`<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`]));
 const PERKS=[["truck","perk1","#/delivery"],["shield","perk2","#/delivery"],["back","perk3","#/returns"],["chat","perk4",""]];
+/* ===== checkout: payment method placeholders (Apple Pay, Google Pay, card) — inactive until online payments are switched on.
+   The card fields are disabled and have no name: nothing is collected or sent. The order is placed with the payment-link method. ===== */
+function payStub(method){const soon='<span class="paysoon">Coming soon</span>';
+ return `<input type="hidden" name="payment" value="${esc(method)}">
+ <div class="paystub" aria-disabled="true">
+  <div class="paywallets"><button type="button" class="paywallet apple" disabled aria-label="Apple Pay (coming soon)">${PAY_SVG.applepay}${soon}</button><button type="button" class="paywallet google" disabled aria-label="Google Pay (coming soon)">${PAY_SVG.googlepay}${soon}</button></div>
+  <div class="payor"><span>or pay with card</span></div>
+  <div class="paycardwrap">${soon}<fieldset class="paycard" disabled><legend class="sr-only">Card details (coming soon)</legend>
+   <div class="paycardrow"><input class="field" placeholder="1234 1234 1234 1234" autocomplete="off" aria-label="Card number" inputmode="none"><span class="paycardbrands">${PAY_SVG.visa}${PAY_SVG.mastercard}</span></div>
+   <div class="paycardrow2"><input class="field" placeholder="MM / YY" autocomplete="off" aria-label="Expiry date" inputmode="none"><input class="field" placeholder="CVC" autocomplete="off" aria-label="CVC" inputmode="none"></div>
+  </fieldset></div>
+ </div>
+ <div class="paynow">💳 <div><b>For now: we’ll email you a secure payment link</b><br><span class="small muted">Place your order and we’ll send a link to pay by card within a few hours. Apple Pay, Google Pay and card checkout here are coming soon.</span></div></div>`}
 /* ===== footer: payment method badges (drawn in code, no external images): Mastercard, Visa, PayPal, Apple Pay, Google Pay ===== */
 const PAY_SVG={
  visa:`<svg viewBox="0 0 38 24" role="img" aria-label="Visa"><rect width="38" height="24" rx="4" fill="#fff"/><text x="19" y="16.2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="900" font-style="italic" fill="#1a1f71" letter-spacing=".3">VISA</text></svg>`,
@@ -360,7 +373,7 @@ function viewCheckout(){
  <div><label>State <span class="req">*</span></label><select class="field" name="state" autocomplete="address-level1" required><option value="">Select state</option>${US_STATES.map(([c,n])=>`<option value="${c}" ${stateCode(d.state)===c?"selected":""}>${n}</option>`).join("")}</select></div>
  <div><label>ZIP code <span class="req">*</span></label><input class="field" name="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" value="${esc(d.zip)}" placeholder="12345" required><div class="ferr" data-for="zip"></div></div>
  <div><label>Country</label><input class="field" value="United States" disabled></div></div></div>
- <div class="panel"><h2>${t("paymentM")}</h2>${shipCfg().pay?`<div class="paysecure">🔒 <div><b>Pay securely by card, Apple Pay or Google Pay</b><br><span class="small muted">You’ll complete payment on a secure Stripe page. Your order is placed as soon as the payment goes through.</span></div></div><input type="hidden" name="payment" value="Card (Stripe)">`:`<div class="radio">${o(S.settings.paymentOptions).map((x,i)=>`<label><input type="radio" name="payment" value="${esc(x)}" ${i?"":"checked"}>${esc(x)}</label>`).join("")}</div>`}
+ <div class="panel"><h2>${t("paymentM")}</h2>${shipCfg().pay?`<div class="paysecure">🔒 <div><b>Pay securely by card, Apple Pay or Google Pay</b><br><span class="small muted">You’ll complete payment on a secure Stripe page. Your order is placed as soon as the payment goes through.</span></div></div><input type="hidden" name="payment" value="Card (Stripe)">`:payStub(o(S.settings.paymentOptions)[0]||"Card — we’ll email you a secure payment link")}
  <div style="margin-top:14px"><label class="lbl">${t("comment")}</label><textarea class="field" name="comment"></textarea></div></div>
  <div id="coErr">${/[?&]canceled=1/.test(location.hash)?`<div class="note">Payment was cancelled — nothing was charged. Your cart is saved, you can try again.</div>`:""}</div><p class="small muted" style="margin:0">By placing your order, you agree to our <a class="textlink" href="#/terms" target="_blank">Terms of Service</a> and <a class="textlink" href="#/privacy" target="_blank">Privacy Policy</a>.</p><button class="btn primary block" style="padding:15px">${shipCfg().pay?"Continue to payment":t("placeOrder")} →</button></form>${summary(false,stateCode(d.state),false)}</div>`}
 function orderText(o){
