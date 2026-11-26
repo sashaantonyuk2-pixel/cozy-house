@@ -189,6 +189,8 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&NavDrop.el&&NavDrop
 addEventListener("scroll",()=>{if(NavDrop.el&&NavDrop.el.classList.contains("on"))NavDrop.hide(0)},{passive:true});
 addEventListener("resize",()=>NavDrop.hide(0));
 
+/* product page: hovering a thumbnail shows that photo (like Amazon) */
+document.addEventListener("mouseover",e=>{const b=e.target.closest&&e.target.closest('.pdp .thumbs [data-act="cargo"]');if(!b||!matchMedia("(hover:hover)").matches)return;const c=document.querySelector(`[data-car="${b.dataset.car}"].car`);if(c&&carIdx(c)!==+b.dataset.i)carGo(c,+b.dataset.i,true)});
 /* ===== product page: Amazon-style zoom (desktop). A lens follows the mouse over the photo and a large window beside it
    shows that area magnified. Touch screens keep tap-to-open full screen. ===== */
 const PZoom={Z:2.3,lens:null,pane:null,img:null,
@@ -365,17 +367,22 @@ function viewProduct(id){
  const c=catOf(p.cat),cp=catParent(c),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  const rel=visible().filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
  const specs=[...filtFor(p.cat).filter(f=>pAttr(p,f.id).length).map(f=>[f.name,pAttr(p,f.id).join(", ")]),...(p.specs||[]).filter(s=>(s[0]||s[1])&&!filtFor(p.cat).some(f=>pAttr(p,f.id).length&&f.name.toLowerCase()===String(s[0]).trim().toLowerCase()))];
- return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}<p class="zoomhint">🔍 Roll over image to zoom in · Click to open expanded view</p></div>
- <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${cp?` / <a href="#/shop?cat=${cp.id}">${esc(cp.name)}</a>`:""}${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
+ const disc=p.oldPrice>p.price,priceHtml=`<span class="price ${disc?"sale":""}">${money(p.price)}</span>${disc?`<span class="old">${money(p.oldPrice)}</span><span class="label sale">−${Math.round(100-p.price/p.oldPrice*100)}%</span>`:""}`;
+ return `<div class="shell"><div class="pdp pdp3"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}<p class="zoomhint">🔍 Roll over image to zoom in · Click to open expanded view</p></div>
+ <div class="pdinfo"><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${cp?` / <a href="#/shop?cat=${cp.id}">${esc(cp.name)}</a>`:""}${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
  ${!p.active?`<div class="note">Hidden product — customers can’t see it.</div>`:""}
- <h1>${esc(p.name)}</h1>${(()=>{const r=rating(p.id);return r?`<button class="crate rlink" data-act="toreviews">${stars(r.avg,17)}<span>${r.avg.toFixed(1)} · ${r.n} ${r.n===1?"review":"reviews"}</span></button>`:`<button class="crate rlink none" data-act="toreviews">${stars(0,17)}<span>No reviews yet · Write a review</span></button>`})()}<span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>${p.sku?` <span class="muted small" style="margin-left:12px">Item # <b>${esc(p.sku)}</b></span>`:""}
- <div class="pricebox"><span class="price ${p.oldPrice>p.price?"sale":""}">${money(p.price)}</span>${p.oldPrice>p.price?`<span class="old">${money(p.oldPrice)}</span><span class="label sale">−${Math.round(100-p.price/p.oldPrice*100)}%</span>`:""}</div>
+ <h1>${esc(p.name)}</h1>${(()=>{const r=rating(p.id);return r?`<button class="crate rlink" data-act="toreviews">${stars(r.avg,17)}<span>${r.avg.toFixed(1)} · ${r.n} ${r.n===1?"review":"reviews"}</span></button>`:`<button class="crate rlink none" data-act="toreviews">${stars(0,17)}<span>No reviews yet · Write a review</span></button>`})()}${p.sku?` <span class="muted small" style="margin-left:12px">Item # <b>${esc(p.sku)}</b></span>`:""}
+ <div class="pricebox">${priceHtml}</div>
  ${p.short?`<p class="lead">${esc(p.short)}</p>`:""}
- ${optsHtml(p,"pdp")}<div class="buyrow"><div class="qty"><button data-act="q-" aria-label="-">−</button><input id="pq" type="number" min="1" max="${Math.max(1,p.stock)}" value="1" aria-label="${t("qty")}"><button data-act="q+" aria-label="+">+</button></div>
- <button class="btn primary" style="flex:1" data-act="addq" data-id="${p.id}" ${st==="out"?"disabled":""}>${ICON.bag.replace("<svg",'<svg width="18" height="18"')} ${st==="out"?t("notAvail"):t("addToCart")}</button>
+ ${optsHtml(p,"pdp")}</div>
+ <aside class="buybox" aria-label="Buy"><div class="pricebox bbprice">${priceHtml}</div>
+ <div class="bbship">🚚 ${esc(shipNote())}</div>
+ <span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>
+ <div class="buyrow"><div class="qty"><button data-act="q-" aria-label="-">−</button><input id="pq" type="number" min="1" max="${Math.max(1,p.stock)}" value="1" aria-label="${t("qty")}"><button data-act="q+" aria-label="+">+</button></div>
  <button class="btn fav-inline ${favs.includes(p.id)?"on":""}" data-act="fav" data-id="${p.id}" aria-label="${t("favorites")}" style="padding:11px 13px">${ICON.heart.replace("<svg",'<svg width="20" height="20"')}</button></div>
+ <button class="btn primary block" data-act="addq" data-id="${p.id}" ${st==="out"?"disabled":""}>${ICON.bag.replace("<svg",'<svg width="18" height="18"')} ${st==="out"?t("notAvail"):t("addToCart")}</button>
  <button class="btn buynow block" data-act="buynow" data-id="${p.id}" data-scope="pdp" ${st==="out"?"hidden":""}>Buy now</button>
- <div class="infobox"><b>🚚 ${t("deliveryInfo")}</b>${esc(shipNote())}<span class="retnote">↺ Easy returns within ${shipCfg().days} days · <a class="textlink" href="#/returns">Return policy</a></span></div></div></div>
+ <dl class="bbmeta"><dt>Ships from</dt><dd>${esc(S.settings.name||"")}</dd><dt>Returns</dt><dd>${shipCfg().days}-day returns · <a class="textlink" href="#/returns">Policy</a></dd><dt>Payment</dt><dd>Secure checkout</dd></dl></aside></div>
  <div class="tabsec">${p.desc?`<div><h2>${t("description")}</h2><div class="desc">${esc(p.desc)}</div></div>`:"<div></div>"}${specs.length?`<div><h2>${t("specs")}</h2><table class="specs">${specs.map(s=>`<tr><td>${esc(s[0])}</td><td>${esc(s[1])}</td></tr>`).join("")}</table></div>`:""}</div>
  ${reviewsHtml(p)}
  ${rel.length?`<section class="section" style="padding-top:10px"><div class="section-head"><h2>${t("related")}</h2></div><div class="grid">${rel.map(card).join("")}</div></section>`:""}</div>`}

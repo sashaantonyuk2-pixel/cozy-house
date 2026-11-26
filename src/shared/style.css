@@ -852,3 +852,27 @@ footer .copy{padding-bottom:84px}
 .pdp .carslide img{cursor:crosshair}
 .zoomhint{text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 0}
 @media (hover:none),(max-width:899px){.zoomhint{display:none}.pdp .carslide img{cursor:zoom-in}}
+/* ===== product page: Amazon-like layout — photo | details | buy box ===== */
+.pdp3{grid-template-columns:minmax(0,460px) minmax(0,1fr) 280px;gap:32px;align-items:start}
+.pdp3 .gallery{display:grid;grid-template-columns:58px minmax(0,1fr);gap:10px;align-items:start;position:sticky;top:150px}
+.pdp3 .gallery .car{grid-column:2;max-width:400px;width:100%}
+.pdp3 .gallery .thumbs{grid-column:1;grid-row:1;flex-direction:column;flex-wrap:nowrap;gap:8px;margin:0;max-height:400px;overflow-y:auto;overflow-x:hidden;padding:0 2px 0 0}
+.pdp3 .gallery .thumbs button{width:52px;height:52px;border-radius:9px}
+.pdp3 .gallery .thumbs button.on{box-shadow:0 0 0 2px var(--terra);border-color:#fff}
+.pdp3 .zoomhint{grid-column:2;max-width:400px}
+.pdp3 .gallery:not(:has(.thumbs)) {grid-template-columns:minmax(0,1fr)}
+.pdp3 .gallery:not(:has(.thumbs)) .car,.pdp3 .gallery:not(:has(.thumbs)) .zoomhint{grid-column:1}
+.pdp3 h1{font-size:30px;line-height:1.2}
+.pdp3 .pdinfo .pricebox{padding-top:10px;border-top:1px solid var(--line);margin-top:10px}
+.buybox{border:1px solid var(--line);border-radius:16px;background:#fff;padding:18px;display:flex;flex-direction:column;gap:12px;position:sticky;top:150px}
+.buybox .pricebox{margin:0}.buybox .price{font-size:26px}
+.bbship{font-size:13.5px;color:#4a564c;line-height:1.45}
+.buybox .stock{align-self:flex-start;margin:0}
+.buybox .buyrow{margin:0;display:flex;gap:8px}.buybox .buyrow .qty{flex:1}
+.buybox .btn.block{width:100%}
+.bbmeta{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:4px 0 0;font-size:12.5px;color:var(--muted)}.bbmeta dd{margin:0;color:var(--ink)}
+@media (max-width:1100px){.pdp3{grid-template-columns:minmax(0,420px) minmax(0,1fr)}.pdp3 .buybox{grid-column:2;position:static}.pdp3 .gallery{position:static}}
+@media (max-width:860px){.pdp3{grid-template-columns:1fr}.pdp3 .buybox{grid-column:auto}
+ .pdp3 .gallery{grid-template-columns:1fr}.pdp3 .gallery .car,.pdp3 .zoomhint{grid-column:1;max-width:none}.pdp3 .gallery .thumbs{grid-column:1;grid-row:auto;flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden}}
+.pdp3 .pdinfo>.muted.small{margin-left:0!important;display:block;margin-top:4px}
+@media (min-width:861px) and (max-width:1100px){.pdp3 .gallery{grid-row:span 2}.pdp3{row-gap:18px}}
