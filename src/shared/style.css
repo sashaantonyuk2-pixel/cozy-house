@@ -729,3 +729,11 @@ footer .copy{padding-bottom:84px}
 /* customer: delayed delivery */
 .o-late{background:#fdf3dd;color:#9a5a0b}
 .otrk-late{background:#fdf3dd;border-color:#f0d9a8}
+/* Seller · Категорії: click the picture to upload a new photo */
+.catpic{position:relative;display:block;width:46px;height:46px;border-radius:9px;overflow:hidden;cursor:pointer}
+.cattable .catsub .catpic{width:34px;height:34px;margin-left:12px}
+.catpic img{width:100%!important;height:100%!important;margin:0!important;display:block}
+.catpicov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(30,40,32,.45);color:#fff;font-size:15px;opacity:0;transition:opacity .15s}
+.catpic:hover .catpicov,.catpic:focus-within .catpicov{opacity:1}
+.catpic:focus-within{outline:2px solid var(--terra);outline-offset:2px}
+.catsave{flex:none}.catsave:disabled{opacity:.45;cursor:default}

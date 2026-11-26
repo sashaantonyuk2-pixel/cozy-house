@@ -85,6 +85,7 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
   const a=C.indexOf(c),b=C.indexOf(o);[C[a],C[b]]=[C[b],C[a]];save();chrome();render()},
  catsub:()=>{const r=$(`tr.catnew[data-p="${id}"]`);if(!r)return;r.hidden=!r.hidden;if(!r.hidden)r.querySelector("input[name=name]").focus()},
  catimgdel:()=>{catOf(id).image="";save();render()},
+ catsave:()=>{const c=catOf(id),i=el.parentNode.querySelector(".catnm"),v=(i&&i.value||"").trim().slice(0,80);if(!c||!v)return;c.name=v;i.dataset.orig=v;el.disabled=true;el.classList.remove("primary");save();chrome();toast("Назву збережено ✓")},
  herodel:()=>{S.settings.heroImage="";save();render()},
  heromdel:()=>{S.settings.heroImageMobile="";save();render()},
  export:()=>{download(`cozyhousevibe-backup-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(S),"application/json");toast("Копію збережено")},
