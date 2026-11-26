@@ -6,10 +6,10 @@ function sbInit(){
  try{if(!window.supabase||!window.supabase.createClient)return;
   sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{flowType:"pkce",persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   sb.auth.onAuthStateChange((ev,session)=>{const was=user&&user.id;user=session?session.user:null;if(!user)profile=null;
-   setTimeout(()=>{acctBadge();if(user&&(was||null)!==user.id)syncFavs();
+   setTimeout(()=>{acctBadge();if(user&&(was||null)!==user.id){syncFavs();claimGuest()}
     if(ev==="PASSWORD_RECOVERY"){location.hash="#/account/reset";return}
     if((was||null)!==(user&&user.id||null)&&/^#\/(account|checkout|orders)/.test(location.hash))render()},0)});
-  sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;authReady=true;acctBadge();if(user)syncFavs();
+  sb.auth.getSession().then(({data})=>{user=data.session?data.session.user:null;authReady=true;acctBadge();if(user){syncFavs();claimGuest()}
    if(/[?&]code=|[?&]error/.test(location.search)){const next=(location.hash&&location.hash!=="#/"?location.hash:"")||LS.get("afterLogin","")||"#/account";LS.set("afterLogin","");history.replaceState(null,"",location.pathname+next);if(user)setTimeout(()=>{toast("Signed in");if(location.hash!==next)location.hash=next;else render()},0)}
    if(/^#\/(account|checkout|orders)/.test(location.hash))render()});
  }catch(e){sb=null}}
@@ -76,3 +76,7 @@ async function authSubmit(k,f){
  if(k==="acReset"){if(String(fd.password).length<8)return acMsg("Password must be at least 8 characters.");busy(true);
   const{error}=await sb.auth.updateUser({password:fd.password});busy(false);if(error)return acMsg(esc(authErr(error)));toast("Password updated");location.hash="#/account";return}
  }catch(e){busy(false);acMsg(esc(authErr(e)))}}
+/* guest orders placed with this account's (confirmed) email join the account — then they appear in My orders */
+let claimDone=null;
+function claimGuest(){if(!sb||!user||claimDone===user.id)return;claimDone=user.id;
+ sb.rpc("claim_guest_orders").then(({data,error})=>{if(error||!data)return;toast(`${data} earlier order${data===1?"":"s"} added to your account`);if(location.hash.startsWith("#/account"))render()}).catch(()=>{})}

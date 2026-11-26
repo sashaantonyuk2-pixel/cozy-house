@@ -123,3 +123,23 @@ create policy "Customers and admins view return media" on storage.objects as per
   using (((bucket_id = 'return-media'::text) and (((storage.foldername(name))[1] = (( select auth.uid() as uid))::text) or ( select private.is_admin() as is_admin))));
 create policy "Admins delete return media" on storage.objects as permissive for delete to authenticated
   using (((bucket_id = 'return-media'::text) and ( select private.is_admin() as is_admin)));
+
+-- =====================================================================
+-- Guest orders → account, guest returns (migration guest_orders_link_and_guest_returns, 27.11.2026)
+--   private.link_guest_orders(uid): orders without an account whose customer email = the account's CONFIRMED email join it
+--     (trigger on auth.users after insert / email confirmation; public.claim_guest_orders() is called by the storefront on sign-in)
+--   Guest return: public.guest_return_start(no, email) → one-time token (2 h) → photos uploaded to return-media/guest/<token>/
+--     (storage policy "Guests upload return media with a token") → public.guest_return_request(...) inserts through the same guard.
+--   private.return_guard() got a guest mode (set only inside guest_return_request); track_order() also returns the return status.
+--   Full SQL of this migration: see the Supabase migration history (name above).
+-- =====================================================================
+create table if not exists private.guest_return_tokens (
+  token text primary key,
+  order_id bigint not null references public.orders(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+-- functions: private.link_guest_orders(uuid), private.link_guest_orders_trg(), public.claim_guest_orders(),
+--            public.guest_return_start(text,text), private.guest_upload_ok(text), public.guest_return_request(text,text,text,text,text,jsonb,jsonb),
+--            private.return_guard() (guest mode), public.track_order(text,text) (+ 'return')
+-- trigger:   link_guest_orders after insert or update of email_confirmed_at, email on auth.users
+-- policy:    "Guests upload return media with a token" on storage.objects for insert to anon, authenticated

@@ -31,7 +31,7 @@ function retStatus(r){const free=r.free_return,note=r.seller_note?`<br><span cla
   approved:`✓ Return approved. ${free?"We’ll email you a prepaid return label — return shipping is free.":"Please ship the item(s) to the address in our email. Return shipping is paid by you."} Pack the items in their original packaging.`,
   rejected:`Your return request was declined.`,received:`📦 We’ve received your return. Your refund is being processed.`,refunded:`💳 Your refund has been issued. It can take 5–10 business days to appear.`};
  return `<div class="retstat r-${r.status}">${M[r.status]||esc(r.status)}${note}</div>`}
-function retForm(o){const w=retWindow(o);return `<form class="retform" data-form="retreq" data-id="${o.id}" data-no="${esc(o.order_no)}" hidden novalidate>
+function retForm(o,guestEmail){const w=retWindow(o);return `<form class="retform" data-form="retreq" data-id="${o.id}" data-no="${esc(o.order_no)}" ${guestEmail?`data-email="${esc(guestEmail)}"`:""} hidden novalidate>
  <h4>Return items <span class="muted small">· within ${w.days} days of delivery (until ${fmtDate(w.until)})</span></h4>
  <fieldset><legend>Which items?</legend>${o.items.map((i,k)=>`<label class="retitem"><input type="checkbox" name="ri" value="${k}" ${o.items.length===1?"checked":""}><span>${esc(i.name)}${i.opt?` <span class="muted">(${esc(optStr(i.opt,prod(i.id)))})</span>`:""}</span>${+i.qty>1?`<select class="field" name="rq${k}" aria-label="Quantity">${Array.from({length:+i.qty},(_,n)=>`<option value="${n+1}" ${n+1===+i.qty?"selected":""}>${n+1}</option>`).join("")}</select>`:`<input type="hidden" name="rq${k}" value="1">`}</label>`).join("")}</fieldset>
  <fieldset><legend>Reason</legend>${Object.entries(RET_REASONS).map(([k,[l,free]])=>`<label class="retreason"><input type="radio" name="reason" value="${k}"><span><b>${l}</b><small>${free?"Free return — we send you a prepaid label":"Return shipping is paid by you"}</small></span></label>`).join("")}</fieldset>
@@ -112,13 +112,16 @@ async function submitReturn(f){const msg=f.querySelector(".retmsg"),err=h=>{msg.
  if(files.some(x=>!/^(image|video)\//.test(x.type||"")&&!/\.(heic|heif)$/i.test(x.name)))return err("Please add photos or videos only.");
  if(!f.agree.checked)return err("Please confirm the condition of the item.");
  const btn=f.querySelector("button.primary");btn.disabled=true;btn.textContent="Uploading…";
- try{const paths=[];for(let k=0;k<files.length;k++){const x=files[k],ext=((x.name.match(/\.([a-z0-9]{2,5})$/i)||[])[1]||"bin").toLowerCase(),p=`${user.id}/${f.dataset.no}-${Date.now()}-${k}.${ext}`;
+ const guest=f.dataset.email||"";
+ try{let tok="";if(guest){const r=await sb.rpc("guest_return_start",{p_no:f.dataset.no,p_email:guest});if(r.error)throw r.error;tok=r.data}
+  const paths=[];for(let k=0;k<files.length;k++){const x=files[k],ext=((x.name.match(/\.([a-z0-9]{2,5})$/i)||[])[1]||"bin").toLowerCase(),p=guest?`guest/${tok}/${f.dataset.no}-${Date.now()}-${k}.${ext}`:`${user.id}/${f.dataset.no}-${Date.now()}-${k}.${ext}`;
    const{error}=await sb.storage.from("return-media").upload(p,x,{contentType:x.type||undefined,upsert:false});if(error)throw error;paths.push(p)}
   const items=idx.map(i=>({i,qty:+((f.querySelector(`[name=rq${i}]`)||{}).value||1)}));
-  const{error}=await sb.from("return_requests").insert({order_id:+f.dataset.id,reason,details:f.details.value.trim()||null,items,media:paths});
+  const{error}=guest?await sb.rpc("guest_return_request",{p_no:f.dataset.no,p_email:guest,p_token:tok,p_reason:reason,p_details:f.details.value.trim()||null,p_items:items,p_media:paths}):await sb.from("return_requests").insert({order_id:+f.dataset.id,reason,details:f.details.value.trim()||null,items,media:paths});
+  if(error)throw error;if(guest){toast("Return request sent ✓");const tf=$('[data-form="track"]');tf&&tf.requestSubmit();return}
   if(error)throw error;toast("Return request sent ✓");fillOrders()}
  catch(e){const m=(e&&e.message)||"";btn.disabled=false;btn.textContent="Send return request";
-  err(/RETURN_WINDOW_CLOSED/.test(m)?"The return window for this order has closed.":/ALREADY_REQUESTED/.test(m)?"A return for this order has already been requested.":/NOT_RETURNABLE/.test(m)?"This order can’t be returned yet — it hasn’t shipped.":/mime|type/i.test(m)?"This file type isn’t supported. Please use JPG, PNG, HEIC or MP4/MOV video.":/size|large/i.test(m)?`A file is too large (max ${RET_MAX_MB} MB).`:"Couldn’t send your request. Please try again or contact us.")}}
+  err(/RETURN_WINDOW_CLOSED/.test(m)?"The return window for this order has closed.":/ALREADY_REQUESTED/.test(m)?"A return for this order has already been requested.":/NOT_RETURNABLE|NOT_DELIVERED/.test(m)?"Returns open once your order is delivered.":/NOT_FOUND/.test(m)?"We couldn’t match this order number and email.":/TOKEN_EXPIRED/.test(m)?"This page was open too long — please send the request again.":/mime|type/i.test(m)?"This file type isn’t supported. Please use JPG, PNG, HEIC or MP4/MOV video.":/size|large/i.test(m)?`A file is too large (max ${RET_MAX_MB} MB).`:"Couldn’t send your request. Please try again or contact us.")}}
 /* ===== Invoice (download as PDF / print) ===== */
 function loadHtml2pdf(){if(window.html2pdf)return Promise.resolve(window.html2pdf);return new Promise((res,rej)=>{const s=document.createElement("script");
  s.src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";s.integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==";s.crossOrigin="anonymous";s.referrerPolicy="no-referrer";
