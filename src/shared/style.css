@@ -876,3 +876,6 @@ footer .copy{padding-bottom:84px}
  .pdp3 .gallery{grid-template-columns:1fr}.pdp3 .gallery .car,.pdp3 .zoomhint{grid-column:1;max-width:none}.pdp3 .gallery .thumbs{grid-column:1;grid-row:auto;flex-direction:row;max-height:none;overflow-x:auto;overflow-y:hidden}}
 .pdp3 .pdinfo>.muted.small{margin-left:0!important;display:block;margin-top:4px}
 @media (min-width:861px) and (max-width:1100px){.pdp3 .gallery{grid-row:span 2}.pdp3{row-gap:18px}}
+/* hover preview never takes clicks */
+.cprev{pointer-events:none}
+.cphint{font-size:11.5px;color:var(--muted);margin-top:6px}

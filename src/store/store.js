@@ -212,29 +212,30 @@ document.addEventListener("mousemove",e=>{const img=e.target.closest&&e.target.c
 document.addEventListener("mouseleave",()=>PZoom.stop());addEventListener("scroll",()=>PZoom.img&&PZoom.stop(),{passive:true});addEventListener("hashchange",()=>PZoom.stop());
 document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest('[data-act="carmove"],[data-act="cargo"],[data-act="lbopen"]'))PZoom.stop()},true);
 
-/* ===== product card: large hover preview (desktop). Rest the mouse on a card photo ~0.7 s → a big photo with all the
-   product's photos pops up beside the card; hover a thumbnail to switch; click opens the product. ===== */
-const CardPrev={el:null,t:null,h:null,cur:null,
+/* ===== product card: large hover preview (desktop). Rest the mouse on a card photo ~0.7 s → a big photo with the product's
+   photos pops up beside the card. Moving the mouse across the card photo flips through the photos. The preview never takes
+   clicks (pointer-events: none) and closes as soon as the mouse leaves the photo, so it can't cover another card's buttons. ===== */
+const CardPrev={el:null,t:null,cur:null,imgs:[],
  ok(){return matchMedia("(hover:hover) and (pointer:fine) and (min-width:900px)").matches&&!document.querySelector(".modal.open,.drawer.open")},
- box(){if(this.el)return this.el;const d=this.el=document.createElement("div");d.className="cprev";d.setAttribute("aria-hidden","true");document.body.appendChild(d);
-  d.addEventListener("mouseenter",()=>clearTimeout(this.h));d.addEventListener("mouseleave",()=>this.hide(150));
-  d.addEventListener("mouseover",e=>{const th=e.target.closest(".cpthumb");if(!th)return;d.querySelector(".cpmain").src=th.dataset.src;d.querySelectorAll(".cpthumb").forEach(x=>x.classList.toggle("on",x===th))});return d},
+ box(){if(this.el)return this.el;const d=this.el=document.createElement("div");d.className="cprev";d.setAttribute("aria-hidden","true");document.body.appendChild(d);return d},
  show(card){const a=card.querySelector("a.ph"),id=(a&&a.getAttribute("href")||"").split("/").pop(),p=prod(decodeURIComponent(id));if(!p||!this.ok())return;
-  const imgs=(p.images&&p.images.length?p.images:[img0(p)]).slice(0,6),d=this.box(),r=rating(p.id);this.cur=card;
-  d.innerHTML=`<a class="cpimg" href="#/product/${esc(p.id)}" tabindex="-1"><img class="cpmain" src="${esc(imgs[0])}" alt=""></a>
-   ${imgs.length>1?`<div class="cpthumbs">${imgs.map((u,i)=>`<img class="cpthumb ${i?"":"on"}" src="${esc(u)}" data-src="${esc(u)}" alt="">`).join("")}</div>`:""}
+  const imgs=this.imgs=(p.images&&p.images.length?p.images:[img0(p)]).slice(0,6),d=this.box(),r=rating(p.id);this.cur=card;
+  d.innerHTML=`<div class="cpimg"><img class="cpmain" src="${esc(imgs[0])}" alt=""></div>
+   ${imgs.length>1?`<div class="cpthumbs">${imgs.map((u,i)=>`<img class="cpthumb ${i?"":"on"}" src="${esc(u)}" alt="">`).join("")}</div><div class="cphint">Move across the photo to see all ${imgs.length}</div>`:""}
    <div class="cpinfo"><b>${esc(p.name)}</b><span><span class="price ${p.oldPrice>p.price?"sale":""}">${money(p.price)}</span>${p.oldPrice>p.price?` <span class="old">${money(p.oldPrice)}</span>`:""}${r?` · ★ ${r.avg.toFixed(1)} (${r.n})`:""}</span></div>`;
   d.classList.add("on");const R=card.getBoundingClientRect(),W=d.offsetWidth,H=d.offsetHeight,gap=14;
-  let left=R.right+gap;if(left+W>innerWidth-8)left=R.left-gap-W;if(left<8)left=Math.max(8,Math.min(innerWidth-W-8,R.left+R.width/2-W/2));
-  const hb=Math.max(0,(document.querySelector(".header")||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom)+8,top=Math.max(hb,Math.min(innerHeight-H-8,R.top+R.height/2-H/2));d.style.left=Math.round(left)+"px";d.style.top=Math.round(top)+"px"},
- hide(ms){clearTimeout(this.t);clearTimeout(this.h);this.h=setTimeout(()=>{if(this.el)this.el.classList.remove("on");this.cur=null},ms||0)}};
+  let left=R.right+gap;if(left+W>innerWidth-8)left=R.left-gap-W;if(left<8){d.classList.remove("on");this.cur=null;return}
+  const hb=Math.max(0,(document.querySelector(".header")||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom)+8,top=Math.max(hb,Math.min(innerHeight-H-8,R.top+R.height/2-H/2));
+  d.style.left=Math.round(left)+"px";d.style.top=Math.round(top)+"px"},
+ pick(e,ph){if(!this.el||!this.el.classList.contains("on")||this.imgs.length<2)return;const r=ph.getBoundingClientRect(),i=Math.max(0,Math.min(this.imgs.length-1,Math.floor((e.clientX-r.left)/r.width*this.imgs.length)));
+  const m=this.el.querySelector(".cpmain");if(m&&m.dataset.i!==String(i)){m.src=this.imgs[i];m.dataset.i=i;this.el.querySelectorAll(".cpthumb").forEach((x,k)=>x.classList.toggle("on",k===i))}},
+ hide(){clearTimeout(this.t);if(this.el)this.el.classList.remove("on");this.cur=null}};
 document.addEventListener("mouseover",e=>{const ph=e.target.closest&&e.target.closest(".card .ph");if(!ph)return;const card=ph.closest(".card");
- clearTimeout(CardPrev.h);if(CardPrev.cur===card)return;clearTimeout(CardPrev.t);CardPrev.t=setTimeout(()=>CardPrev.show(card),700)});
-document.addEventListener("mouseout",e=>{const ph=e.target.closest&&e.target.closest(".card .ph");if(!ph||ph.contains(e.relatedTarget))return;clearTimeout(CardPrev.t);
- if(!(CardPrev.el&&CardPrev.el.contains(e.relatedTarget)))CardPrev.hide(200)});
-addEventListener("scroll",()=>{if(CardPrev.el&&CardPrev.el.classList.contains("on"))CardPrev.hide(0);clearTimeout(CardPrev.t)},{passive:true});
-addEventListener("hashchange",()=>CardPrev.hide(0));
-document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest('[data-act="qv"],[data-act="fav"],[data-act="add"]'))CardPrev.hide(0)},true);
+ if(CardPrev.cur===card)return;CardPrev.hide();CardPrev.t=setTimeout(()=>CardPrev.show(card),700)});
+document.addEventListener("mousemove",e=>{const ph=e.target.closest&&e.target.closest(".card .ph");if(ph&&CardPrev.cur===ph.closest(".card"))CardPrev.pick(e,ph)});
+document.addEventListener("mouseout",e=>{const ph=e.target.closest&&e.target.closest(".card .ph");if(!ph||ph.contains(e.relatedTarget))return;CardPrev.hide()});
+addEventListener("scroll",()=>CardPrev.hide(),{passive:true});addEventListener("hashchange",()=>CardPrev.hide());
+document.addEventListener("click",()=>CardPrev.hide(),true);
 
 /* ===== layers: mini cart, quick view, filter drawer ===== */
 let lastFocus=null;
