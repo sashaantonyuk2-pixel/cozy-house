@@ -16,7 +16,7 @@ adminOff:"Адмін-панель вимкнена в опублікованій
 },
 en:{home:"Home",shop:"Shop",delivery:"Shipping & payment",contacts:"Contacts",about:"About",favorites:"Wishlist",cart:"Cart",
 shopNow:"Shop now",learnMore:"About us",categories:"Categories",allCats:"All categories",featured:"Bestsellers",newArrivals:"New arrivals",viewAll:"View all →",
-perk1:"Fast dispatch",perk1s:"1–2 business days",perk2:"Secure payment",perk2s:"card or bank transfer",perk3:"Easy returns",perk3s:"14 days",perk4:"Support",perk4s:"we reply daily",
+perk1:"Fast dispatch",perk1s:"1–2 business days",perk2:"Secure payment",perk2s:"card payments",perk3:"Easy returns",perk3s:"14 days",perk4:"Support",perk4s:"we reply daily",
 items:"items",search:"Search products…",sort:"Sort",sortPop:"Popular",sortNew:"Newest",sortCheap:"Price: low to high",sortExp:"Price: high to low",sortName:"Name",inStockOnly:"In stock only",
 noResults:"Nothing found",noResultsS:"Try another search or category.",resetFilters:"Reset filters",
 sale:"Sale",out:"Sold out",inStock:"In stock",low:"Low stock",newL:"New",
