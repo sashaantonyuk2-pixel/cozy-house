@@ -932,3 +932,43 @@ footer .copy{padding-bottom:84px}
 .t tr.ordrow select[data-ach="ostatus"]{background-image:none;padding:5px 26px 5px 10px;font-size:12.5px;color:#3d4540;min-width:150px}
 .ostlegend i{border-radius:2px;width:9px;height:3px}
 .admin .tablewrap .t td.nm{min-width:210px}.admin .tablewrap .t td.nm b{font-weight:700;color:var(--forest)}
+/* ===== Seller tables: compact rows (colours kept) ===== */
+.admin .tablewrap .t td{padding:8px 10px}
+.admin .tablewrap .t th{padding:9px 10px}
+.admin .tablewrap .t img{width:40px;height:40px;border-radius:7px}
+.admin .tablewrap .t .btn.sm{padding:5px 9px;font-size:12px}
+.admin .tablewrap .t input.mini,.admin .tablewrap .t .mini{padding:5px 8px;font-size:13px}
+/* orders: light status colour back, status word + select on one line */
+.t tr.ordrow>td{background:var(--sb)}
+.t tr.ordrow>td:first-child{box-shadow:inset 2px 0 0 var(--sc)}
+.t tr.ordrow:hover>td{filter:brightness(.985)}
+.ostword{display:inline-block;margin:0 6px 0 0;font-size:12.5px;vertical-align:middle}
+.t tr.ordrow select[data-ach="ostatus"]{display:inline-block;vertical-align:middle;min-width:0!important;width:auto!important;padding:3px 22px 3px 8px;font-size:12px;height:28px}
+.t tr.ordrow .etarow{display:flex;align-items:center;gap:4px;margin-top:4px!important;font-size:0}
+.t tr.ordrow .etarow:before{content:"📅";font-size:12px}
+.t tr.ordrow .etarow input{font-size:12px;padding:2px 6px;height:28px;width:auto}
+.t tr.ordrow .owarn,.t tr.ordrow .odelay{margin-top:4px;font-size:11.5px;padding:1px 0 1px 6px;cursor:help}
+.t tr.ordrow .pill,.t tr.ordrow [class*="paypill"],.t tr.ordrow td:first-child small{font-size:11px}
+.t tr.ordrow td:first-child br+small+br{display:none}
+/* ===== orders list: one line per cell, like Amazon ===== */
+.t tr.ordrow>td{white-space:nowrap;vertical-align:middle;padding-top:7px;padding-bottom:7px}
+.t tr.ordrow>td:first-child br{display:none}
+.t tr.ordrow>td:first-child small,.t tr.ordrow>td:first-child .paypill,.t tr.ordrow>td:first-child [class*="pay"]{margin-left:6px;vertical-align:middle}
+.t tr.ordrow td.oitemscell{max-width:230px;overflow:hidden;text-overflow:ellipsis}
+.t tr.ordrow td details{display:inline-block;vertical-align:middle}.t tr.ordrow td details[open]{white-space:normal}
+.t tr.ordrow .etarow{display:inline-flex!important;margin:0 0 0 8px!important;vertical-align:middle}
+.t tr.ordrow .owarn,.t tr.ordrow .odelay{display:inline-block;margin:0 0 0 8px;vertical-align:middle}
+.t tr.ordrow td>div.small{display:inline-block;margin:0 0 0 8px!important;vertical-align:middle}
+.t tr.ordrow .acts{flex-wrap:nowrap}
+.t tr.ordrow .oicon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;margin-left:6px;border:0;padding:0;font-size:13px;cursor:help;vertical-align:middle;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #ecd9cf}
+.t tr.ordrow .btn.ib{min-width:30px;padding:5px 7px;justify-content:center}
+.t tr.ordrow .etarow input{width:118px}
+/* orders list: tighter columns */
+.t tr.ordrow td.onocell .opay{margin-top:2px;line-height:1}.t tr.ordrow td.onocell .opay>*{font-size:10.5px;padding:1px 7px;margin:0}
+.t tr.ordrow td.onocell br{display:none}
+.oacc{font-size:11px;opacity:.7}
+.t tr.ordrow td.oitemscell{max-width:190px}
+.t tr.ordrow select[data-ach="ostatus"]{color:var(--sc);font-weight:600;border-color:color-mix(in srgb,var(--sc) 35%,#e3e3dc)}
+.oeta{display:inline-block;margin-left:8px;font-size:12px;color:#4a564c;vertical-align:middle}
+.t tr.ordrow td>div.small{max-width:150px;overflow:hidden;text-overflow:ellipsis}
+.t tr.ordrow td.oitemscell{max-width:140px}
