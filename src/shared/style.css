@@ -879,3 +879,24 @@ footer .copy{padding-bottom:84px}
 /* hover preview never takes clicks */
 .cprev{pointer-events:none}
 .cphint{font-size:11.5px;color:var(--muted);margin-top:6px}
+/* ===== Seller · Замовлення: status colours, filters, pages ===== */
+.s-new{--sc:#c0392b;--sb:#fdecea}.s-confirmed{--sc:#2f8a4a;--sb:#e8f5ec}.s-shipped{--sc:#2f6db0;--sb:#e8f0fa}
+.s-completed{--sc:#5a6b5d;--sb:#eef1ec}.s-returned{--sc:#b0661f;--sb:#fdf1e4}.s-cancelled{--sc:#7c7c78;--sb:#f1f0ec}
+.ostchips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px;align-items:center}
+.ostchip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:#48544a}
+.ostchip[class*=" s-"]:before{content:"";width:9px;height:9px;border-radius:50%;background:var(--sc)}
+.ostchip b{font-weight:700;color:var(--muted);font-size:12px}
+.ostchip.on{border-color:var(--forest);background:var(--sage2);color:var(--ink)}.ostchip[class*=" s-"].on{border-color:var(--sc);background:var(--sb)}
+.ostsep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.ordbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 10px}
+.ordbar .search{flex:1 1 280px;min-width:220px}
+.ordsel{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.ordsel .field{width:auto;padding:7px 30px 7px 10px}
+.ordcustom{display:inline-flex;align-items:center;gap:6px}.ordcustom .field{width:auto;padding:6px 8px}
+.ostlegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:0 0 10px}
+.ostlegend span{display:inline-flex;align-items:center;gap:5px}.ostlegend i{width:10px;height:10px;border-radius:3px;background:var(--sb);box-shadow:inset 3px 0 0 var(--sc)}
+.t tr.ordrow>td{background:var(--sb)}
+.t tr.ordrow>td:first-child{box-shadow:inset 4px 0 0 var(--sc)}
+.t tr.ordrow select[data-ach="ostatus"]{border-color:var(--sc);color:var(--sc);font-weight:700}
+.ordcustom[hidden]{display:none!important}
+.opager .small{margin-left:6px}
+.shopbar.ordbar{margin-bottom:10px}.ordbar .ordsel select.field{width:auto}.ordbar .ordcustom input.field{width:auto}

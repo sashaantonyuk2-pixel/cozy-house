@@ -5,7 +5,7 @@ PAY:{unpaid:"Не оплачено",paid:"Оплачено",partially_refunded:"
 PMETHODS:["Payoneer (payment link)","Western Bid","PayPal","Bank transfer","Cash","Other"],/* saved in English — the customer sees it on the invoice */
 PMLABEL:{"Payoneer (payment link)":"Payoneer (посилання на оплату)","Bank transfer":"Банківський переказ","Cash":"Готівка","Other":"Інше"},
 payPill(o){const k=o.payment_status||"unpaid";return `<span class="paypill p-${k}">${k==="paid"?"💳 ":""}${this.PAY[k]}</span>`},
-afterOrderChange(id){if($("#ordPage"))this.fillOrder(id);else{const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"ship";this.fillOrders(st)}},
+afterOrderChange(id){if($("#ordPage"))this.fillOrder(id);else this.fillOrders()},
 orderPage(id){setTimeout(()=>this.fillOrder(id),0);return `<div class="crumbs" style="margin-bottom:8px"><a href="#/admin/orders">← Замовлення</a></div><div id="ordPage"><p class="muted">Завантаження…</p></div>`},
 addrText(c){return [c.name,c.address,[c.city,[c.state,c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),"United States"].filter(Boolean).join("\n")},
 async fillOrder(id){
@@ -84,13 +84,37 @@ orderSubmit(k,f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);if(
   if(st&&!/^[A-Z]{2}$/.test(st))return toast("Штат — 2 літери, напр. TX");if(zip&&!/^\d{5}(-\d{4})?$/.test(zip))return toast("ZIP — 5 цифр");
   const c={...(o.customer||{}),name:String(fd.name).trim(),email:String(fd.email).trim().toLowerCase(),phone:String(fd.phone).trim(),address:String(fd.address).trim(),city:String(fd.city).trim(),state:st,zip};
   return this.orderUpdate(id,{customer:c},"Адресу оновлено ✓")}},
-orders(q){const st=q.get("status")||"ship";
- const chips=[["ship","📦 Потребують відправлення"],["unpaid","💳 Не оплачені"],["","Усі"],...Object.entries(Admin.ST)];
- setTimeout(()=>this.fillOrders(st),0);
+/* ---- orders list: server pages of 20, period, status filter with counts, sort, search; rows coloured by status ---- */
+ORD_PER:20,
+ordQ(){return new URLSearchParams((location.hash.split("?")[1])||"")},
+ordHref(o){const q=this.ordQ();Object.entries(o).forEach(([k,v])=>v===""||v==null?q.delete(k):q.set(k,v));const s=q.toString();return "#/admin/orders"+(s?"?"+s:"")},
+ordRange(q){const per=q.get("period")||"all",now=new Date(),ago=d=>new Date(now.getTime()-d*864e5).toISOString();
+ if(per==="today"){const d=new Date();d.setHours(0,0,0,0);return[d.toISOString(),null]}
+ if(per==="7d")return[ago(7),null];if(per==="30d")return[ago(30),null];if(per==="3m")return[ago(91),null];if(per==="6m")return[ago(182),null];
+ if(/^\d{4}$/.test(per))return[new Date(+per,0,1).toISOString(),new Date(+per+1,0,1).toISOString()];
+ if(per==="custom"){const ok=x=>/^\d{4}-\d{2}-\d{2}$/.test(x||""),f=q.get("from"),t=q.get("to");return[ok(f)?new Date(f+"T00:00:00").toISOString():null,ok(t)?new Date(new Date(t+"T00:00:00").getTime()+864e5).toISOString():null]}
+ return[null,null]},
+/* applies period + search (+ optional status filter) to a query */
+ordFilter(qq,q,st){const[from,to]=this.ordRange(q);if(from)qq=qq.gte("created_at",from);if(to)qq=qq.lt("created_at",to);
+ const term=String(this.ordTerm||"").trim().replace(/[%,()*"]/g," ").trim();
+ if(term){const t=`*${term}*`,dig=term.replace(/\D/g,"");qq=qq.or([`order_no.ilike.${t}`,`customer->>name.ilike.${t}`,`customer->>email.ilike.${t}`,`customer->>phone.ilike.${t}`,...(dig.length>=4?[`customer->>phone.ilike.*${dig.split("").join("*")}*`]:[])].join(","))}
+ if(st==="unpaid")qq=qq.eq("payment_status","unpaid").not("status","in","(cancelled,returned)");else if(st==="ship")qq=qq.in("status",["new","confirmed"]);else if(st&&st!=="all")qq=qq.eq("status",st);
+ return qq},
+OSTAT:[["all","Усі",""],["new","Нові / не підтверджені","s-new"],["confirmed","Підтверджені","s-confirmed"],["shipped","Відправлені","s-shipped"],["completed","Доставлені","s-completed"],["returned","Повернення","s-returned"],["cancelled","Скасовані","s-cancelled"]],
+orders(q){const st=q.get("status")||"all",per=q.get("period")||"all",so=q.get("sort")||"new";
+ if(this.ordTerm==null)this.ordTerm="";const pq=sessionStorage.getItem("ordQ");if(pq){sessionStorage.removeItem("ordQ");this.ordTerm=pq}
+ setTimeout(()=>this.fillOrders(),0);
+ const y0=new Date().getFullYear(),years=[y0,y0-1,y0-2].map(String);
+ const pers=[["all","Увесь час"],["today","Сьогодні"],["7d","Останні 7 днів"],["30d","Останні 30 днів"],["3m","Останні 3 місяці"],["6m","Останні 6 місяців"],...years.map(y=>[y,y+" рік"]),["custom","Свої дати…"]];
  return `<div class="ahead"><h1>Замовлення</h1><button class="btn sm" data-act="a:reloadOrders">↻ Оновити</button></div>
- <div class="chips">${chips.map(([k,v])=>`<a class="chip ${st===k?"on":""}" href="#/admin/orders${k===""?"?status=all":k==="ship"?"":"?status="+k}">${v}</a>`).join("")}</div>
- <div class="shopbar"><label class="search">${ICON.search}<input id="ordSearch" placeholder="Пошук: номер, ім’я, телефон, email або код товару" autocomplete="off"></label></div>
- <div id="ordList"><p class="muted">Завантаження…</p></div>`},
+ <div class="ostchips" id="ostChips">${this.OSTAT.map(([k,l,c])=>`<a class="ostchip ${c} ${st===k?"on":""}" href="${this.ordHref({status:k==="all"?"":k,page:""})}">${l} <b data-cnt="${k}">·</b></a>`).join("")}
+  <span class="ostsep"></span><a class="ostchip ${st==="ship"?"on":""}" href="${this.ordHref({status:"ship",page:""})}">📦 Потребують відправлення <b data-cnt="ship">·</b></a><a class="ostchip ${st==="unpaid"?"on":""}" href="${this.ordHref({status:"unpaid",page:""})}">💳 Не оплачені <b data-cnt="unpaid">·</b></a></div>
+ <form class="shopbar ordbar" data-form="ordbar"><label class="search">${ICON.search}<input id="ordSearch" value="${esc(this.ordTerm)}" placeholder="Пошук: номер, ім’я, телефон або email" autocomplete="off"></label>
+  <label class="ordsel"><span>Період</span><select class="field" name="period" data-ach="ordper">${pers.map(([v,l])=>`<option value="${v}" ${per===v?"selected":""}>${l}</option>`).join("")}</select></label>
+  <span class="ordcustom" ${per==="custom"?"":"hidden"}><input class="field" type="date" name="from" value="${esc(q.get("from")||"")}" aria-label="Від"><span>–</span><input class="field" type="date" name="to" value="${esc(q.get("to")||"")}" aria-label="До"><button class="btn sm primary">Показати</button></span>
+  <label class="ordsel"><span>Сортування</span><select class="field" name="sort" data-ach="ordsort">${[["new","Спочатку нові"],["old","Спочатку старі"],["sumdesc","Сума: більша → менша"],["sum","Сума: менша → більша"]].map(([v,l])=>`<option value="${v}" ${so===v?"selected":""}>${l}</option>`).join("")}</select></label></form>
+ <div class="ostlegend">${this.OSTAT.slice(1).map(([k,l,c])=>`<span class="${c}"><i></i>${l}</span>`).join("")}</div>
+ <div id="ordList"><p class="muted">Завантаження…</p></div><div id="ordPager"></div>`},
 ST:{new:"Нове",confirmed:"Підтверджене",shipped:"Відправлене",completed:"Доставлене",cancelled:"Скасоване",returned:"Повернення"},
 /* status list for the select: «Доставлене» is not picked by hand (button «✓ Доставлено» or automatically the morning after the delivery date) */
 statusOpts(o){return Object.entries(this.ST).filter(([k])=>!["returned","completed"].includes(k)||o.status===k).map(([k,v])=>`<option value="${k}" ${o.status===k?"selected":""}>${v}</option>`).join("")},
@@ -118,17 +142,23 @@ CARRIERS:["USPS","UPS","FedEx","DHL","Other"],/* saved in English — the custom
 etaDefault(o){const c=o.customer||{},n=/express/i.test(c.delivery||"")?2:5,d=new Date();let k=0;while(k<n){d.setDate(d.getDate()+1);if(d.getDay()%6)k++}return d.toISOString().slice(0,10)},
 day(s){if(!s)return"";const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("uk-UA",{weekday:"short",day:"2-digit",month:"2-digit"})},
 ordersData:[],
-async fillOrders(st){const box=$("#ordList");if(!box)return;
- let qq=sb.from("orders").select("*").order("created_at",{ascending:false}).limit(500);
- if(st==="unpaid")qq=qq.eq("payment_status","unpaid").not("status","in","(cancelled,returned)");else if(st==="ship")qq=qq.in("status",["new","confirmed"]);else if(st&&st!=="all")qq=qq.eq("status",st);
- const{data,error}=await qq;if(error){box.innerHTML=`<div class="note">Не вдалося завантажити: ${esc(error.message)}</div>`;return}
- this.ordersData=data;this.renderOrders();
- const inp=$("#ordSearch");if(inp&&!inp.dataset.ready){inp.dataset.ready=1;inp.addEventListener("input",()=>this.renderOrders());const pq=sessionStorage.getItem("ordQ");if(pq){sessionStorage.removeItem("ordQ");inp.value=pq;this.renderOrders()}}},
+async fillOrders(){const box=$("#ordList");if(!box)return;const q=this.ordQ(),st=q.get("status")||"all",so=q.get("sort")||"new",page=Math.max(1,parseInt(q.get("page"))||1),seq=(this.ordSeq=(this.ordSeq||0)+1);
+ const order=so==="old"?["created_at",true]:so==="sum"?["total",true]:so==="sumdesc"?["total",false]:["created_at",false];
+ const list=this.ordFilter(sb.from("orders").select("*",{count:"exact"}),q,st).order(order[0],{ascending:order[1]}).order("id",{ascending:false}).range((page-1)*this.ORD_PER,page*this.ORD_PER-1);
+ const keys=[...this.OSTAT.map(x=>x[0]),"ship","unpaid"],counts=keys.map(k=>this.ordFilter(sb.from("orders").select("id",{count:"exact",head:true}),q,k));
+ const[res,...cs]=await Promise.all([list,...counts]);if(seq!==this.ordSeq||!$("#ordList"))return;
+ cs.forEach((r,i)=>{const b=document.querySelector(`#ostChips [data-cnt="${keys[i]}"]`);if(b)b.textContent=r&&r.count!=null?r.count:"·"});
+ if(res.error){box.innerHTML=`<div class="note">Не вдалося завантажити: ${esc(res.error.message)}</div>`;$("#ordPager").innerHTML="";return}
+ this.ordersData=res.data||[];this.ordTotal=res.count||0;this.renderOrders();
+ const pages=Math.max(1,Math.ceil(this.ordTotal/this.ORD_PER)),pg=$("#ordPager");
+ if(pg)pg.innerHTML=pages>1?`<nav class="opager" aria-label="Сторінки замовлень">${page>1?`<a class="btn sm" href="${this.ordHref({page:page-1})}">← Назад</a>`:`<span class="btn sm" aria-disabled="true">← Назад</span>`}
+  <span class="opnums">${Array.from({length:pages},(_,i)=>i+1).filter(n=>pages<=9||n===1||n===pages||Math.abs(n-page)<=2).map((n,i,a)=>(i&&n-a[i-1]>1?'<span class="muted">…</span>':"")+(n===page?`<b aria-current="page">${n}</b>`:`<a href="${this.ordHref({page:n})}">${n}</a>`)).join("")}</span>
+  ${page<pages?`<a class="btn sm" href="${this.ordHref({page:page+1})}">Далі →</a>`:`<span class="btn sm" aria-disabled="true">Далі →</span>`}<span class="muted small">${(page-1)*this.ORD_PER+1}–${Math.min(page*this.ORD_PER,this.ordTotal)} з ${this.ordTotal}</span></nav>`:this.ordTotal?`<p class="muted small" style="text-align:center">${this.ordTotal} замовл.</p>`:"";
+ const inp=$("#ordSearch");if(inp&&!inp.dataset.ready){inp.dataset.ready=1;inp.addEventListener("input",()=>{clearTimeout(this.ordT);this.ordT=setTimeout(()=>{this.ordTerm=inp.value;if((parseInt(this.ordQ().get("page"))||1)>1){location.hash=this.ordHref({page:""})}else this.fillOrders()},350)})}},
 renderOrders(){const box=$("#ordList");if(!box)return;
- const term=(($("#ordSearch")||{}).value||"").trim().toLowerCase();
- const data=this.ordersData.filter(o=>{if(!term)return true;const c=o.customer||{};return [o.order_no,c.name,c.phone,c.email,String(c.phone||"").replace(/\D/g,""),...(o.items||[]).map(i=>i.sku)].some(v=>String(v||"").toLowerCase().includes(term))});
- if(!data.length){box.innerHTML=`<div class="empty"><b>${term?"Нічого не знайдено":"Тут порожньо"}</b>${term?"Спробуйте інший запит.":"Немає замовлень із таким статусом."}</div>`;return}
- box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th>Номер</th><th>Дата</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th></th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="new"||o.status==="confirmed",canRet=o.status==="shipped"||o.status==="completed";return `<tr>
+ const term=String(this.ordTerm||"").trim(),data=this.ordersData||[];
+ if(!data.length){box.innerHTML=`<div class="empty"><b>${term?"Нічого не знайдено":"Тут порожньо"}</b>${term?"Спробуйте інший запит.":"Немає замовлень із таким статусом за цей період."}</div>`;return}
+ box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th>Номер</th><th>Дата</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th></th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="new"||o.status==="confirmed",canRet=o.status==="shipped"||o.status==="completed";return `<tr class="ordrow s-${esc(o.status)}">
  <td><a class="textlink" href="#/admin/order/${o.id}"><b>${esc(o.order_no)}</b></a><br><small class="muted">${o.user_id?"з акаунтом":"гість"}</small><br>${Admin.payPill(o)}${o.admin_note?` <span title="${esc(o.admin_note)}">📝</span>`:""}</td>
  <td class="small">${new Date(o.created_at).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td>
  <td><details><summary><b>${esc(c.name||"—")}</b></summary><div class="small" style="margin-top:6px;line-height:1.6">${c.phone?`📞 <a href="tel:${esc(String(c.phone).replace(/[^+\d]/g,""))}">${esc(c.phone)}</a><br>`:""}${c.email?`✉️ ${esc(c.email)}<br>`:""}🚚 ${esc(c.delivery||"")}<br>📍 ${esc([c.address,c.city,c.state,c.zip].filter(Boolean).join(", "))}<br>💳 ${esc(c.payment||"")}${c.comment?`<br>💬 ${esc(c.comment)}`:""}</div></details></td>
