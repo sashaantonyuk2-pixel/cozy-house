@@ -42,18 +42,66 @@ function retForm(o){const w=retWindow(o);return `<form class="retform" data-form
  <div class="retmsg"></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary">Send return request</button><button type="button" class="btn" data-act="retopen" data-id="${o.id}">Cancel</button></div>
  <p class="small muted" style="margin:0">See our <a class="textlink" href="#/returns" target="_blank">Return policy</a>.</p></form>`}
 function orderTotals(o){const sub=o.subtotal!=null?+o.subtotal:+o.total;return `<div class="ototals"><div class="row small"><span>${t("subtotal")}</span><span>${money(sub)}</span></div><div class="row small"><span>${t("shipping")}</span><span>${+o.shipping?money(o.shipping):t("free")}</span></div><div class="row small"><span>Sales tax${+o.tax_rate?` (${esc(o.customer&&o.customer.state||"")} ${+o.tax_rate}%)`:""}</span><span>${money(o.tax||0)}</span></div><div class="row small"><b>${t("total")}</b><b>${money(o.total)}</b></div></div>`}
-let MY_ORDERS={};
+let MY_ORDERS={},MY_RETURNS={};
+/* ===== My orders: list (Amazon-style cards with product photos) and one order's page (#/account/orders/<order no>) =====
+   The list shows only a short status; the step tracker, tracking number and all actions are on the order page. */
+const oItemImg=i=>{const p=prod(i.id);return p?img0(p):art("basket","#efece4","#e4ddd0")};
+const oItemLink=i=>{const p=prod(i.id);return p&&p.active?"#/product/"+encodeURIComponent(p.id):""};
+const oUrl=(o,act)=>"#/account/orders/"+encodeURIComponent(o.order_no)+(act?"?act="+act:"");
+const RET_SHORT={requested:"Return requested",approved:"Return approved",received:"Return received",refunded:"Refund issued"};
+function oStatus(o){
+ if(o.status==="cancelled")return{k:"off",pill:"Cancelled",head:"Order cancelled"};
+ if(o.status==="returned")return{k:"off",pill:"Returned",head:"Order returned"};
+ if(o.status==="completed")return{k:"del",pill:"Delivered",head:o.delivered_at?fmtDate(o.delivered_at):"Delivered",sub:canReturn(o)?"Returns open until "+fmtDate(retWindow(o).until):""};
+ if(o.status==="shipped")return{k:"ship",pill:"Shipped",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"On its way"};
+ if(o.payment_status==="unpaid")return{k:"new",pill:"Awaiting payment",head:"We’ll email you a secure payment link"};
+ if(o.status==="confirmed")return{k:"new",pill:"Confirmed",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"Preparing to ship"};
+ return{k:"new",pill:"Order placed",head:"Preparing your order"}}
+function oBar(o,inList){const c=o.customer||{};return `<div class="ocbar"><div><small>Order placed</small>${fmtDate(o.created_at)}</div><div><small>Total</small>${money(o.total)}</div>
+ ${c.name?`<div class="ocship"><small>Ship to</small><details class="ocaddr"><summary>${esc(c.name)}</summary><div>${esc(c.name)}<br>${esc(c.address||"")}<br>${esc([c.city,[c.state,c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "))}<br>United States</div></details></div>`:"<div></div>"}
+ <div class="ocno"><small>Order # ${esc(o.order_no)}</small>${inList?`<a href="${oUrl(o)}">View order details</a>`:""}${inList&&o.status!=="cancelled"?`<span aria-hidden="true"> · </span><a href="#/account/invoice/${encodeURIComponent(o.order_no)}">Invoice</a>`:""}</div></div>`}
+function oCard(o){const r=MY_RETURNS[o.id],st=oStatus(o),items=o.items||[],shown=items.slice(0,3),canRet=canReturn(o)&&(!r||r.status==="rejected");
+ const acts=[`<a class="btn primary sm" href="${oUrl(o)}">View order</a>`];
+ if(o.status==="completed")acts.push(`<a class="btn sm" href="${oUrl(o,"review")}">Write a review</a>`);
+ if(canRet)acts.push(`<a class="btn sm" href="${oUrl(o,"return")}">Return items</a>`);
+ else if(canCancel(o))acts.push(`<a class="btn sm" href="${oUrl(o,"cancel")}">Cancel order</a>`);
+ if(acts.length<3&&["completed","shipped","cancelled","returned"].includes(o.status))acts.push(`<button class="btn sm" data-act="buyagain" data-id="${o.id}">Buy it again</button>`);
+ return `<article class="ocard">${oBar(o,true)}<div class="ocbody"><div class="ocmain">
+ <div class="ocstat"><span class="opill o-${st.k}">${st.pill}</span><b>${esc(st.head)}</b>${st.sub&&!(r&&RET_SHORT[r.status])?`<span class="muted small">${esc(st.sub)}</span>`:""}${r&&RET_SHORT[r.status]?`<span class="opill o-ret">${RET_SHORT[r.status]}</span>`:""}</div>
+ ${shown.map(i=>{const h=oItemLink(i);return `<div class="ocitem">${h?`<a href="${h}" tabindex="-1">`:"<span>"}<img src="${esc(oItemImg(i))}" alt="" loading="lazy">${h?"</a>":"</span>"}<div>${h?`<a class="ocname" href="${h}">${esc(i.name)}</a>`:`<span class="ocname">${esc(i.name)}</span>`}<span class="muted small">${i.opt?esc(optStr(i.opt,prod(i.id)))+" · ":""}Qty ${+i.qty||1}</span></div></div>`}).join("")}
+ ${items.length>shown.length?`<a class="textlink small" href="${oUrl(o)}">+ ${items.length-shown.length} more item${items.length-shown.length===1?"":"s"}</a>`:""}
+ </div><div class="ocacts">${acts.join("")}</div></div></article>`}
+function oDetail(o){const r=MY_RETURNS[o.id],c=o.customer||{},canRet=canReturn(o)&&(!r||r.status==="rejected"),n=(o.items||[]).reduce((s,i)=>s+(+i.qty||0),0);
+ const again=["completed","shipped","cancelled","returned"].includes(o.status);
+ return `<div class="crumbs odcrumbs"><a href="#/account">My account</a> › <a href="#/account/orders">My orders</a> › ${esc(o.order_no)}</div>
+ <div class="odhead"><div><h2>Order ${esc(o.order_no)}</h2><span class="muted small">Placed ${fmtDate(o.created_at)} · ${n} item${n===1?"":"s"}</span></div>
+ <div class="odtop">${o.status!=="cancelled"?`<a class="btn sm" href="#/account/invoice/${encodeURIComponent(o.order_no)}">🧾 Invoice</a>`:""}<a class="btn sm" href="#/contacts">Contact us</a></div></div>
+ <article class="ocard">${oBar(o,false)}<div class="odtrack">${orderTracker(o)}${r?retStatus(r):""}</div></article>
+ <div class="odgrid"><div class="panel oditems"><h3>Items</h3>${(o.items||[]).map((i,ix)=>{const h=oItemLink(i),p=prod(i.id);return `<div class="oditem">${h?`<a href="${h}" tabindex="-1">`:"<span>"}<img src="${esc(oItemImg(i))}" alt="" loading="lazy">${h?"</a>":"</span>"}
+  <div class="odinfo">${h?`<a class="ocname" href="${h}">${esc(i.name)}</a>`:`<span class="ocname">${esc(i.name)}</span>`}<span class="muted small">${i.opt?esc(optStr(i.opt,p))+" · ":""}${i.sku?`Item # ${esc(i.sku)} · `:""}Qty ${+i.qty||1} · ${money(+i.price||0)} each</span>
+  <div class="odbtns">${again&&h?`<button class="btn sm" data-act="buyagain" data-id="${o.id}" data-ix="${ix}">Buy it again</button>`:""}${h?`<a class="btn sm" href="${h}">View item</a>`:`<span class="muted small">No longer available</span>`}${o.status==="completed"&&h?`<a class="btn sm" href="${h}?review=1">Write a review</a>`:""}</div></div>
+  <b class="odprice">${money((+i.price||0)*(+i.qty||0))}</b></div>`}).join("")}</div>
+ <aside class="odside"><div class="panel"><h3>Ship to</h3><p class="small" style="margin:0;line-height:1.6">${esc(c.name||"")}<br>${esc(c.address||"")}<br>${esc([c.city,[c.state,c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "))}<br>United States${c.phone?`<br><span class="muted">${esc(c.phone)}</span>`:""}</p>${c.delivery?`<p class="small muted" style="margin:8px 0 0">${esc(c.delivery)}</p>`:""}</div>
+ <div class="panel"><h3>Order summary</h3>${orderTotals(o)}${o.payment_status==="paid"?`<p class="small" style="margin:8px 0 0;color:#2f6b37">✓ Paid</p>`:o.payment_status==="unpaid"&&o.status!=="cancelled"?`<p class="small" style="margin:8px 0 0;color:#8a5a0b">Awaiting payment</p>`:""}</div>
+ ${canRet||canCancel(o)||again?`<div class="panel odacts">${canRet?`<button class="btn block" data-act="retopen" data-id="${o.id}">↩ Return items</button>`:""}${canCancel(o)?`<button class="btn block" data-act="cancelopen" data-no="${esc(o.order_no)}">✕ Cancel order</button>`:""}${again?`<button class="btn block" data-act="buyagain" data-id="${o.id}">🔁 Buy whole order again</button>`:""}
+ ${o.status==="shipped"?`<p class="small muted" style="margin:0">Returns can be requested after delivery, within ${shipCfg().days} days.</p>`:""}</div>`:""}</aside></div>
+ ${canRet?retForm(o):""}${canCancel(o)?cancelForm(o):""}`}
 async function fillOrders(){const box=$("#acMain");if(!box)return;
+ const h=location.hash.slice(1).split("?"),no=decodeURIComponent((h[0].split("/")[3])||""),act=new URLSearchParams(h[1]||"").get("act");
  const[{data,error},rr]=await Promise.all([sb.from("orders").select("id,order_no,status,items,total,subtotal,shipping,tax,tax_rate,created_at,carrier,tracking_number,shipped_at,customer,delivery_eta,delivered_at,payment_status").order("created_at",{ascending:false}).limit(50),
   sb.from("return_requests").select("id,order_id,status,reason,free_return,created_at,seller_note").order("created_at",{ascending:false})]);
+ if(!$("#acMain"))return;
  if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
- MY_ORDERS={};(data||[]).forEach(o=>MY_ORDERS[o.id]=o);
- const R={};(rr.data||[]).forEach(r=>{if(!R[r.order_id]||R[r.order_id].status==="rejected")R[r.order_id]=r});
- box.innerHTML=`<div class="panel"><h2>My orders</h2>${data.length?data.map(o=>{const r=R[o.id],paid=o.status!=="cancelled",canRet=canReturn(o)&&(!r||r.status==="rejected");
-  return `<div class="oblock"><div class="ohead"><div><b>${esc(o.order_no)}</b><span class="muted small"> · ${fmtDate(o.created_at)} · ${o.items.reduce((s,i)=>s+(+i.qty||0),0)} items</span></div><b>${money(o.total)}</b></div>
- ${orderTracker(o)}${r?retStatus(r):""}
- <div class="oacts">${["completed","shipped","cancelled","returned"].includes(o.status)?`<button class="btn sm" data-act="buyagain" data-id="${o.id}">🔁 Buy again</button>`:""}${paid?`<a class="btn sm" href="#/account/invoice/${encodeURIComponent(o.order_no)}">🧾 Invoice</a>`:""}${canRet?`<button class="btn sm" data-act="retopen" data-id="${o.id}">↩ Return items</button>`:""}${canCancel(o)?`<button class="btn sm" data-act="cancelopen" data-no="${esc(o.order_no)}">✕ Cancel order</button>`:""}</div>${canRet?retForm(o):""}${canCancel(o)?cancelForm(o):""}${o.status==="shipped"?`<p class="small muted" style="margin:8px 0 0">Returns can be requested after delivery, within ${shipCfg().days} days.</p>`:""}
- <details class="oitems"><summary>Items${o.customer&&o.customer.address?" & shipping address":""}</summary>${o.items.map(i=>`<div class="row small"><span>${esc(i.name)}${i.opt?` <span class="muted">(${esc(optStr(i.opt,prod(i.id)))})</span>`:""} × ${+i.qty||0}${i.sku?` <span class="muted">· Item # ${esc(i.sku)}</span>`:""}</span><span>${money((+i.price||0)*(+i.qty||0))}</span></div>`).join("")}${orderTotals(o)}${o.customer&&o.customer.address?`<p class="small muted" style="margin:8px 0 0">Ship to: ${esc([o.customer.name,o.customer.address,o.customer.city,[o.customer.state,o.customer.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "))}</p>`:""}</details></div>`}).join(""):`<div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div>`}</div>`}
+ MY_ORDERS={};MY_RETURNS={};(data||[]).forEach(o=>MY_ORDERS[o.id]=o);
+ (rr.data||[]).forEach(r=>{if(!MY_RETURNS[r.order_id]||MY_RETURNS[r.order_id].status==="rejected")MY_RETURNS[r.order_id]=r});
+ if(no){const o=(data||[]).find(x=>x.order_no===no);
+  if(!o){box.innerHTML=`<div class="panel"><div class="empty" style="border:0;padding:30px 0"><b>Order not found</b>We couldn’t find order ${esc(no)} in your account.<br><br><a class="btn" href="#/account/orders">← My orders</a></div></div>`;return}
+  box.innerHTML=oDetail(o);
+  if(act==="return"||act==="cancel"){const f=act==="return"?$(`[data-form="retreq"][data-id="${o.id}"]`):$(`[data-form="cancelord"][data-no="${o.order_no}"]`);if(f){f.hidden=false;setTimeout(()=>{f.scrollIntoView({block:"center"});const x=f.querySelector("input,select");x&&x.focus({preventScroll:true})},60)}}
+  else if(act==="review"){const it=$(".oditems");it&&setTimeout(()=>it.scrollIntoView({block:"start"}),60)}
+  return}
+ box.innerHTML=`<div class="odhead" style="margin-bottom:14px"><h2 style="margin:0">My orders</h2>${data.length?`<span class="muted small">${data.length} order${data.length===1?"":"s"}</span>`:""}</div>
+ ${data.length?data.map(oCard).join(""):`<div class="panel"><div class="empty" style="border:0;padding:30px 0"><b>No orders yet</b>Your orders will show up here.<br><br><a class="btn primary" href="#/shop">${t("shopNow")} →</a></div></div>`}`}
 async function submitReturn(f){const msg=f.querySelector(".retmsg"),err=h=>{msg.innerHTML=`<div class="note">${h}</div>`};msg.innerHTML="";
  const idx=[...f.querySelectorAll("[name=ri]:checked")].map(x=>+x.value);if(!idx.length)return err("Please choose the item(s) you’d like to return.");
  const reason=(f.querySelector("[name=reason]:checked")||{}).value;if(!reason)return err("Please choose a reason.");
@@ -95,8 +143,8 @@ async function fillInvoice(no){const box=$("#invBox");if(!box)return;
  ${isPaid?`<tr><th>Paid${o.paid_at?" "+d(o.paid_at):""}</th><td>${money(paidAmt)}</td></tr>`:""}${+o.refund_amount?`<tr><th>Refunded${o.refunded_at?" "+d(o.refunded_at):""}</th><td>−${money(o.refund_amount)}</td></tr>`:""}<tr class="${isPaid?"":"due"}"><th>Balance due</th><td>${money(Math.max(0,Math.round(((+o.total)-paidAmt)*100)/100))}</td></tr></table>${isPaid?"":`<p class="invnote">Payment is due upon receipt. We’ll email you a secure payment link — please include the order number ${esc(o.order_no)} with your payment.</p>`}
  <div class="invfoot">Thank you for shopping with ${esc(st.name)}! Returns are accepted within ${shipCfg().days} days of delivery — see ${esc(SITE_URL.replace(/^https?:\/\//,""))}#/returns. Questions? ${esc(st.email||"")}</div></article>`}
 /* ===== Buy again: adds the order's items that are still available and in stock ===== */
-function buyAgain(id){const o=MY_ORDERS[id];if(!o)return;let added=0;const miss=[];
- (o.items||[]).forEach(i=>{const p=prod(i.id),nm=i.name||"An item";
+function buyAgain(id,ix){const o=MY_ORDERS[id];if(!o)return;let added=0;const miss=[];
+ (o.items||[]).filter((_,k)=>ix==null||k===ix).forEach(i=>{const p=prod(i.id),nm=i.name||"An item";
   if(!p||!p.active)return miss.push(nm+" (no longer available)");
   if(p.stock<=0)return miss.push(nm+" (out of stock)");
   let opt=null;if(optList(p).length){opt=i.opt&&typeof i.opt==="object"?i.opt:null;if(!opt||!optOk({opt},p))return miss.push(nm+" (options changed — please choose again)")}

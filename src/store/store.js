@@ -502,7 +502,7 @@ function render(){
  document.body.classList.toggle("invoice-mode",path.startsWith("/account/invoice"));markNav(path);hsClose();hsSync(path,q);let html;
  html=({"":()=>viewHome(),shop:()=>viewShop(q),product:()=>viewProduct(parts[1]),cart:viewCart,checkout:viewCheckout,order:()=>viewOrder(q),favorites:viewFavs,account:()=>viewAccount(parts),delivery:()=>viewText(t("delivery"),S.settings.deliveryText),about:viewAbout,contacts:viewContacts,track:()=>viewTrack(q),privacy:()=>viewLegal("privacy"),terms:()=>viewLegal("terms"),returns:()=>viewLegal("returns")}[parts[0]||""]||notFound)();
  if(html!==undefined&&html!=="")app.innerHTML=html;
- if(path!==lastPath)window.scrollTo(0,0);lastPath=path;applySeo(parts,q);Trk.page(parts);
+ if(path!==lastPath)window.scrollTo(0,0);lastPath=path;if(parts[0]==="product"&&q.get("review")==="1")setTimeout(()=>{const r=$("#reviews");r&&r.scrollIntoView({behavior:"smooth"})},120);applySeo(parts,q);Trk.page(parts);
 }
 
 /* ===== events ===== */
@@ -545,7 +545,7 @@ document.addEventListener("click",e=>{
   cancelopen:()=>{const f=document.querySelector(`[data-form="cancelord"][data-no="${el.dataset.no}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("select").focus()}},
   retopen:()=>{const f=document.querySelector(`[data-form="retreq"][data-id="${id}"]`);if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   invprint:()=>window.print(),
-  buyagain:()=>buyAgain(+id),
+  buyagain:()=>buyAgain(+id,el.dataset.ix==null?null:+el.dataset.ix),
   delacct:()=>{const f=$('[data-form="delacct"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
   oauth:()=>oauthLogin(el.dataset.p),
   invpdf:()=>downloadInvoice(el),
