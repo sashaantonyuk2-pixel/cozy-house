@@ -189,6 +189,30 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&NavDrop.el&&NavDrop
 addEventListener("scroll",()=>{if(NavDrop.el&&NavDrop.el.classList.contains("on"))NavDrop.hide(0)},{passive:true});
 addEventListener("resize",()=>NavDrop.hide(0));
 
+/* ===== product card: large hover preview (desktop). Rest the mouse on a card photo ~0.7 s → a big photo with all the
+   product's photos pops up beside the card; hover a thumbnail to switch; click opens the product. ===== */
+const CardPrev={el:null,t:null,h:null,cur:null,
+ ok(){return matchMedia("(hover:hover) and (pointer:fine) and (min-width:900px)").matches&&!document.querySelector(".modal.open,.drawer.open")},
+ box(){if(this.el)return this.el;const d=this.el=document.createElement("div");d.className="cprev";d.setAttribute("aria-hidden","true");document.body.appendChild(d);
+  d.addEventListener("mouseenter",()=>clearTimeout(this.h));d.addEventListener("mouseleave",()=>this.hide(150));
+  d.addEventListener("mouseover",e=>{const th=e.target.closest(".cpthumb");if(!th)return;d.querySelector(".cpmain").src=th.dataset.src;d.querySelectorAll(".cpthumb").forEach(x=>x.classList.toggle("on",x===th))});return d},
+ show(card){const a=card.querySelector("a.ph"),id=(a&&a.getAttribute("href")||"").split("/").pop(),p=prod(decodeURIComponent(id));if(!p||!this.ok())return;
+  const imgs=(p.images&&p.images.length?p.images:[img0(p)]).slice(0,6),d=this.box(),r=rating(p.id);this.cur=card;
+  d.innerHTML=`<a class="cpimg" href="#/product/${esc(p.id)}" tabindex="-1"><img class="cpmain" src="${esc(imgs[0])}" alt=""></a>
+   ${imgs.length>1?`<div class="cpthumbs">${imgs.map((u,i)=>`<img class="cpthumb ${i?"":"on"}" src="${esc(u)}" data-src="${esc(u)}" alt="">`).join("")}</div>`:""}
+   <div class="cpinfo"><b>${esc(p.name)}</b><span><span class="price ${p.oldPrice>p.price?"sale":""}">${money(p.price)}</span>${p.oldPrice>p.price?` <span class="old">${money(p.oldPrice)}</span>`:""}${r?` · ★ ${r.avg.toFixed(1)} (${r.n})`:""}</span></div>`;
+  d.classList.add("on");const R=card.getBoundingClientRect(),W=d.offsetWidth,H=d.offsetHeight,gap=14;
+  let left=R.right+gap;if(left+W>innerWidth-8)left=R.left-gap-W;if(left<8)left=Math.max(8,Math.min(innerWidth-W-8,R.left+R.width/2-W/2));
+  const hb=Math.max(0,(document.querySelector(".header")||{getBoundingClientRect:()=>({bottom:0})}).getBoundingClientRect().bottom)+8,top=Math.max(hb,Math.min(innerHeight-H-8,R.top+R.height/2-H/2));d.style.left=Math.round(left)+"px";d.style.top=Math.round(top)+"px"},
+ hide(ms){clearTimeout(this.t);clearTimeout(this.h);this.h=setTimeout(()=>{if(this.el)this.el.classList.remove("on");this.cur=null},ms||0)}};
+document.addEventListener("mouseover",e=>{const ph=e.target.closest&&e.target.closest(".card .ph");if(!ph)return;const card=ph.closest(".card");
+ clearTimeout(CardPrev.h);if(CardPrev.cur===card)return;clearTimeout(CardPrev.t);CardPrev.t=setTimeout(()=>CardPrev.show(card),700)});
+document.addEventListener("mouseout",e=>{const ph=e.target.closest&&e.target.closest(".card .ph");if(!ph||ph.contains(e.relatedTarget))return;clearTimeout(CardPrev.t);
+ if(!(CardPrev.el&&CardPrev.el.contains(e.relatedTarget)))CardPrev.hide(200)});
+addEventListener("scroll",()=>{if(CardPrev.el&&CardPrev.el.classList.contains("on"))CardPrev.hide(0);clearTimeout(CardPrev.t)},{passive:true});
+addEventListener("hashchange",()=>CardPrev.hide(0));
+document.addEventListener("click",e=>{if(e.target.closest&&e.target.closest('[data-act="qv"],[data-act="fav"],[data-act="add"]'))CardPrev.hide(0)},true);
+
 /* ===== layers: mini cart, quick view, filter drawer ===== */
 let lastFocus=null;
 function openLayer(id){closeLayers(true);lastFocus=document.activeElement;const el=$("#"+id);el.classList.add(id==="qv"?"show":"open");$("#overlay").classList.add("show");document.body.classList.add("locked");setTimeout(()=>{const f=el.querySelector("[data-autofocus]")||el.querySelector("button,a,input");f&&f.focus({preventScroll:true})},60)}
