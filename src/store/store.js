@@ -102,8 +102,7 @@ function hsSetup(){
 }
 function hsSync(path,q){if(path==="/shop"){hsIn().value=q.get("q")||"";hsCat().value=q.get("cat")||""}else if(path==="/"){hsIn().value="";hsCat().value=""}}
 
-/* ===== footer: accepted payment methods (drawn badges, no external images).
-   Cards are shown when card payment is offered; Apple Pay / Google Pay only with Stripe on; bank transfer if listed in settings ===== */
+/* ===== footer: payment method badges (drawn in code, no external images): Mastercard, Visa, PayPal, Apple Pay, Google Pay ===== */
 const PAY_SVG={
  visa:`<svg viewBox="0 0 38 24" role="img" aria-label="Visa"><rect width="38" height="24" rx="4" fill="#fff"/><text x="19" y="16.2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="10.5" font-weight="900" font-style="italic" fill="#1a1f71" letter-spacing=".3">VISA</text></svg>`,
  mastercard:`<svg viewBox="0 0 38 24" role="img" aria-label="Mastercard"><rect width="38" height="24" rx="4" fill="#fff"/><circle cx="15.5" cy="12" r="6.6" fill="#eb001b"/><circle cx="22.5" cy="12" r="6.6" fill="#f79e1b"/><path d="M19 6.4a6.6 6.6 0 0 1 0 11.2 6.6 6.6 0 0 1 0-11.2z" fill="#ff5f00"/></svg>`,
@@ -111,13 +110,9 @@ const PAY_SVG={
  discover:`<svg viewBox="0 0 38 24" role="img" aria-label="Discover"><rect width="38" height="24" rx="4" fill="#fff"/><text x="4" y="14.6" font-family="Arial,Helvetica,sans-serif" font-size="6.4" font-weight="800" fill="#231f20">DISC</text><circle cx="24.3" cy="12.4" r="3.3" fill="#f48120"/><text x="28" y="14.6" font-family="Arial,Helvetica,sans-serif" font-size="6.4" font-weight="800" fill="#231f20">VER</text></svg>`,
  applepay:`<svg viewBox="0 0 38 24" role="img" aria-label="Apple Pay"><rect width="38" height="24" rx="4" fill="#000"/><path fill="#fff" d="M11.1 8.4c.4-.5.7-1.2.6-1.9-.6 0-1.3.4-1.8.9-.4.4-.7 1.1-.6 1.8.7.1 1.4-.3 1.8-.8zm.6 1c-1 0-1.8.6-2.3.6s-1.2-.5-2-.5c-1 0-2 .6-2.5 1.5-1.1 1.9-.3 4.6.8 6.1.5.7 1.1 1.5 1.9 1.5.8 0 1-.5 2-.5s1.2.5 2 .5 1.3-.7 1.8-1.5c.6-.8.8-1.6.8-1.7 0 0-1.6-.6-1.6-2.4 0-1.5 1.2-2.2 1.3-2.3-.7-1-1.8-1.1-2.2-1.1z"/><text x="16" y="16.3" font-family="-apple-system,Helvetica,Arial,sans-serif" font-size="9.6" font-weight="600" fill="#fff">Pay</text></svg>`,
  googlepay:`<svg viewBox="0 0 38 24" role="img" aria-label="Google Pay"><rect width="38" height="24" rx="4" fill="#fff"/><path d="M13.6 12.2c0-.4 0-.8-.1-1.1H9v2.1h2.6c-.1.6-.5 1.1-1 1.5v1.2h1.6c.9-.9 1.4-2.2 1.4-3.7z" fill="#4285f4"/><path d="M9 16.8c1.3 0 2.4-.4 3.2-1.2l-1.6-1.2c-.4.3-1 .5-1.6.5-1.3 0-2.3-.8-2.7-2H4.7v1.3c.8 1.6 2.4 2.6 4.3 2.6z" fill="#34a853"/><path d="M6.3 12.9c-.2-.6-.2-1.2 0-1.8V9.8H4.7a4.8 4.8 0 0 0 0 4.4l1.6-1.3z" fill="#fbbc04"/><path d="M9 9.1c.7 0 1.3.2 1.8.7l1.4-1.4A4.8 4.8 0 0 0 4.7 9.8l1.6 1.3c.4-1.2 1.4-2 2.7-2z" fill="#ea4335"/><text x="16" y="15.8" font-family="Arial,Helvetica,sans-serif" font-size="8.8" font-weight="600" fill="#5f6368">Pay</text></svg>`,
+ paypal:`<svg viewBox="0 0 38 24" role="img" aria-label="PayPal"><rect width="38" height="24" rx="4" fill="#fff"/><text x="19" y="15.4" text-anchor="middle" font-family="Verdana,Arial,Helvetica,sans-serif" font-size="8.4" font-weight="700" font-style="italic"><tspan fill="#003087">Pay</tspan><tspan fill="#009cde">Pal</tspan></text></svg>`,
  bank:`<svg viewBox="0 0 38 24" role="img" aria-label="Bank transfer"><rect width="38" height="24" rx="4" fill="#fff"/><path d="M19 4.6 11.2 8.4v1.3h15.6V8.4z M12.6 10.8h1.8v5.6h-1.8z m3.5 0h1.8v5.6h-1.8z m3.9 0h1.8v5.6H20z m3.5 0h1.8v5.6h-1.8z M11.2 17.4h15.6v1.8H11.2z" fill="#385a46"/></svg>`};
-function payIcons(){const c=shipCfg(),opts=String(S.settings.paymentOptions||"");
- const card=c.pay||/card|visa|mastercard|stripe/i.test(opts),L=[];
- if(card)L.push("visa","mastercard","amex","discover");
- if(c.pay)L.push("applepay","googlepay");
- if(!c.pay&&/bank|transfer|wire|ach/i.test(opts))L.push("bank");
- return L.length?`<span class="payicons" aria-label="Accepted payment methods">${L.map(k=>`<span class="payic" title="${k==="bank"?"Bank transfer":""}">${PAY_SVG[k]}</span>`).join("")}</span>`:""}
+function payIcons(){return `<span class="payicons" aria-label="Accepted payment methods">${["mastercard","visa","paypal","applepay","googlepay"].map(k=>`<span class="payic">${PAY_SVG[k]}</span>`).join("")}</span>`}
 /* ===== chrome ===== */
 function chrome(){
  const st=S.settings;document.title=st.name+(st.tagline?" — "+st.tagline:"");
