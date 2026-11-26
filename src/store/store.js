@@ -578,6 +578,7 @@ document.addEventListener("click",e=>{
   hsclear:()=>{e.preventDefault();LS.set("recent",[]);hsClose();hsIn().focus()},
   cart:()=>{e.preventDefault();openCart()},
   acctmenu:()=>{e.preventDefault();const w=$("#acctWrap"),o=!w.classList.contains("open");w.classList.toggle("open",o);el.setAttribute("aria-expanded",String(o))},
+  pwopen:()=>pwToggle(),
   pw:()=>{const i=el.parentNode.querySelector("input");i.type=i.type==="password"?"text":"password";el.textContent=i.type==="password"?"Show":"Hide"},
   signout:async()=>{await sb.auth.signOut();profile=null;favs=[];LS.set("favs",favs);badges();toast("Signed out");location.hash="#/account"},
   cologin:()=>{LS.set("afterLogin","#/checkout")},

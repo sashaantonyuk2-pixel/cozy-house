@@ -816,3 +816,7 @@ footer .copy{padding-bottom:84px}
 .paycardrow2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .paycard .field:disabled{background:#f4f3ef;cursor:not-allowed}
 .paynow{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--sage2);font-size:14px;line-height:1.45}
+/* profile: password row with «Change password» */
+.pwhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.pwhead h2{margin:0 0 2px}.pwdots{letter-spacing:2px}
+.pwpanel form{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}

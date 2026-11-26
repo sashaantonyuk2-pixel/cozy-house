@@ -16,12 +16,16 @@ async function fillProfile(){const box=$("#acMain");if(!box)return;const p=await
  const f=(k,l,o={})=>`<div class="${o.full?"full":""}"><label>${l}</label><input class="field" name="${k}" value="${esc(p[k]||"")}" autocomplete="${o.ac||"off"}" maxlength="${o.max||100}" ${o.type?`type="${o.type}"`:""}${o.ph?` placeholder="${o.ph}"`:""}></div>`;
  box.innerHTML=`<form class="panel" data-form="acProfile"><h2>Profile</h2><div class="form">${f("full_name","Full name",{full:true,ac:"name",max:120})}${f("phone","Phone",{ac:"tel",type:"tel",max:40})}<div><label>Email</label><input class="field" value="${esc(user.email)}" disabled></div>
   ${f("address_line","Street address",{full:true,ac:"address-line1",max:200,ph:"123 Main St"})}${f("address_line2","Apartment, suite, unit, floor <span class=\"muted small\">(optional)</span>",{full:true,ac:"address-line2",max:60,ph:"Apt 4B"})}${f("city","City",{ac:"address-level2"})}${f("state","State",{ac:"address-level1",max:60})}${f("zip","ZIP code",{ac:"postal-code",max:20})}</div>
-  <p class="help">We’ll fill these in for you at checkout.</p><div id="acMsg"></div><button class="btn primary" style="margin-top:8px">Save changes</button></form>${hasPw()?`<form class="panel" data-form="acPassword" novalidate><h2>Change password</h2><div class="form">
+  <p class="help">We’ll fill these in for you at checkout.</p><div id="acMsg"></div><button class="btn primary" style="margin-top:8px">Save changes</button></form>${hasPw()?`<div class="panel pwpanel"><div class="pwhead"><div><h2>Password</h2><span class="muted pwdots" aria-hidden="true">••••••••</span></div><button type="button" class="btn sm" data-act="pwopen" aria-expanded="false" aria-controls="pwForm">Change password</button></div>
+  <form data-form="acPassword" id="pwForm" novalidate hidden><div class="form">
   ${pwf("current","Current password","current-password",true)}${pwf("password","New password","new-password")}${pwf("password2","Repeat new password","new-password")}</div>
-  <p class="help">At least 8 characters. <a class="textlink" href="#/account/forgot">Forgot your current password?</a></p><div class="pwmsg"></div><button class="btn" style="margin-top:8px">Update password</button></form>`:""}
+  <p class="help">At least 8 characters. <a class="textlink" href="#/account/forgot">Forgot your current password?</a></p><div class="pwmsg"></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn primary">Update password</button><button type="button" class="btn" data-act="pwopen">Cancel</button></div></form></div>`:""}
   <div class="panel dangerzone"><h2>Delete account</h2><p class="small" style="margin:0 0 10px">Permanently delete your account, saved details and wishlist. Past orders stay in our records for tax and accounting, but will no longer be linked to you. This can’t be undone.</p>
   <button class="btn danger sm" data-act="delacct">Delete my account</button>
   <form class="stack" data-form="delacct" hidden style="margin-top:12px"><label class="lbl">Type <b>DELETE</b> to confirm</label><input class="field" name="confirm" autocomplete="off" placeholder="DELETE" style="max-width:220px"><div class="delmsg"></div><div><button class="btn danger">Permanently delete account</button></div></form></div>`}
+/* show / hide the change-password form */
+function pwToggle(open){const f=$("#pwForm"),b=document.querySelector('.pwhead [data-act="pwopen"]');if(!f)return;const on=open===undefined?f.hidden:open;
+ f.hidden=!on;if(b){b.hidden=on;b.setAttribute("aria-expanded",on)}if(on){f.querySelector(".pwmsg").innerHTML="";f.current.focus()}else{f.reset();b&&b.focus()}}
 /* ===== change password (email accounts): check the current password first, then set the new one ===== */
 async function changePassword(f){const fd=Object.fromEntries(new FormData(f)),btn=f.querySelector("button:not(.pwtoggle)"),box=f.querySelector(".pwmsg");
  const say=(t,ok)=>{box.innerHTML=`<div class="${ok?"okbox":"note"}" style="margin-bottom:4px">${t}</div>`};
@@ -34,7 +38,7 @@ async function changePassword(f){const fd=Object.fromEntries(new FormData(f)),bt
   if(chk.error){btn.disabled=false;return say(/invalid/i.test(chk.error.message)?"Current password is incorrect.":esc(authErr(chk.error)))}
   const{error}=await sb.auth.updateUser({password:fd.password});btn.disabled=false;
   if(error)return say(esc(authErr(error)));
-  f.reset();say("Password updated ✓",true);toast("Password updated")}
+  f.reset();toast("Password updated ✓");pwToggle(false)}
  catch(e){btn.disabled=false;say(esc(authErr(e)))}}
 /* ===== wishlist saved in the account (same list on every device) ===== */
 async function syncFavs(){if(!sb||!user)return;try{
