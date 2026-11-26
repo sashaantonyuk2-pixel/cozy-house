@@ -797,3 +797,7 @@ footer .copy{padding-bottom:84px}
  .catmosaic .ctile.wide-m{grid-column:1/-1;aspect-ratio:16/8}
  .ctname{font-size:13.5px;padding:30px 10px 10px}.ctname em{width:24px;height:24px;font-size:13px}
  .ctile.big .ctname{font-size:19px;padding:44px 14px 14px}}
+/* home: slim line above the category mosaic (the heading stays for screen readers and search engines) */
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.cathead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+.cathead .eyebrow{margin:0}
