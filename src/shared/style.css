@@ -723,3 +723,9 @@ footer .copy{padding-bottom:84px}
 @media (prefers-reduced-motion:reduce){.cat .ph img{transition:none;transform:none!important}}
 .retform,.cancelform{grid-template-columns:minmax(0,1fr)}.retform>*,.retform fieldset>*,.cancelform>*{min-width:0}.filepick{flex-wrap:wrap;max-width:100%}.filepick .filenames{min-width:0;overflow-wrap:anywhere}
 .retform .check,.cancelform .check{white-space:normal;align-items:flex-start;line-height:1.45}.retform .check input{margin-top:2px;flex:none}
+/* seller orders: delivery delay + delivery warnings */
+.odelay{margin-top:6px;padding:6px 10px;border-radius:9px;background:#fdf3dd;color:#7a4f0a;line-height:1.45}
+.owarn{margin-top:6px;padding:6px 10px;border-radius:9px;background:#fbeee7;color:#8a4b30;line-height:1.45}
+/* customer: delayed delivery */
+.o-late{background:#fdf3dd;color:#9a5a0b}
+.otrk-late{background:#fdf3dd;border-color:#f0d9a8}

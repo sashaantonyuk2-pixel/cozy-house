@@ -197,6 +197,7 @@ as $function$
     'order_no', o.order_no, 'status', o.status, 'created_at', o.created_at, 'total', o.total,
     'carrier', o.carrier, 'tracking_number', o.tracking_number, 'shipped_at', o.shipped_at,
     'delivery_eta', o.delivery_eta, 'delivered_at', o.delivered_at, 'payment_status', o.payment_status,
+    'delay_reason', o.delay_reason, 'delayed_at', o.delayed_at,
     'delivery', o.customer->>'delivery',
     'items', (select jsonb_agg(jsonb_build_object('id', i->>'id', 'name', i->>'name', 'qty', (i->>'qty')::int, 'price', i->'price', 'opt', i->'opt'))
               from jsonb_array_elements(o.items) i))
@@ -253,3 +254,28 @@ begin
 end; $function$;
 revoke execute on function public.cancel_order(text, text, text) from public;
 grant execute on function public.cancel_order(text, text, text) to anon, authenticated;
+
+-- Delivery delay + automatic delivery (migration orders_delay_and_auto_deliver, 26.11.2026)
+--   delay_reason / delayed_at: set by the seller («⏰ Затримка»), together with a new delivery_eta
+--   Shipped orders become «completed» (delivered) the morning after delivery_eta (US Eastern), via pg_cron at 11:00 UTC.
+alter table public.orders add column if not exists delay_reason text;
+alter table public.orders add column if not exists delayed_at timestamp with time zone;
+alter table public.orders add constraint orders_delay_reason_check check (char_length(delay_reason) <= 200);
+grant select (delay_reason, delayed_at) on public.orders to authenticated;
+grant update (delay_reason, delayed_at) on public.orders to authenticated;
+create or replace function private.auto_deliver_orders() returns integer
+language plpgsql security definer set search_path = '' as $$
+declare n integer;
+begin
+  update public.orders
+     set status = 'completed',
+         delivered_at = ((delivery_eta::timestamp + time '18:00') at time zone 'America/New_York')
+   where status = 'shipped'
+     and delivery_eta is not null
+     and delivery_eta < (now() at time zone 'America/New_York')::date;
+  get diagnostics n = row_count;
+  return n;
+end $$;
+revoke execute on function private.auto_deliver_orders() from public;
+create extension if not exists pg_cron;
+select cron.schedule('auto-deliver-orders', '0 11 * * *', 'select private.auto_deliver_orders()');

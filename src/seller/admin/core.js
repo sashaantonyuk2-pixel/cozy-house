@@ -44,6 +44,7 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
  else if(k==="filtercat"){const f=el.form;const n=new URLSearchParams();const fd=new FormData(f);fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));fd.get("sup")&&n.set("sup",fd.get("sup"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"")}
  else if(k==="ostatus"){const v=el.value;el.disabled=true;sb.from("orders").update({status:v}).eq("id",+id).then(({error})=>{el.disabled=false;toast(error?"⚠️ "+error.message:"Статус: "+Admin.ST[v]+(v==="cancelled"?" · товари повернено на склад":""));if(!error){const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.status=v;refreshAdminCatalog();if($("#ordPage"))Admin.fillOrder(+id)}})}
  else if(k==="carrierpick"){const o=el.form.carrier_other;o.hidden=el.value!=="Other";if(!o.hidden)o.focus()}
+ else if(k==="delayreason"){const o=el.form.reason_other;o.hidden=el.value!=="__other";if(!o.hidden)o.focus()}
  else if(k==="oeta"){const v=el.value||null;el.disabled=true;sb.from("orders").update({delivery_eta:v}).eq("id",+id).then(({error})=>{el.disabled=false;if(error)return toast("⚠️ "+error.message);const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.delivery_eta=v;toast(v?"Очікувана доставка: "+Admin.day(v):"Дату доставки прибрано")})}
  else if(k==="catname"){const c=catOf(id);if(c&&el.value.trim()){c.name=el.value.trim();save();chrome();toast("Збережено ✓")}}},
 click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("Спочатку виберіть товари галочками");return false}return true};
@@ -105,6 +106,8 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  custExport:()=>Admin.custExport(),
  dashP:()=>{const p=el.dataset.p;sessionStorage.setItem("dashP",p);if(p==="custom"&&!sessionStorage.getItem("dashFrom")){const d=new Date();sessionStorage.setItem("dashTo",Admin.dISO(d));d.setDate(d.getDate()-29);sessionStorage.setItem("dashFrom",Admin.dISO(d))}render()},
  msgStatus:()=>{const v=el.dataset.v;sb.from("messages").update({status:v}).eq("id",+id).then(({error})=>{if(error)return toast("⚠️ "+error.message);const m=Admin.msgData.find(x=>x.id===+id);if(m)m.status=v;Admin.renderMsgs();Admin.msgBadge()})},
+ odeliver:()=>{const o=this.ordersData.find(x=>x.id===+id);if(!o||!confirm(`Позначити замовлення ${o.order_no} доставленим сьогодні?\nУ покупця відкриється повернення на ${parseFloat(S.settings.returnDays)||14} днів.`))return;this.orderUpdate(+id,{status:"completed"},"Позначено доставленим ✓")},
+ delayForm:()=>{const r=$("#delay-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=eta]").focus()}},
  shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=tracking]").focus()}},
  shipCancel:()=>{const r=$("#ship-"+id);if(r)r.hidden=true},
  slip:()=>this.slip(id),
@@ -118,7 +121,7 @@ submit(k,f){
  if(k==="dashrange")return this.dashRange(f);
  if(k==="supadd")return this.supAdd(f);
  if(k==="supplier")return this.supplierSave(f);
- if(k==="opay"||k==="orefund"||k==="onote"||k==="oaddr")return this.orderSubmit(k,f);
+ if(k==="opay"||k==="orefund"||k==="onote"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
  if(k==="ret"){const id=+f.dataset.id,reason=f.reason.value+(f.note.value.trim()?": "+f.note.value.trim():"");const b=f.querySelector("button.primary");b.disabled=true;

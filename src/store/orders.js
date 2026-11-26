@@ -53,6 +53,7 @@ function oStatus(o){
  if(o.status==="cancelled")return{k:"off",pill:"Cancelled",head:"Order cancelled"};
  if(o.status==="returned")return{k:"off",pill:"Returned",head:"Order returned"};
  if(o.status==="completed")return{k:"del",pill:"Delivered",head:o.delivered_at?fmtDate(o.delivered_at):"Delivered",sub:canReturn(o)?"Returns open until "+fmtDate(retWindow(o).until):""};
+ if(o.status==="shipped"&&o.delayed_at)return{k:"late",pill:"Delayed",head:o.delivery_eta?"Now arriving "+fmtDay(o.delivery_eta):"Running late",sub:o.delay_reason||""};
  if(o.status==="shipped")return{k:"ship",pill:"Shipped",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"On its way"};
  if(o.payment_status==="unpaid")return{k:"new",pill:"Awaiting payment",head:"We’ll email you a secure payment link"};
  if(o.status==="confirmed")return{k:"new",pill:"Confirmed",head:o.delivery_eta?"Arriving "+fmtDay(o.delivery_eta):"Preparing to ship"};
@@ -88,7 +89,7 @@ function oDetail(o){const r=MY_RETURNS[o.id],c=o.customer||{},canRet=canReturn(o
  ${canRet?retForm(o):""}${canCancel(o)?cancelForm(o):""}`}
 async function fillOrders(){const box=$("#acMain");if(!box)return;
  const h=location.hash.slice(1).split("?"),no=decodeURIComponent((h[0].split("/")[3])||""),act=new URLSearchParams(h[1]||"").get("act");
- const[{data,error},rr]=await Promise.all([sb.from("orders").select("id,order_no,status,items,total,subtotal,shipping,tax,tax_rate,created_at,carrier,tracking_number,shipped_at,customer,delivery_eta,delivered_at,payment_status").order("created_at",{ascending:false}).limit(50),
+ const[{data,error},rr]=await Promise.all([sb.from("orders").select("id,order_no,status,items,total,subtotal,shipping,tax,tax_rate,created_at,carrier,tracking_number,shipped_at,customer,delivery_eta,delivered_at,payment_status,delay_reason,delayed_at").order("created_at",{ascending:false}).limit(50),
   sb.from("return_requests").select("id,order_id,status,reason,free_return,created_at,seller_note").order("created_at",{ascending:false})]);
  if(!$("#acMain"))return;
  if(error){box.innerHTML=`<div class="note">${esc(authErr(error))}</div>`;return}
