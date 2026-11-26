@@ -39,7 +39,7 @@ h1,h2,h3.serif{font-family:Georgia,"Times New Roman",serif;font-weight:500;lette
 .grid.cats{grid-template-columns:repeat(6,minmax(0,1fr));gap:16px}
 .cat{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:.2s;text-align:center}
 .cat:hover{transform:translateY(-3px);box-shadow:var(--shadow)}.cat .ph{aspect-ratio:1;background:#efece4}.cat .ph img{width:100%;height:100%;object-fit:cover}
-.cat b{display:block;padding:12px 8px 2px;font-size:14px}.cat small{display:block;color:var(--muted);font-size:12px;padding-bottom:12px}
+.cat b{display:block;padding:12px 8px 13px;font-size:14px}.cat small{display:block;color:var(--muted);font-size:12px;padding-bottom:12px}
 /* product card */
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;display:flex;flex-direction:column;transition:.2s;position:relative}
 .card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
