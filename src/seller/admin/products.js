@@ -1,5 +1,14 @@
 /* ===== Seller Central · Товари: список, порядок, редактор товару, фото ===== */
 Object.assign(Admin,{
+/* ---- product editor: list of changes shown before saving («Назва: A → B») ---- */
+prodDiff(p,d){const L={name:"Назва",sku:"Код (SKU)",price:"Ціна",oldPrice:"Стара ціна",stock:"Залишок",cat:"Категорія",active:"На сайті",featured:"Хіт",short:"Короткий опис",desc:"Опис",specs:"Характеристики",options:"Варіанти",images:"Фото",supplierId:"Постачальник",supplierSku:"SKU постачальника",cost:"Собівартість",supplierUrl:"Посилання постачальника"};
+ const show=(k,v)=>v==null||v===""?"—":k==="price"||k==="oldPrice"||k==="cost"?money(v):k==="cat"?(catLabel(catOf(v))||"без категорії"):k==="active"||k==="featured"?(v?"так":"ні"):k==="supplierId"?(this.supName(v)||"—"):String(v);
+ const norm=(k,v)=>k==="price"||k==="oldPrice"||k==="cost"||k==="stock"?(v==null||v===""?null:+v):k==="images"||k==="specs"||k==="options"?JSON.stringify(v||[]):v==null?"":String(v);
+ const out=[];Object.keys(L).forEach(k=>{if(!(k in d))return;if(norm(k,p[k])===norm(k,d[k]))return;
+  if(k==="images"){const a=(p.images||[]).length,b=(d.images||[]).length;out.push(`Фото: ${a===b?"змінено порядок або фото":a+" → "+b}`)}
+  else if(["desc","short","specs","options","supplierUrl"].includes(k))out.push(L[k]+": змінено");
+  else out.push(`${L[k]}: ${show(k,p[k])} → ${show(k,d[k])}`)});
+ return out},
 /* ---- unsaved changes in the products table: nothing is saved until «Зберегти зміни» ---- */
 pendB:{},/* product id → JSON of the product before its first unsaved change */
 pendTouch(p){if(p&&!this.pendB[p.id])this.pendB[p.id]=JSON.stringify(p)},
@@ -70,7 +79,7 @@ editor(id){
 imgsHtml(){const I=this.draft.images;return I.length?`<div class="imgs">${I.map((s,i)=>`<div class="imgbox"><img src="${esc(s)}" alt="">${i?"":`<span class="main-l">Головне</span>`}<div class="tools"><span><button type="button" data-act="a:imgmv" data-i="${i}" data-d="-1" title="Лівіше">←</button> <button type="button" data-act="a:imgmv" data-i="${i}" data-d="1" title="Правіше">→</button></span><button type="button" data-act="a:imgdel" data-i="${i}" title="Видалити">✕</button></div></div>`).join("")}</div><p class="help" style="margin-top:-4px">Перше фото — головне (показується в каталозі). Стрілками змінюйте порядок.</p>`:`<p class="muted small">Фото ще немає.</p>`},
 optRow(o){return `<div class="specrow"><input class="field" name="on" value="${esc(o.name)}" placeholder="Напр.: Color" style="max-width:160px"><input class="field" name="ov" value="${esc((o.values||[]).join(", "))}" placeholder="Напр.: Sage, Oat, Terracotta"><button type="button" class="btn sm" data-act="a:optdel">✕</button></div>`},
 specRow(s){return `<div class="specrow"><input class="field" name="sk" value="${esc(s[0])}" placeholder="Напр.: Матеріал"><input class="field" name="sv" value="${esc(s[1])}" placeholder="Напр.: Кераміка"><button type="button" class="btn sm" data-act="a:specdel">✕</button></div>`},
-async addFiles(files){const arr=[...files].filter(f=>f.type.startsWith("image/"));if(!arr.length)return;toast("Обробка фото…");for(const f of arr){try{this.draft.images.push(await toDataURL(f,1400))}catch(e){toast("Не вдалося відкрити "+f.name)}}$("#imgs").innerHTML=this.imgsHtml();toast("Фото додано: "+arr.length)},
+async addFiles(files){this.edDirty=true;const arr=[...files].filter(f=>f.type.startsWith("image/"));if(!arr.length)return;toast("Обробка фото…");for(const f of arr){try{this.draft.images.push(await toDataURL(f,1400))}catch(e){toast("Не вдалося відкрити "+f.name)}}$("#imgs").innerHTML=this.imgsHtml();toast("Фото додано: "+arr.length)},
 supAdd(f){const sup=f.supplierId.value,sku=f.supplierSku.value.trim().slice(0,80);if(!sku){f.supplierSku.focus();return toast("Вкажіть SKU постачальника")}
  const same=S.products.filter(p=>(p.supplierSku||"").toLowerCase()===sku.toLowerCase()),hit=same.find(p=>!sup||(p.supplierId||"")===sup)||(!sup&&same[0]);
  if(hit){toast(`Цей SKU уже є: «${hit.name}»`);location.hash="#/admin/product/"+hit.id;return}
@@ -89,3 +98,8 @@ async moveToStorage(btn){const L=this.outsideStorage();if(!L.length)return toast
   catch(e){fail++;console.warn("move failed",x.u,e&&e.message)}}
  save();toast(`Перенесено: ${done}${fail?` · не вдалося: ${fail}`:""}. Зберігаю…`);render()},
 });
+/* product editor: Enter in a field does not save the product (only the «Зберегти зміни» button does) */
+document.addEventListener("keydown",e=>{if(e.key!=="Enter"||e.isComposing)return;const t=e.target;if(!t.closest||!t.closest('[data-form="product"]'))return;if(t.tagName==="TEXTAREA"||t.tagName==="BUTTON"||t.type==="submit")return;e.preventDefault()});
+/* leaving the editor with unsaved changes: ask first (links inside Seller Central) */
+document.addEventListener("click",e=>{if(!Admin.edDirty||!document.querySelector('[data-form="product"]'))return;const a=e.target.closest&&e.target.closest("a[href]");if(!a||a.target==="_blank")return;
+ if(!confirm("У товарі є незбережені зміни. Вийти без збереження?")){e.preventDefault();e.stopPropagation()}else Admin.edDirty=false},true);

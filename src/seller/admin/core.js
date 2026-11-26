@@ -26,7 +26,7 @@ view(parts,q){const k=parts[1]||"";
  if(k==="supplier")return this.wrap("suppliers",this.supplierEdit(parts[2]));
  return this.wrap("",this.dash())},
 after(parts){
- {const pf=document.querySelector('[data-form="product"]');if(pf){const u=()=>this.marginInfo();pf.cost&&pf.cost.addEventListener("input",u);pf.price&&pf.price.addEventListener("input",u);u()}}
+ {const pf=document.querySelector('[data-form="product"]');this.edDirty=false;if(pf){pf.addEventListener("input",()=>this.edDirty=true);pf.addEventListener("change",()=>this.edDirty=true);const u=()=>this.marginInfo();pf.cost&&pf.cost.addEventListener("input",u);pf.price&&pf.price.addEventListener("input",u);u()}}
  const dz=$("#drop");if(dz){const fi=$("#imgFile");dz.addEventListener("dragover",e=>{e.preventDefault();dz.classList.add("over")});dz.addEventListener("dragleave",()=>dz.classList.remove("over"));dz.addEventListener("drop",e=>{e.preventDefault();dz.classList.remove("over");this.addFiles(e.dataTransfer.files)});fi.addEventListener("change",()=>{this.addFiles(fi.files);fi.value=""})}
  document.querySelectorAll("input[type=file][data-up]").forEach(inp=>inp.addEventListener("change",async()=>{const f=inp.files[0];if(!f)return;const up=inp.dataset.up,url=await toDataURL(f,up==="hero"?2400:up==="heroMobile"?1200:900);if(up==="hero")S.settings.heroImage=url;else if(up==="heroMobile")S.settings.heroImageMobile=url;else{const c=catOf(inp.dataset.up);if(c)c.image=url}save();render();toast("Фото оновлено")}));
  const imp=$("#importFile");if(imp)imp.addEventListener("change",()=>this.importFile(imp.files[0]));
@@ -57,9 +57,9 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  pct:()=>{if(this.pendBlock()||!need())return;const pc=Number($("#pct").value)||0,s=+el.dataset.s;if(!pc)return;if(!confirm(`${s>0?"Підняти":"Знизити"} ціну на ${pc}% для ${this.sel.size} товарів?`))return;this.sel.forEach(i=>{const p=prod(i);p.price=Math.max(0,Math.round(p.price*(1+s*pc/100)))});save();toast("Ціни оновлено");render()},
  vis:()=>{if(this.pendBlock()||!need())return;if(!confirm(`${el.dataset.v==="1"?"Показати на сайті":"Приховати з сайту"} ${this.sel.size} товарів?`))return;this.sel.forEach(i=>prod(i).active=el.dataset.v==="1");save();render();toast("Готово")},
  bulkdel:()=>{if(this.pendBlock()||!need())return;if(confirm(`Видалити ${this.sel.size} товарів? Це не можна скасувати.`)){S.products=S.products.filter(p=>!this.sel.has(p.id));this.sel.clear();save();render();toast("Видалено")}},
- imgmv:()=>{const I=this.draft.images,i=+el.dataset.i,j=i+ +el.dataset.d;if(j<0||j>=I.length)return;[I[i],I[j]]=[I[j],I[i]];$("#imgs").innerHTML=this.imgsHtml()},
- imgdel:()=>{this.draft.images.splice(+el.dataset.i,1);$("#imgs").innerHTML=this.imgsHtml()},
- imgurl:()=>{const u=$("#imgUrl").value.trim();if(!/^https?:\/\//.test(u))return toast("Вставте посилання, що починається з https://");this.draft.images.push(u);$("#imgUrl").value="";$("#imgs").innerHTML=this.imgsHtml()},
+ imgmv:()=>{this.edDirty=true;const I=this.draft.images,i=+el.dataset.i,j=i+ +el.dataset.d;if(j<0||j>=I.length)return;[I[i],I[j]]=[I[j],I[i]];$("#imgs").innerHTML=this.imgsHtml()},
+ imgdel:()=>{this.edDirty=true;this.draft.images.splice(+el.dataset.i,1);$("#imgs").innerHTML=this.imgsHtml()},
+ imgurl:()=>{this.edDirty=true;const u=$("#imgUrl").value.trim();if(!/^https?:\/\//.test(u))return toast("Вставте посилання, що починається з https://");this.draft.images.push(u);$("#imgUrl").value="";$("#imgs").innerHTML=this.imgsHtml()},
  posmv:()=>{const L=S.products.slice().sort(this.PSORT.manual);const i=L.findIndex(x=>x.id===id),j=i+ +el.dataset.d;if(j<0||j>=L.length)return;L.forEach(x=>this.pendTouch(x));L.forEach((x,k)=>x.position=k+1);[L[i].position,L[j].position]=[L[j].position,L[i].position];render()},
  seoopen:()=>{const r=$("#seo-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("input").focus()}},
  xlsExport:()=>this.xlsExport(),
@@ -152,7 +152,10 @@ submit(k,f){
   const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),supplierId:String(fd.get("supplierId")||""),supplierSku:String(fd.get("supplierSku")||"").trim().slice(0,80),cost:fd.get("cost")===""||fd.get("cost")==null?null:Math.max(0,Math.round(Number(fd.get("cost"))*100)/100),supplierUrl:String(fd.get("supplierUrl")||"").trim().slice(0,500),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
   if(data.supplierUrl&&!/^https?:\/\//i.test(data.supplierUrl)){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Посилання на постачальника має починатися з https://</div>';return}
   if(data.supplierSku){const dup=S.products.find(x=>x.id!==this.draft._for&&(x.supplierSku||"").toLowerCase()===data.supplierSku.toLowerCase()&&(x.supplierId||"")===data.supplierId);if(dup&&!confirm(`SKU постачальника «${data.supplierSku}» уже є в товарі «${dup.name}». Все одно зберегти?`))return}
-  const id=this.draft._for;if(id==="new"){S.products.push({id:uid(),created:Date.now(),...data})}else Object.assign(prod(id),data);
+  const id=this.draft._for;
+  if(id!=="new"){const p0=prod(id),ch=this.prodDiff(p0,data);if(!ch.length){toast("Змін немає — нічого не збережено");return}
+   if(!confirm(`Зберегти зміни в товарі «${p0.name}»?\n\n${ch.map(x=>"• "+x).join("\n")}`))return}
+  if(id==="new"){S.products.push({id:uid(),created:Date.now(),...data})}else Object.assign(prod(id),data);this.edDirty=false;
   this.draft=null;save();toast(id==="new"?"Товар створено ✓":"Зміни збережено ✓");location.hash="#/admin/products"}},
 };
 function toDataURL(file,max){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{let w=im.naturalWidth,h=im.naturalHeight;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);res(c.toDataURL("image/jpeg",.84))};im.src=r.result};r.readAsDataURL(file)})}
