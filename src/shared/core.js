@@ -22,10 +22,16 @@ const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,pri
 async function fetchCatalog(){
  const[c,p,s,rv]=await Promise.all([sb.from("categories").select("*").order("position"),sb.from("products").select("*").order("created_at",{ascending:false}),sb.from("store_settings").select("data").eq("id",1).maybeSingle(),sb.from("reviews").select("id,product_id,name,rating,title,body,verified,created_at").eq("status","approved").order("created_at",{ascending:false}).limit(1000)]);
  const err=c.error||p.error||s.error;if(err)throw err;
- return normalize({version:3,settings:(s.data&&s.data.data)||{},categories:c.data.map(x=>({id:x.id,name:x.name,image:x.image||""})),products:p.data.map(fromRow),reviews:rv&&!rv.error&&Array.isArray(rv.data)?rv.data:[]})}
+ return normalize({version:3,settings:(s.data&&s.data.data)||{},categories:c.data.map(x=>({id:x.id,name:x.name,image:x.image||"",parent:x.parent_id||""})),products:p.data.map(fromRow),reviews:rv&&!rv.error&&Array.isArray(rv.data)?rv.data:[]})}
 
 const prod=id=>S.products.find(p=>p.id===id);
 const catOf=id=>S.categories.find(c=>c.id===id);
+/* subcategories: two levels only. A category's "parent" is "" for top-level ones */
+const catParent=c=>c&&c.parent&&catOf(c.parent)?catOf(c.parent):null;
+const topCats=()=>S.categories.filter(c=>!catParent(c));
+const subCats=id=>S.categories.filter(c=>c.parent===id&&id);
+const inCat=(p,id)=>!id||p.cat===id||((catOf(p.cat)||{}).parent===id&&!!id);
+const catLabel=c=>c?(catParent(c)?catParent(c).name+" › ":"")+c.name:"";
 const visible=()=>S.products.filter(p=>p.active);
 
 const optList=p=>(p&&Array.isArray(p.options)?p.options:[]).filter(o=>o&&o.name&&Array.isArray(o.values)&&o.values.length);
@@ -42,7 +48,7 @@ const isNew=p=>Date.now()-(p.created||0)<14*86400000&&!p.oldPrice;
 
 const X='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
 
-function catImg(c){if(c.image)return c.image;const p=visible().find(p=>p.cat===c.id&&p.images&&p.images[0]);return p?p.images[0]:art("basket","#efece4","#e4ddd0")}
+function catImg(c){if(c.image)return c.image;const p=visible().find(p=>inCat(p,c.id)&&p.images&&p.images[0]);return p?p.images[0]:art("basket","#efece4","#e4ddd0")}
 
 function copy(s){(navigator.clipboard?navigator.clipboard.writeText(s):Promise.reject()).then(()=>toast(t("copied"))).catch(()=>{const tmp=document.createElement("textarea");tmp.value=s;document.body.appendChild(tmp);tmp.select();try{document.execCommand("copy");toast(t("copied"))}catch(_){}tmp.remove()})}
 /* values saved by the seller that customers see (old orders may have Ukrainian ones) */

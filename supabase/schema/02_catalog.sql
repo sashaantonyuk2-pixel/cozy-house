@@ -7,8 +7,11 @@ create table if not exists public.categories (
   name text not null,
   image text,
   "position" integer default 0 not null,
+  parent_id text,  -- subcategory: the parent category's id (two levels only, see trigger below)
   updated_at timestamp with time zone default now() not null,
   constraint categories_pkey primary key (id),
+  constraint categories_parent_id_fkey foreign key (parent_id) references public.categories(id) on update cascade,
+  constraint categories_parent_not_self check (parent_id is null or parent_id <> id),
   constraint categories_id_check check ((id ~ '^[a-z0-9-]{1,40}$'::text)),
   constraint categories_image_check check ((char_length(image) <= 500000)),
   constraint categories_name_check check (((char_length(name) >= 1) and (char_length(name) <= 80)))
@@ -25,6 +28,22 @@ create policy "Anyone can read categories" on public.categories as permissive fo
   using (true);
 create trigger audit_categories after insert or delete or update on public.categories for each row execute function public.log_change();
 create trigger categories_updated_at before update on public.categories for each row execute function public.set_updated_at();
+create index if not exists categories_parent_idx on public.categories (parent_id);
+-- subcategories: two levels only (category → subcategory). Migration categories_parent (26.11.2026)
+create or replace function private.categories_two_levels() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+  if new.parent_id is not null then
+    if exists (select 1 from public.categories c where c.id = new.parent_id and c.parent_id is not null) then
+      raise exception 'SUBCATEGORY_DEPTH: a subcategory cannot have its own subcategories';
+    end if;
+    if exists (select 1 from public.categories c where c.parent_id = new.id) then
+      raise exception 'SUBCATEGORY_DEPTH: a category with subcategories cannot become a subcategory';
+    end if;
+  end if;
+  return new;
+end $$;
+create trigger categories_two_levels before insert or update of parent_id on public.categories for each row execute function private.categories_two_levels();
 
 create table if not exists public.products (
   id text not null,

@@ -633,3 +633,43 @@ small.supsku{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;wh
 .navgrp{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#8a948c;padding:12px 12px 3px}
 @media(min-width:861px){.admin .aside{max-height:calc(100vh - 110px);overflow-y:auto;scrollbar-width:thin}.admin .aside a{padding:7px 12px}.admin .aside .navhide{padding-bottom:4px}.navgrp:first-of-type{padding-top:8px}}
 @media(max-width:860px){.navgrp{display:none}}
+/* ===== subcategories: header dropdown, subcategory chips, filter tree ===== */
+.navitem{position:relative;display:flex;align-items:center;flex:none}
+.navpar{display:inline-flex;align-items:center;gap:6px}
+.navcaret{width:6px;height:6px;border-right:1.6px solid currentColor;border-bottom:1.6px solid currentColor;transform:translateY(-2px) rotate(45deg);opacity:.7}
+.navitem.hover .navpar{color:var(--terra)}
+.navexp,.navsubs{display:none}
+.navdrop{position:fixed;z-index:60;display:none;flex-direction:column;min-width:210px;max-width:320px;max-height:70vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px}
+.navdrop.on{display:flex}
+.navdrop a{padding:9px 12px;border-radius:8px;color:#48544a;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.navdrop a:hover,.navdrop a:focus-visible,.navdrop a.active{background:#f4f6f1;color:var(--terra)}
+.navdrop .navall{color:var(--forest);border-bottom:1px solid var(--line);border-radius:8px 8px 0 0;margin-bottom:4px}
+@media (max-width:860px){
+ .navitem{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid #f0f1ed}
+ .nav .navitem>a.navpar{border:0}.navcaret{display:none}
+ .navexp{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;background:none;cursor:pointer;color:#48544a}
+ .navexp:before{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .2s}
+ .navitem.open .navexp:before{transform:translateY(2px) rotate(225deg)}
+ .navitem.open .navsubs{display:flex;flex-direction:column;grid-column:1/-1;padding:0 0 8px 14px}
+ .nav .navsubs a{padding:10px 4px;font-size:14px;border:0;font-weight:500}
+ .nav .navsubs a.navall{font-weight:600}
+}
+.subchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.subchip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:13.5px;font-weight:600;color:#48544a;transition:.15s}
+.subchip small{color:var(--muted);font-weight:500;font-size:12px}
+.subchip:hover{border-color:var(--forest);color:var(--forest)}
+.subchip.on{background:var(--forest);border-color:var(--forest);color:#fff}.subchip.on small{color:#d7e2d5}
+.subchip.dim{opacity:.55}
+.fopt.fsub{padding-left:14px;font-size:13.5px}.fopt.fsub span:before{content:"└ ";color:var(--muted)}
+/* Seller Central · Категорії (tree) */
+.cattable .catname{display:flex;align-items:center;gap:8px}
+.cattable .catname .field{min-width:0}
+.cattable .catsub td:first-child img{width:34px;height:34px;margin-left:12px}
+.cattable .catsub .catname,.catsubform{padding-left:16px}
+.catbranch{color:var(--muted);font-size:15px;flex:none}
+.cattable .cattop td{border-top:1px solid var(--line)}
+.cattable tr[hidden]{display:none}
+.catsubform{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.catsubform .field{flex:1;min-width:180px;max-width:340px}
+.catplus{color:var(--forest);font-weight:700}
+/* header menu on mid-size screens: tighter, and wraps to a second row instead of hiding categories off-screen */
+@media (min-width:861px) and (max-width:1240px){.navbar .nav{gap:4px 16px;flex-wrap:wrap;padding:6px 0}.nav a{font-size:13px}}

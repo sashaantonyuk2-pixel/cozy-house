@@ -54,7 +54,7 @@ const tokens=q=>norm(q).split(/[^a-z0-9\u0400-\u04ff]+/).filter(Boolean);
 const stem=w=>w.length>4&&/(ches|shes|xes|sses)$/.test(w)?w.slice(0,-2):w.length>3&&/[^s]s$/.test(w)?w.slice(0,-1):w;
 function near(a,b){if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,e=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++e>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++}}return e+(a.length-i)+(b.length-j)<=1}
 function scoreOf(p,toks){
- const c=catOf(p.cat),name=norm(p.name),cat=norm(c?c.name:""),rest=norm([p.short,p.desc,p.sku,...(p.specs||[]).flat()].join(" "));
+ const c=catOf(p.cat),name=norm(p.name),cat=norm(c?catLabel(c):""),rest=norm([p.short,p.desc,p.sku,...(p.specs||[]).flat()].join(" "));
  const nw=name.split(/[^a-z0-9\u0400-\u04ff]+/).filter(Boolean),aw=(cat+" "+rest).split(/[^a-z0-9\u0400-\u04ff]+/).filter(Boolean);
  let s=0;
  for(const t of toks){let b=0;
@@ -64,7 +64,7 @@ function scoreOf(p,toks){
   else if(t.length>=4&&nw.concat(cat.split(/[^a-z0-9\u0400-\u04ff]+/)).some(w=>w.length>=4&&((st.length>=4&&near(st,stem(w)))||near(t,w)||near(t,w.slice(0,t.length)))))b=2;
   if(!b)return 0;s+=b}
  if(name.startsWith(toks.join(" ")))s+=5;if(p.stock>0)s+=1;if(p.featured)s+=.5;return s}
-function searchProducts(q,cat){const toks=tokens(q);if(!toks.length)return[];return visible().filter(p=>!cat||p.cat===cat).map(p=>[p,scoreOf(p,toks)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(x=>x[0])}
+function searchProducts(q,cat){const toks=tokens(q);if(!toks.length)return[];return visible().filter(p=>inCat(p,cat)).map(p=>[p,scoreOf(p,toks)]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).map(x=>x[0])}
 function hl(text,toks){let h=esc(text);toks.filter(t=>t.length>1).forEach(t=>{h=h.replace(new RegExp("("+t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+")","ig"),"\u0001$1\u0002")});return h.replace(/\u0001/g,"<mark>").replace(/\u0002/g,"</mark>")}
 const shopLink=(q,cat)=>{const n=new URLSearchParams();if(q)n.set("q",q);if(cat)n.set("cat",cat);return"#/shop"+(n.toString()?"?"+n:"")};
 const HS={i:-1,items:[]};
@@ -88,7 +88,7 @@ function hsMove(d){const els=[...hsList().querySelectorAll(".hs-item")];if(!els.
 function hsGo(href,q){if(q){const r=[q,...LS.get("recent",[]).filter(x=>norm(x)!==norm(q))].slice(0,6);LS.set("recent",r)}hsClose();hsIn().blur();if(location.hash===href)render();else location.hash=href}
 function hsSetup(){
  const inp=hsIn(),f=$("#hsearch");
- hsCat().innerHTML=`<option value="">${t("allShort")}</option>`+S.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+ hsCat().innerHTML=`<option value="">${t("allShort")}</option>`+topCats().map(c=>`<option value="${c.id}">${esc(c.name)}</option>`+subCats(c.id).map(x=>`<option value="${x.id}">\u00a0\u00a0${esc(x.name)}</option>`).join("")).join("");
  inp.placeholder=t("searchPh");
  if(f.dataset.ready)return;f.dataset.ready=1;
  inp.addEventListener("input",hsRender);inp.addEventListener("focus",hsRender);
@@ -106,17 +106,38 @@ function hsSync(path,q){if(path==="/shop"){hsIn().value=q.get("q")||"";hsCat().v
 function chrome(){
  const st=S.settings;document.title=st.name+(st.tagline?" — "+st.tagline:"");
  $("#promo").textContent=st.promo||"";$("#brandName").textContent=st.name;$("#brandTag").textContent=st.tagline||"";
- $("#nav").innerHTML=[["#/",t("home")],["#/shop","All products"],...S.categories.map(c=>["#/shop?cat="+c.id,c.name])].map(([h,l])=>`<a href="${h}">${esc(l)}</a>`).join("")+`<a href="#/account" class="navacct" id="navAcct">${user?"My account":"Sign in / Register"}</a>`;
+ $("#nav").innerHTML=[["#/",t("home")],["#/shop","All products"]].map(([h,l])=>`<a href="${h}">${esc(l)}</a>`).join("")+topCats().map(c=>{const subs=subCats(c.id);if(!subs.length)return `<a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`;
+  return `<div class="navitem"><a href="#/shop?cat=${c.id}" class="navpar" aria-haspopup="true">${esc(c.name)}<span class="navcaret" aria-hidden="true"></span></a><button type="button" class="navexp" data-act="navexp" aria-expanded="false" aria-label="${esc(c.name)}: subcategories"></button>
+  <div class="navsubs"><a href="#/shop?cat=${c.id}" class="navall">All ${esc(c.name)}</a>${subs.map(x=>`<a href="#/shop?cat=${x.id}">${esc(x.name)}</a>`).join("")}</div></div>`}).join("")+`<a href="#/account" class="navacct" id="navAcct">${user?"My account":"Sign in / Register"}</a>`;
  const c=S.settings;
  const logo=($(".brand img")||{}).src||"";
  $("#footer").innerHTML=`<div class="shell foot"><div><a class="footlogo" href="#/">${logo?`<img src="${esc(logo)}" alt="" width="48" height="48">`:""}<span>${esc(c.name)}</span></a><p>${esc(c.tagline)}</p>${c.hours?`<p>${esc(c.hours)}</p>`:""}</div>
- <div><h4>${t("shop")}</h4><a href="#/shop">${t("allCats")}</a>${S.categories.slice(0,6).map(x=>`<a href="#/shop?cat=${x.id}">${esc(x.name)}</a>`).join("")}</div>
+ <div><h4>${t("shop")}</h4><a href="#/shop">${t("allCats")}</a>${topCats().slice(0,6).map(x=>`<a href="#/shop?cat=${x.id}">${esc(x.name)}</a>`).join("")}</div>
  <div><h4>${t("contacts")}</h4>${c.address?`<p class="footaddr">${esc(c.address).replace(/\n/g,"<br>")}</p>`:""}${c.phone?`<a href="tel:${esc(c.phone.replace(/[^+\d]/g,""))}">${esc(c.phone)}</a>`:""}${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:""}${c.telegram?`<a href="https://t.me/${esc(c.telegram.replace(/^@/,""))}" target="_blank" rel="noopener">Telegram</a>`:""}${c.instagram?`<a href="https://instagram.com/${esc(c.instagram.replace(/^@/,""))}" target="_blank" rel="noopener">Instagram</a>`:""}<a href="#/contacts">Contact us</a></div>
  <div><h4>Help</h4><a href="#/track">Track your order</a><a href="#/delivery">${t("delivery")}</a><a href="#/returns">Returns &amp; refunds</a><a href="#/privacy">Privacy policy</a><a href="#/terms">Terms of service</a><a href="#/about">Our story</a></div></div>
  <div class="shell copy"><span>© ${new Date().getFullYear()} ${esc(c.name)}. ${t("rights")}.</span></div>`;
  hsSetup();badges();acctBadge();
 }
-function markNav(path){const full=(location.hash.slice(1)||"/"),cat=new URLSearchParams(full.split("?")[1]||"").get("cat");document.querySelectorAll("#nav a").forEach(a=>{const h=a.getAttribute("href").slice(1);const on=h==="/"?path==="/":h.includes("?cat=")?path==="/shop"&&h.endsWith("="+cat):h==="/shop"?path==="/shop"&&!cat:path.startsWith(h);a.classList.toggle("active",on)});$("#nav").classList.remove("open")}
+function markNav(path){const full=(location.hash.slice(1)||"/"),cat=new URLSearchParams(full.split("?")[1]||"").get("cat");document.querySelectorAll("#nav a").forEach(a=>{const h=a.getAttribute("href").slice(1);const on=h==="/"?path==="/":h.includes("?cat=")?path==="/shop"&&(h.endsWith("="+cat)||a.classList.contains("navpar")&&!!cat&&(catOf(cat)||{}).parent===h.split("=")[1]):h==="/shop"?path==="/shop"&&!cat:path.startsWith(h);a.classList.toggle("active",on)});$("#nav").classList.remove("open");NavDrop.hide(0)}
+
+/* ===== header: subcategory dropdown (desktop). The list is copied from .navsubs into one floating box ===== */
+const NavDrop={el:null,t:null,cur:null,
+ box(){if(this.el)return this.el;const d=this.el=document.createElement("div");d.className="navdrop";d.setAttribute("role","menu");document.body.appendChild(d);
+  d.addEventListener("mouseenter",()=>clearTimeout(this.t));d.addEventListener("mouseleave",()=>this.hide(180));d.addEventListener("click",e=>{if(e.target.closest("a"))this.hide(0)});
+  d.addEventListener("focusout",e=>{if(!d.contains(e.relatedTarget)&&!(this.cur&&this.cur.contains(e.relatedTarget)))this.hide(0)});return d},
+ show(it){if(matchMedia("(max-width:860px)").matches||!it)return;clearTimeout(this.t);const d=this.box();
+  if(this.cur!==it||!d.classList.contains("on")){d.innerHTML=it.querySelector(".navsubs").innerHTML;this.cur=it;
+   const cat=new URLSearchParams((location.hash.split("?")[1])||"").get("cat");d.querySelectorAll("a").forEach(a=>a.classList.toggle("active",!a.classList.contains("navall")&&a.getAttribute("href").endsWith("="+cat)))}
+  d.classList.add("on");it.classList.add("hover");const r=it.getBoundingClientRect(),bar=it.closest(".navbar")||it,b=bar.getBoundingClientRect().bottom;
+  d.style.top=Math.round(b)+"px";d.style.left=Math.round(Math.max(8,Math.min(r.left-14,innerWidth-d.offsetWidth-8)))+"px"},
+ hide(ms){clearTimeout(this.t);this.t=setTimeout(()=>{if(this.el)this.el.classList.remove("on");if(this.cur)this.cur.classList.remove("hover")},ms)}};
+document.addEventListener("mouseover",e=>{const it=e.target.closest&&e.target.closest("#nav .navitem");if(it)NavDrop.show(it)});
+document.addEventListener("mouseout",e=>{const it=e.target.closest&&e.target.closest("#nav .navitem");if(it&&!it.contains(e.relatedTarget)&&!(NavDrop.el&&NavDrop.el.contains(e.relatedTarget)))NavDrop.hide(180)});
+document.addEventListener("focusin",e=>{const it=e.target.closest&&e.target.closest("#nav .navitem");if(it&&e.target.classList.contains("navpar"))NavDrop.show(it);else if(!(NavDrop.el&&NavDrop.el.contains(e.target)))NavDrop.hide(0)});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&NavDrop.el&&NavDrop.el.classList.contains("on")){const it=NavDrop.cur;NavDrop.hide(0);it&&it.querySelector(".navpar").focus()}
+ else if(e.key==="ArrowDown"&&e.target.classList&&e.target.classList.contains("navpar")&&NavDrop.el&&NavDrop.el.classList.contains("on")){e.preventDefault();const a=NavDrop.el.querySelector("a");a&&a.focus()}});
+addEventListener("scroll",()=>{if(NavDrop.el&&NavDrop.el.classList.contains("on"))NavDrop.hide(0)},{passive:true});
+addEventListener("resize",()=>NavDrop.hide(0));
 
 /* ===== layers: mini cart, quick view, filter drawer ===== */
 let lastFocus=null;
@@ -189,7 +210,7 @@ function viewHome(){
  ${st.heroButtons==="1"?`<div class="hero-cta"><a class="btn hero-btn" href="${esc(link)}">${esc(st.heroBtnText||t("shopNow"))} →</a><a class="btn hero-btn2" href="#/about">Our story</a></div>`:""}</div></div>${st.heroButtons==="1"?"":`<a class="hero2-link" href="${esc(link)}" aria-label="${esc(st.heroBtnText||t("shopNow"))}"></a>`}</section>
  <div class="shell perks" data-track="perks">${[["🚚","perk1"],["💳","perk2"],["↺","perk3"],["💬","perk4"]].map(([i,k])=>`<div class="perk"><i>${i}</i><span><b>${t(k)}</b>${t(k+"s")}</span></div>`).join("")}</div>
  <section class="section" style="padding-top:20px" data-track="categories"><div class="shell"><div class="section-head"><div><span class="eyebrow">${t("categories")}</span><h2>${lang==="en"?"Shop by category":"Оберіть категорію"}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div>
- <div class="grid cats">${S.categories.map(c=>`<a class="cat" href="#/shop?cat=${c.id}"><div class="ph"><img src="${esc(catImg(c))}" alt="" loading="lazy"></div><b>${esc(c.name)}</b><small>${nItems(vis.filter(p=>p.cat===c.id).length)}</small></a>`).join("")}</div></div></section>
+ <div class="grid cats">${topCats().map(c=>`<a class="cat" href="#/shop?cat=${c.id}"><div class="ph"><img src="${esc(catImg(c))}" alt="" loading="lazy"></div><b>${esc(c.name)}</b><small>${nItems(vis.filter(p=>inCat(p,c.id)).length)}</small></a>`).join("")}</div></div></section>
  <section class="section alt" data-track="featured"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Our favourites":"Обирають найчастіше"}</span><h2>${t("featured")}</h2></div><a class="textlink" href="#/shop">${t("viewAll")}</a></div><div class="grid">${feat.slice(0,4).map(card).join("")}</div></div></section>
  <section class="section" data-track="new"><div class="shell"><div class="section-head"><div><span class="eyebrow">${lang==="en"?"Just in":"Щойно надійшли"}</span><h2>${t("newArrivals")}</h2></div><a class="textlink" href="#/shop?sort=new">${t("viewAll")}</a></div><div class="grid">${fresh.map(card).join("")}</div></div></section>`}
 let shopShown=12,shopKey="";
@@ -198,31 +219,33 @@ function viewShop(q){
  const min=q.get("min")!==null&&q.get("min")!==""?+q.get("min"):null,max=q.get("max")!==null&&q.get("max")!==""?+q.get("max"):null;
  const key=[...q.entries()].filter(([k])=>k!=="sort").join("&");if(key!==shopKey){shopKey=key;shopShown=12}
  const base=raw?searchProducts(raw,""):visible();
- const fPrice=p=>(min===null||p.price>=min)&&(max===null||p.price<=max),fStock=p=>!stock||p.stock>0,fCat=p=>!cat||p.cat===cat;
+ const fPrice=p=>(min===null||p.price>=min)&&(max===null||p.price<=max),fStock=p=>!stock||p.stock>0,fCat=p=>inCat(p,cat);
  let list=base.filter(p=>fCat(p)&&fPrice(p)&&fStock(p));
  if(raw)Trk.search(raw,base.length);
  const mpos=p=>p.position>0?p.position:1e9;const by={pop:(a,b)=>(mpos(a)-mpos(b))||((b.stock>0)-(a.stock>0))||(b.featured-a.featured)||((b.created||0)-(a.created||0)),new:(a,b)=>(b.created||0)-(a.created||0),cheap:(a,b)=>a.price-b.price,exp:(a,b)=>b.price-a.price,name:(a,b)=>a.name.localeCompare(b.name)};
  if(sort!=="rel"||!raw)list.sort(by[sort]||by.pop);
- const c=catOf(cat);
+ const c=catOf(cat),par=catParent(c),topC=par||c,subs=topC?subCats(topC.id):[];
  const link=o=>{const n=new URLSearchParams(q);Object.entries(o).forEach(([k,v])=>v!==""&&v!=null?n.set(k,v):n.delete(k));const s=n.toString();return"#/shop"+(s?"?"+s:"")};
  const sorts=(raw?[["rel","bestMatch"]]:[]).concat([["pop","sortPop"],["new","sortNew"],["cheap","sortCheap"],["exp","sortExp"],["name","sortName"]]);
  const title=raw?`${t("resultsFor")} “${esc(raw)}”`:esc(c?c.name:t("shop"));
  const popular=visible().filter(p=>p.featured&&p.stock>0).slice(0,4);
  // facet counts (each ignores its own filter)
- const catCount=id=>base.filter(p=>(!id||p.cat===id)&&fPrice(p)&&fStock(p)).length;
+ const catCount=id=>base.filter(p=>inCat(p,id)&&fPrice(p)&&fStock(p)).length;
  const stockCount=base.filter(p=>fCat(p)&&fPrice(p)&&p.stock>0).length;
  const prices=visible().map(p=>p.price),top=Math.max(0,...prices);
  const step=top>400?100:top>150?50:top>60?20:10;const bands=[[null,step],[step,step*2],[step*2,step*4],[step*4,null]].filter(([a,b])=>visible().some(p=>(a===null||p.price>=a)&&(b===null||p.price<=b)));
  const bandLabel=([a,b])=>a===null?`${t("under")} ${money(b)}`:b===null?`${t("over")} ${money(a)}`:`${money(a)} – ${money(b)}`;
  const bandCount=([a,b])=>base.filter(p=>fCat(p)&&fStock(p)&&(a===null||p.price>=a)&&(b===null||p.price<=b)).length;
  const active=[];
- if(raw)active.push([`“${esc(raw)}”`,link({q:""})]);if(c)active.push([esc(c.name),link({cat:""})]);
+ if(raw)active.push([`“${esc(raw)}”`,link({q:""})]);if(c)active.push([esc(catLabel(c)),link({cat:""})]);
  if(min!==null||max!==null)active.push([min!==null&&max!==null?`${money(min)} – ${money(max)}`:min!==null?`${t("over")} ${money(min)}`:`${t("under")} ${money(max)}`,link({min:"",max:""})]);
  if(stock)active.push([t("inStockOnly"),link({stock:""})]);
  const shown=list.slice(0,shopShown);
- return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${c?" / "+esc(c.name):""}</div><h1>${title}</h1><p>${nItems(list.length)}${raw&&c?` ${t("inCat")} ${esc(c.name)}`:""}</p></div></div>
+ return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${par?` / <a href="${link({cat:par.id})}">${esc(par.name)}</a>`:""}${c?" / "+esc(c.name):""}</div><h1>${title}</h1><p>${nItems(list.length)}${raw&&c?` ${t("inCat")} ${esc(c.name)}`:""}</p>
+ ${subs.length?`<nav class="subchips" aria-label="${esc(topC.name)}: subcategories"><a class="subchip ${cat===topC.id?"on":""}" href="${link({cat:topC.id})}">All</a>${subs.map(x=>{const n=catCount(x.id);return `<a class="subchip ${cat===x.id?"on":""} ${n?"":"dim"}" href="${link({cat:x.id})}">${esc(x.name)} <small>${n}</small></a>`}).join("")}</nav>`:""}</div></div>
  <div class="shell shoplayout"><aside class="filters" id="filters" aria-label="${t("filters")}"><div class="fhead"><h3>${t("filters")}</h3><button class="iconbtn mob" data-act="closeall" aria-label="${t("close")}">${X}</button></div>
- <div class="fgroup"><h4>${t("category")}</h4><a class="fopt ${!cat?"on":""}" href="${link({cat:""})}"><span>${t("allCats")}</span><small>${catCount("")}</small></a>${S.categories.map(x=>{const n=catCount(x.id);return `<a class="fopt ${cat===x.id?"on":""} ${n?"":"dim"}" href="${link({cat:x.id})}"><span>${esc(x.name)}</span><small>${n}</small></a>`}).join("")}</div>
+ <div class="fgroup"><h4>${t("category")}</h4><a class="fopt ${!cat?"on":""}" href="${link({cat:""})}"><span>${t("allCats")}</span><small>${catCount("")}</small></a>${topCats().map(x=>{const n=catCount(x.id),row=(y,sub,n)=>`<a class="fopt ${sub?"fsub":""} ${cat===y.id?"on":""} ${n?"":"dim"}" href="${link({cat:y.id})}"><span>${esc(y.name)}</span><small>${n}</small></a>`;
+  return row(x,false,n)+(topC&&topC.id===x.id?subCats(x.id).map(y=>row(y,true,catCount(y.id))).join(""):"")}).join("")}</div>
  <div class="fgroup"><h4>${t("price")}</h4>${bands.map(bd=>{const on=min===bd[0]&&max===bd[1];return `<a class="fopt ${on?"on":""}" href="${on?link({min:"",max:""}):link({min:bd[0]??"",max:bd[1]??""})}"><span>${bandLabel(bd)}</span><small>${bandCount(bd)}</small></a>`}).join("")}
  <form class="prange" data-form="price"><input class="field" name="min" type="number" min="0" inputmode="decimal" placeholder="${t("min")}" value="${min??""}" aria-label="${t("min")}"><span>–</span><input class="field" name="max" type="number" min="0" inputmode="decimal" placeholder="${t("max")}" value="${max??""}" aria-label="${t("max")}"><button class="btn sm">${t("apply")}</button></form></div>
  <div class="fgroup"><h4>${t("availability")}</h4><label class="check"><input type="checkbox" data-act="fstock" ${stock?"checked":""}>${t("inStockOnly")} <small class="muted">(${stockCount})</small></label></div>
@@ -236,11 +259,11 @@ function viewShop(q){
 function setParams(o){const cur=new URLSearchParams(location.hash.split("?")[1]||"");Object.entries(o).forEach(([k,v])=>v!==""&&v!=null?cur.set(k,v):cur.delete(k));const s=cur.toString();location.hash="#/shop"+(s?"?"+s:"")}
 function viewProduct(id){
  const p=prod(id);if(!p||!p.active)return notFound();
- const c=catOf(p.cat),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
+ const c=catOf(p.cat),cp=catParent(c),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  const rel=visible().filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
  const specs=(p.specs||[]).filter(s=>s[0]||s[1]);
  return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}</div>
- <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
+ <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${cp?` / <a href="#/shop?cat=${cp.id}">${esc(cp.name)}</a>`:""}${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
  ${!p.active?`<div class="note">Hidden product — customers can’t see it.</div>`:""}
  <h1>${esc(p.name)}</h1>${(()=>{const r=rating(p.id);return r?`<button class="crate rlink" data-act="toreviews">${stars(r.avg,17)}<span>${r.avg.toFixed(1)} · ${r.n} ${r.n===1?"review":"reviews"}</span></button>`:`<button class="crate rlink none" data-act="toreviews">${stars(0,17)}<span>No reviews yet · Write a review</span></button>`})()}<span class="stock ${st}">${st==="out"?t("out"):st==="low"?t("low"):t("inStock")}</span>${p.sku?` <span class="muted small" style="margin-left:12px">Item # <b>${esc(p.sku)}</b></span>`:""}
  <div class="pricebox"><span class="price ${p.oldPrice>p.price?"sale":""}">${money(p.price)}</span>${p.oldPrice>p.price?`<span class="old">${money(p.oldPrice)}</span><span class="label sale">−${Math.round(100-p.price/p.oldPrice*100)}%</span>`:""}</div>
@@ -478,6 +501,7 @@ document.addEventListener("click",e=>{
  const el=e.target.closest("[data-act]");if(!el)return;const a=el.dataset.act,id=el.dataset.id;
  const H={
   menu:()=>$("#nav").classList.toggle("open"),
+  navexp:()=>{const it=el.closest(".navitem"),on=it.classList.toggle("open");el.setAttribute("aria-expanded",on)},
   lang:()=>{lang=lang==="en"?"uk":"en";LS.set("lang",lang);document.documentElement.lang=lang==="en"?"en":"uk";chrome();render()},
   fav:()=>{e.preventDefault();toggleFav(id)},add:()=>{e.preventDefault();addToCart(id)},
   addq:()=>{const r=readOpts(prod(id),"pdp");if(r.ok)addToCart(id,Math.max(1,parseInt($("#pq").value)||1),r.opt)},

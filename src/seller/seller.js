@@ -75,7 +75,7 @@ async signOut(msg){
  if(this.dirty||this.syncing){try{await this.flush()}catch(e){}}
  try{await sb.auth.signOut()}catch(e){}S=normalize(demoState());this.state="login";this.msg=typeof msg==="string"?msg:"";this.synced=null;location.hash="#/";this.render0()},
 /* ---- sync S → database ---- */
-snapshot(){this.synced={sp:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(supRow(p))])),p:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(toRow(p))])),c:Object.fromEntries(S.categories.map((c,i)=>[c.id,JSON.stringify({id:c.id,name:c.name,image:c.image||null,position:i})])),s:JSON.stringify(S.settings)}},
+snapshot(){this.synced={sp:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(supRow(p))])),p:Object.fromEntries(S.products.map(p=>[p.id,JSON.stringify(toRow(p))])),c:Object.fromEntries(S.categories.map((c,i)=>[c.id,JSON.stringify({id:c.id,name:c.name,image:c.image||null,position:i,parent_id:c.parent||null})])),s:JSON.stringify(S.settings)}},
 pill(t,cls){const p=$("#syncPill");if(p){p.textContent=t;p.className="syncpill "+(cls||"")}},
 /* supplier data lives in its own admin-only table (product_suppliers) and is merged into S.products here */
 async loadSup(st){let m={};st.suppliers=[];try{const[a,b]=await Promise.all([sb.from("product_suppliers").select("product_id,supplier_id,supplier_sku,cost_price,supplier_url"),sb.from("suppliers").select("*").order("name")]);if(a.error)throw a.error;if(b.error)throw b.error;(a.data||[]).forEach(r=>m[r.product_id]=r);st.suppliers=b.data||[]}catch(e){console.warn("suppliers load failed",e&&e.message)}
@@ -94,7 +94,7 @@ async flush(){
   for(const c of S.categories)if(String(c.image||"").startsWith("data:"))c.image=await this.upload(c.image,"categories");
   if(String(S.settings.heroImage||"").startsWith("data:"))S.settings.heroImage=await this.upload(S.settings.heroImage,"site");
   if(String(S.settings.heroImageMobile||"").startsWith("data:"))S.settings.heroImageMobile=await this.upload(S.settings.heroImageMobile,"site");
-  const cats=S.categories.map((c,i)=>({id:c.id,name:c.name,image:c.image||null,position:i}));
+  const cats=S.categories.map((c,i)=>({id:c.id,name:c.name,image:c.image||null,position:i,parent_id:c.parent||null}));
   const cUp=cats.filter(c=>this.synced.c[c.id]!==JSON.stringify(c));
   if(cUp.length){const{error}=await sb.from("categories").upsert(cUp);if(error)throw error}
   const rows=S.products.map(toRow);
