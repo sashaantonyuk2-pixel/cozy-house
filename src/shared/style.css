@@ -900,3 +900,20 @@ footer .copy{padding-bottom:84px}
 .ordcustom[hidden]{display:none!important}
 .opager .small{margin-left:6px}
 .shopbar.ordbar{margin-bottom:10px}.ordbar .ordsel select.field{width:auto}.ordbar .ordcustom input.field{width:auto}
+/* Seller · Замовлення: lighter, thinner status styling */
+.s-new{--sb:#fdf6f5}.s-confirmed{--sb:#f4faf6}.s-shipped{--sb:#f4f7fc}.s-completed{--sb:#f7f8f6}.s-returned{--sb:#fdf8f1}.s-cancelled{--sb:#f8f8f6}
+.t tr.ordrow>td:first-child{box-shadow:inset 2px 0 0 var(--sc)}
+.t tr.ordrow>td{border-bottom-color:#eeeee9}
+.t tr.ordrow select[data-ach="ostatus"]{font-weight:500;color:var(--ink);border:1px solid #e3e3dc;background-color:#fff;padding:6px 28px 6px 22px;background-image:radial-gradient(circle at 10px 50%,var(--sc) 3.5px,transparent 4px);background-repeat:no-repeat;font-size:13px;box-shadow:none}
+.ostchips{gap:4px}
+.ostchip{padding:4px 10px;font-size:12.5px;font-weight:500;border-color:#e6e7e1;gap:5px}
+.ostchip[class*=" s-"]:before{width:7px;height:7px}
+.ostchip b{font-weight:500;font-size:11.5px}
+.ostchip.on,.ostchip[class*=" s-"].on{background:#fff;border-color:var(--sc,var(--forest));box-shadow:inset 0 0 0 1px var(--sc,var(--forest));color:var(--ink)}
+.ostsep{height:16px}
+.ostlegend{font-size:11.5px;gap:4px 12px}
+.ostlegend i{width:7px;height:7px;border-radius:50%;background:var(--sc);box-shadow:none}
+.t tr.ordrow select[data-ach="ostatus"]{min-width:158px}
+.owarn,.odelay{padding:3px 0 3px 8px;background:none;border-radius:0;border-left:2px solid currentColor;font-size:12px;line-height:1.4;margin-top:6px}
+.owarn{color:#9a5a3f}.odelay{color:#8a5a0b}
+.t tr.ordrow select[data-ach="ostatus"]{width:auto!important;min-width:162px}
