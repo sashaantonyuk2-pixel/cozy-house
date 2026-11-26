@@ -746,6 +746,29 @@ footer .copy{padding-bottom:84px}
 .pendbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(36,49,36,.18);padding:10px 12px 10px 16px;font-size:14px;max-width:calc(100vw - 24px)}
 .pendbar.shake{animation:pshake .5s}
 @keyframes pshake{20%,60%{transform:translateX(calc(-50% - 6px))}40%,80%{transform:translateX(calc(-50% + 6px))}}
+/* product characteristics: shop filter checkboxes + colour swatches */
+.swatch{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.15);vertical-align:-2px;margin-right:6px;flex:none}
+.fopt.fchk span{display:flex;align-items:center}
+.fbox{width:15px;height:15px;border-radius:4px;border:1.5px solid #9aa19a;margin-right:8px;flex:none;position:relative;background:#fff}
+.fopt.fchk.on .fbox{background:var(--forest);border-color:var(--forest)}
+.fopt.fchk.on .fbox:after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+/* Seller · Характеристики */
+.attrlist{padding:6px 16px}
+.attrrow{border-top:1px solid var(--line);padding:12px 0}.attrrow:first-child{border-top:0}
+.attrsum{display:grid;grid-template-columns:170px minmax(0,1fr) 200px auto;gap:12px;align-items:center}
+.attrsum[hidden]{display:none}
+.attrname b{display:block;font-size:15px}.attrname small{display:block;margin-top:2px}
+.tag{display:inline-flex;align-items:center;background:#f3f1ec;border-radius:999px;padding:3px 10px;margin:2px 4px 2px 0;font-size:12.5px}
+.tag.c{background:var(--sage2);color:var(--forest);font-weight:600}
+.attrgrid{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;align-items:start}
+.attrcats{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.attrcats .attrsub{padding-left:16px}
+.attrpick{margin-bottom:10px}.attrpick b{display:block;font-size:13.5px;margin-bottom:6px}
+.chip2{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;margin:0 6px 6px 0;cursor:pointer;font-size:13px;background:#fff;user-select:none}
+.chip2 input{position:absolute;opacity:0;pointer-events:none}
+.chip2.on{border-color:var(--forest);background:var(--sage2);font-weight:600}
+.chip2:focus-within{outline:2px solid var(--terra);outline-offset:1px}
+@media (max-width:900px){.attrsum{grid-template-columns:1fr}.attrgrid{grid-template-columns:1fr}}
 .fav-inline.on svg{fill:var(--terra);stroke:var(--terra)}
 </style></head>
 <body><header class="header"><div class="shell headinner"><a class="brand" href="#/admin"><img src="data:image/jpeg;base64,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" alt=""><span><strong>CozyHouseVibe</strong><small>Seller Central</small></span></a><div class="sellerright" id="sellerRight"></div></div></header>
@@ -877,8 +900,8 @@ user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1
 menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'};
 
 function normalize(st){const d=demoState().settings;st.settings={...d,...(st.settings||{}),lang:"en"};return st}
-const fromRow=r=>({id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,seoTitle:r.seo_title||"",seoDesc:r.seo_description||"",imgAlt:r.image_alt||"",created:Date.parse(r.created_at)||Date.now()});
-const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0),seo_title:(p.seoTitle||"").trim()||null,seo_description:(p.seoDesc||"").trim()||null,image_alt:(p.imgAlt||"").trim()||null});
+const fromRow=r=>({attrs:r.attrs&&typeof r.attrs==="object"&&!Array.isArray(r.attrs)?r.attrs:{},id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,seoTitle:r.seo_title||"",seoDesc:r.seo_description||"",imgAlt:r.image_alt||"",created:Date.parse(r.created_at)||Date.now()});
+const toRow=p=>({attrs:p.attrs&&typeof p.attrs==="object"?p.attrs:{},id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0),seo_title:(p.seoTitle||"").trim()||null,seo_description:(p.seoDesc||"").trim()||null,image_alt:(p.imgAlt||"").trim()||null});
 async function fetchCatalog(){
  const[c,p,s,rv]=await Promise.all([sb.from("categories").select("*").order("position"),sb.from("products").select("*").order("created_at",{ascending:false}),sb.from("store_settings").select("data").eq("id",1).maybeSingle(),sb.from("reviews").select("id,product_id,name,rating,title,body,verified,created_at").eq("status","approved").order("created_at",{ascending:false}).limit(1000)]);
  const err=c.error||p.error||s.error;if(err)throw err;
@@ -891,6 +914,13 @@ const catParent=c=>c&&c.parent&&catOf(c.parent)?catOf(c.parent):null;
 const topCats=()=>S.categories.filter(c=>!catParent(c));
 const subCats=id=>S.categories.filter(c=>c.parent===id&&id);
 const inCat=(p,id)=>!id||p.cat===id||((catOf(p.cat)||{}).parent===id&&!!id);
+/* product characteristics (S.settings.filters): {id,name,values:[{v,c?}],cats:[category ids, empty = all],filter:false to hide from the shop filters}
+   product.attrs = {filterId:[values]} */
+const FILTERS=()=>Array.isArray(S.settings.filters)?S.settings.filters:[];
+const filtFor=catId=>{const c=catOf(catId),ids=c?[c.id,c.parent].filter(Boolean):[];return FILTERS().filter(f=>!f.cats||!f.cats.length||f.cats.some(x=>ids.includes(x)))};
+const pAttr=(p,fid)=>p&&p.attrs&&Array.isArray(p.attrs[fid])?p.attrs[fid]:[];
+const swColor=c=>/^#[0-9a-f]{3,8}$/i.test(c||"")||/^conic-gradient\([#0-9a-f,\s]+\)$/i.test(c||"")?c:"";
+const swatch=(f,v)=>{const x=(f.values||[]).find(o=>o.v===v),c=x&&swColor(x.c);return c?`<span class="swatch" style="background:${c}"></span>`:""};
 const catLabel=c=>c?(catParent(c)?catParent(c).name+" › ":"")+c.name:"";
 const visible=()=>S.products.filter(p=>p.active);
 
@@ -923,7 +953,7 @@ function trackUrl(c,n){n=encodeURIComponent(String(n||"").trim());if(!n)return""
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
 nav(cur){/* menu groups: daily work on top, analysis and system at the bottom; ["#","Name"] = group label (hidden on phones) */
- const L=[["","📊","Дашборд"],["#","Продажі"],["orders","🧾","Замовлення"],["returns","🔁","Повернення"],["#","Спілкування"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["reviews","⭐","Відгуки"],["#","Каталог"],["products","📦","Товари"],["categories","🗂","Категорії"],["suppliers","🏭","Постачальники"],["#","Аналіз і маркетинг"],["analytics","📈","Аналітика"],["customers","👥","Покупці"],["seo","🔎","SEO"],["#","Система"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
+ const L=[["","📊","Дашборд"],["#","Продажі"],["orders","🧾","Замовлення"],["returns","🔁","Повернення"],["#","Спілкування"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["reviews","⭐","Відгуки"],["#","Каталог"],["products","📦","Товари"],["categories","🗂","Категорії"],["attrs","🏷","Характеристики"],["suppliers","🏭","Постачальники"],["#","Аналіз і маркетинг"],["analytics","📈","Аналітика"],["customers","👥","Покупці"],["seo","🔎","SEO"],["#","Система"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
  return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${L.map(([k,i,n])=>k==="#"?`<div class="navgrp">${i}</div>`:`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="messages"?`<span class="navbadge" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge" id="revBadge"></span>`:k==="returns"?`<span class="navbadge" id="retBadge"></span>`:k==="chat"?`<span class="navbadge" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
@@ -931,6 +961,7 @@ view(parts,q){const k=parts[1]||"";
  if(k==="products")return this.wrap("products",this.products(q));
  if(k==="product")return this.wrap("products",this.editor(parts[2]));
  if(k==="categories")return this.wrap("categories",this.categories());
+ if(k==="attrs")return this.wrap("attrs",this.attrs());
  if(k==="settings")return this.wrap("settings",this.settings());
  if(k==="backup")return this.wrap("backup",this.backup());
  if(k==="orders")return this.wrap("orders",this.orders(q));
@@ -972,6 +1003,9 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
 click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("Спочатку виберіть товари галочками");return false}return true};
  const H={
  pendSave:()=>this.pendSave(),
+ attrNew:()=>{const b=$("#attrNewBox");if(b){b.hidden=!b.hidden;if(!b.hidden)b.querySelector("[name=name]").focus()}},
+ attrEdit:()=>{const r=$("#attr-"+id);if(!r)return;const e=r.querySelector(".attredit"),open=e.hidden;if(!open){const f=e.querySelector("form");f.outerHTML=this.attrForm(FILTERS().find(x=>x.id===id),false)}e.hidden=!open;r.querySelector(".attrsum").hidden=open;if(open)e.querySelector("[name=name]").focus()},
+ attrDel:()=>this.attrDelete(id),
  pendUndo:()=>{this.pendDiscard();render();toast("Зміни скасовано")},
  del:()=>{if(this.pendBlock())return;const p=prod(id);if(confirm(`Видалити «${p.name}»? Це не можна скасувати.`)){S.products=S.products.filter(x=>x.id!==id);save();toast("Товар видалено");location.hash="#/admin/products";render()}},
  dup:()=>{if(this.pendBlock())return;const p=prod(id);const c=JSON.parse(JSON.stringify(p));c.id=uid();c.name=p.name+" (копія)";c.active=false;c.created=Date.now();S.products.push(c);save();toast("Створено копію (прихована)");render()},
@@ -1058,6 +1092,7 @@ submit(k,f){
   sb.from("orders").update({status:"shipped",carrier,tracking_number:tracking||null,delivery_eta:eta}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Позначено відправленим"+(tracking?" · трек "+tracking:"")+(eta?" · доставка "+Admin.day(eta):""));this.afterOrderChange(id)});return}
  if(k==="tgToken"){const tok=f.token.value.trim();const b=f.querySelector("button");b.disabled=true;sb.rpc("seller_set_telegram_token",{token:tok}).then(({data,error})=>{b.disabled=false;if(!error&&data==="same"){f.reset();toast("Цей токен уже збережено — підключення не змінилось");Admin.tgStatus();return}if(error)return toast(/BAD_TOKEN/.test(error.message)?"⚠️ Це не схоже на токен бота. Скопіюйте його з @BotFather повністю.":"⚠️ "+error.message);f.reset();toast("Токен збережено. Тепер крок 3.");Admin.tgStatus()});return}
  if(k==="aprodfilter"){const fd=new FormData(f),n=new URLSearchParams();fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));fd.get("sup")&&n.set("sup",fd.get("sup"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"");return}
+ if(k==="attrsave")return this.attrSubmit(f);
  if(k==="catadd"){const n=f.name.value.trim().slice(0,80);if(!n)return;const par=f.parent&&catOf(f.parent.value)&&!catParent(catOf(f.parent.value))?f.parent.value:"";let id=translit(n)||uid();if(catOf(id))id+="-"+uid().slice(0,3);S.categories.push({id,name:n,image:"",parent:par});save();chrome();render();toast(par?"Підкатегорію додано":"Категорію додано");return}
  if(k==="settings"){delete S.settings.freeFrom;const fd=new FormData(f),NUM={shipStandard:12,shipExpress:25,returnDays:14},R={};let bad="";
   String(fd.get("taxRatesText")||"").split(/[\n;]+/).map(x=>x.trim()).filter(Boolean).forEach(x=>{const m=x.toUpperCase().match(/^([A-Z]{2})\s*[=:\s]\s*(\d+(?:[.,]\d+)?)\s*%?$/);const r=m&&+m[2].replace(",",".");if(!m||r>20)bad=bad||x;else R[m[1]]=r});
@@ -1070,7 +1105,7 @@ submit(k,f){
   const sk=fd.getAll("sk"),sv=fd.getAll("sv"),on=fd.getAll("on"),ov=fd.getAll("ov");
   const options=on.map((n,i)=>({name:n.trim().slice(0,40),values:[...new Set(String(ov[i]||"").split(",").map(x=>x.trim().slice(0,40)).filter(Boolean))].slice(0,20)})).filter(o=>o.name&&o.values.length).slice(0,5);
   if(new Set(options.map(o=>o.name.toLowerCase())).size!==options.length){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Назви параметрів варіантів мають бути різними</div>';return}
-  const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),supplierId:String(fd.get("supplierId")||""),supplierSku:String(fd.get("supplierSku")||"").trim().slice(0,80),cost:fd.get("cost")===""||fd.get("cost")==null?null:Math.max(0,Math.round(Number(fd.get("cost"))*100)/100),supplierUrl:String(fd.get("supplierUrl")||"").trim().slice(0,500),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
+  const data={name,short:String(fd.get("short")).trim(),desc:String(fd.get("desc")).trim(),price:Number(price),oldPrice:fd.get("oldPrice")?Number(fd.get("oldPrice")):null,stock:Math.max(0,parseInt(fd.get("stock"))||0),sku:String(fd.get("sku")).trim(),cat:fd.get("cat"),active:!!fd.get("active"),featured:!!fd.get("featured"),supplierId:String(fd.get("supplierId")||""),supplierSku:String(fd.get("supplierSku")||"").trim().slice(0,80),cost:fd.get("cost")===""||fd.get("cost")==null?null:Math.max(0,Math.round(Number(fd.get("cost"))*100)/100),supplierUrl:String(fd.get("supplierUrl")||"").trim().slice(0,500),attrs:this.attrCollect(f),images:[...this.draft.images],specs:sk.map((x,i)=>[x.trim(),(sv[i]||"").trim()]).filter(s=>s[0]||s[1]),options};
   if(data.supplierUrl&&!/^https?:\/\//i.test(data.supplierUrl)){$("#pErr").innerHTML='<div class="note" style="margin-bottom:10px">Посилання на постачальника має починатися з https://</div>';return}
   if(data.supplierSku){const dup=S.products.find(x=>x.id!==this.draft._for&&(x.supplierSku||"").toLowerCase()===data.supplierSku.toLowerCase()&&(x.supplierId||"")===data.supplierId);if(dup&&!confirm(`SKU постачальника «${data.supplierSku}» уже є в товарі «${dup.name}». Все одно зберегти?`))return}
   const id=this.draft._for;
@@ -1458,11 +1493,12 @@ async stripeRefund(id,amt,f){const b=f&&f.querySelector("button.primary,button")
 /* ===== Seller Central · Товари: список, порядок, редактор товару, фото ===== */
 Object.assign(Admin,{
 /* ---- product editor: list of changes shown before saving («Назва: A → B») ---- */
-prodDiff(p,d){const L={name:"Назва",sku:"Код (SKU)",price:"Ціна",oldPrice:"Стара ціна",stock:"Залишок",cat:"Категорія",active:"На сайті",featured:"Хіт",short:"Короткий опис",desc:"Опис",specs:"Характеристики",options:"Варіанти",images:"Фото",supplierId:"Постачальник",supplierSku:"SKU постачальника",cost:"Собівартість",supplierUrl:"Посилання постачальника"};
+prodDiff(p,d){const L={name:"Назва",sku:"Код (SKU)",price:"Ціна",oldPrice:"Стара ціна",stock:"Залишок",cat:"Категорія",active:"На сайті",featured:"Хіт",short:"Короткий опис",desc:"Опис",specs:"Характеристики",options:"Варіанти",images:"Фото",supplierId:"Постачальник",supplierSku:"SKU постачальника",cost:"Собівартість",supplierUrl:"Посилання постачальника",attrs:"Характеристики"};
  const show=(k,v)=>v==null||v===""?"—":k==="price"||k==="oldPrice"||k==="cost"?money(v):k==="cat"?(catLabel(catOf(v))||"без категорії"):k==="active"||k==="featured"?(v?"так":"ні"):k==="supplierId"?(this.supName(v)||"—"):String(v);
- const norm=(k,v)=>k==="price"||k==="oldPrice"||k==="cost"||k==="stock"?(v==null||v===""?null:+v):k==="images"||k==="specs"||k==="options"?JSON.stringify(v||[]):v==null?"":String(v);
+ const norm=(k,v)=>k==="price"||k==="oldPrice"||k==="cost"||k==="stock"?(v==null||v===""?null:+v):k==="attrs"?JSON.stringify(Object.keys(v||{}).sort().map(x=>[x,[...(v[x]||[])].sort()])):k==="images"||k==="specs"||k==="options"?JSON.stringify(v||[]):v==null?"":String(v);
  const out=[];Object.keys(L).forEach(k=>{if(!(k in d))return;if(norm(k,p[k])===norm(k,d[k]))return;
-  if(k==="images"){const a=(p.images||[]).length,b=(d.images||[]).length;out.push(`Фото: ${a===b?"змінено порядок або фото":a+" → "+b}`)}
+  if(k==="attrs"){const a=p.attrs||{},b=d.attrs||{};[...new Set([...Object.keys(a),...Object.keys(b)])].forEach(fid=>{const x=(a[fid]||[]).join(", "),y=(b[fid]||[]).join(", ");if(x!==y){const f=FILTERS().find(z=>z.id===fid);out.push(`${f?f.name:fid}: ${x||"—"} → ${y||"—"}`)}})}
+  else if(k==="images"){const a=(p.images||[]).length,b=(d.images||[]).length;out.push(`Фото: ${a===b?"змінено порядок або фото":a+" → "+b}`)}
   else if(["desc","short","specs","options","supplierUrl"].includes(k))out.push(L[k]+": змінено");
   else out.push(`${L[k]}: ${show(k,p[k])} → ${show(k,d[k])}`)});
  return out},
@@ -1527,6 +1563,7 @@ editor(id){
  <div><label class="lbl">Категорія</label><select class="field" name="cat"><option value="">— без категорії —</option>${this.catOptions(v.cat)}</select></div>
  <label class="check"><input type="checkbox" name="active" ${v.active?"checked":""}> Показувати на сайті</label>
  <label class="check"><input type="checkbox" name="featured" ${v.featured?"checked":""}> Хіт продажів (на головній)</label></div></div>
+ <div class="panel"><h2>🏷 Характеристики</h2><p class="help" style="margin-top:-8px">За ними покупці фільтрують каталог. Список залежить від категорії товару.</p><div id="attrBox">${this.attrBlock(v.cat,v.attrs||{})}</div></div>
  <div class="panel"><h2>🏭 Постачальник</h2><p class="help" style="margin-top:-8px">Бачите лише ви — покупцям не показується.</p><div class="stack">
  <div><label class="lbl" style="display:flex;justify-content:space-between">Постачальник <button type="button" class="linkbtn textlink small" data-act="a:supNewInline">＋ Новий</button></label><select class="field" name="supplierId" id="supSel"><option value="">— не вказано —</option>${(S.suppliers||[]).filter(x=>x.status!=="archived"||v.supplierId===x.id).map(x=>`<option value="${x.id}" ${v.supplierId===x.id?"selected":""}>${esc(x.name)}${x.status==="paused"?" (призупинено)":x.status==="archived"?" (архів)":""}</option>`).join("")}</select>${v.supplierId&&this.supById(v.supplierId)?`<div class="help"><a class="textlink" href="#/admin/supplier/${v.supplierId}">Картка постачальника →</a></div>`:""}</div>
  <div><label class="lbl">SKU постачальника</label><input class="field" name="supplierSku" maxlength="80" value="${esc(v.supplierSku||"")}" placeholder="Артикул у постачальника"></div>
@@ -1750,6 +1787,68 @@ categories(){const T=topCats();return `<div class="ahead"><h1>Категорії
 /* category names: saved only with «Зберегти» (or Enter); the button lights up when the name changed */
 document.addEventListener("input",e=>{const i=e.target;if(!i.classList||!i.classList.contains("catnm"))return;const b=i.parentNode.querySelector(".catsave");if(b){const ch=i.value.trim()!==i.dataset.orig&&!!i.value.trim();b.disabled=!ch;b.classList.toggle("primary",ch)}});
 document.addEventListener("keydown",e=>{const i=e.target;if(e.key==="Enter"&&i.classList&&i.classList.contains("catnm")){e.preventDefault();const b=i.parentNode.querySelector(".catsave");b&&!b.disabled&&b.click()}});
+
+/* ===== Seller Central · Характеристики (фільтри каталогу) =====
+   Kept in S.settings.filters: [{id, name, values:[{v, c?}], cats:[category ids — empty = all], filter:false — hide from shop filters}].
+   Product values live in product.attrs {filterId:[values]} and are picked in the product editor. Nothing is saved until «Зберегти». */
+Object.assign(Admin,{
+attrUsage(f,v){return S.products.filter(p=>pAttr(p,f.id).includes(v)).length},
+attrCatsHtml(f,pref){const on=id=>(f.cats||[]).includes(id);
+ return `<div class="attrcats"><label class="check small"><input type="checkbox" name="${pref}all" ${!(f.cats||[]).length?"checked":""} data-ach="attrall"> <b>Усі категорії</b></label>
+ ${topCats().map(c=>`<label class="check small"><input type="checkbox" name="${pref}cat" value="${c.id}" ${on(c.id)?"checked":""}> ${esc(c.name)}</label>${subCats(c.id).map(s=>`<label class="check small attrsub"><input type="checkbox" name="${pref}cat" value="${s.id}" ${on(s.id)?"checked":""}> └ ${esc(s.name)}</label>`).join("")}`).join("")}</div>`},
+attrValsText(f){return (f.values||[]).map(o=>o.v+(o.c?" "+o.c:"")).join("\n")},
+attrForm(f,isNew){const id=isNew?"new":f.id;
+ return `<form class="attrform" data-form="attrsave" data-id="${id}" novalidate>
+ <div class="attrgrid"><div><label class="lbl">Назва (англійською — її бачать покупці)</label><input class="field" name="name" maxlength="40" value="${esc(f.name||"")}" placeholder="Напр.: Color, Material, Pet size" required></div>
+ <div><label class="lbl">Значення — кожне з нового рядка</label><textarea class="field" name="values" rows="5" placeholder="Beige #e8dcc7&#10;White #ffffff&#10;Green #7c9a78">${esc(this.attrValsText(f))}</textarea><div class="help">Для кольору можна додати код кольору після назви (#e8dcc7) — на сайті з'явиться кружечок.</div></div>
+ <div><label class="lbl">Для яких категорій</label>${this.attrCatsHtml(f,"")}<label class="check small" style="margin-top:8px"><input type="checkbox" name="filter" ${f.filter===false?"":"checked"}> Показувати як фільтр у каталозі на сайті</label></div></div>
+ <div class="acts" style="margin-top:10px"><button class="btn primary sm">${isNew?"Створити характеристику":"Зберегти"}</button>${isNew?`<button type="button" class="btn sm" data-act="a:attrNew">Скасувати</button>`:`<button type="button" class="btn sm" data-act="a:attrEdit" data-id="${f.id}">Скасувати</button><button type="button" class="btn sm danger" data-act="a:attrDel" data-id="${f.id}">Видалити характеристику</button>`}</div></form>`},
+attrs(){const F=FILTERS(),catN=f=>!(f.cats||[]).length?`<span class="tag c">Усі категорії</span>`:(f.cats||[]).map(id=>catOf(id)?`<span class="tag c">${esc(catLabel(catOf(id)))}</span>`:"").join("");
+ return `<div class="ahead"><div><h1>Характеристики</h1><p class="muted" style="margin:4px 0 0">Колір, матеріал, розмір тощо. Значення вибираються в редакторі товару, а покупці фільтрують за ними каталог.</p></div><button class="btn primary" data-act="a:attrNew">＋ Нова характеристика</button></div>
+ <div id="attrNewBox" hidden class="panel">${this.attrForm({name:"",values:[],cats:[]},true)}</div>
+ ${F.length?`<div class="panel attrlist">${F.map(f=>{const used=S.products.filter(p=>pAttr(p,f.id).length).length;return `<div class="attrrow" id="attr-${f.id}"><div class="attrsum">
+  <div class="attrname"><b>${esc(f.name)}</b>${f.filter===false?`<span class="tag">не фільтр</span>`:""}<small class="muted">заповнено в ${used} ${used===1?"товарі":"товарах"}</small></div>
+  <div class="attrvals">${(f.values||[]).map(o=>`<span class="tag">${o.c&&swColor(o.c)?`<span class="swatch" style="background:${swColor(o.c)}"></span>`:""}${esc(o.v)}</span>`).join("")}</div>
+  <div class="attrc">${catN(f)}</div><div><button class="btn sm" data-act="a:attrEdit" data-id="${f.id}">Змінити</button></div></div>
+  <div class="attredit" hidden>${this.attrForm(f,false)}</div></div>`}).join("")}</div>`:`<div class="empty"><b>Характеристик ще немає</b>Створіть першу — наприклад, Color або Material.</div>`}
+ <p class="help">Порада: тримайте значення короткими й однаковими (Beige, а не «beige color»). Видалення значення прибирає його з усіх товарів — кабінет попередить, скільки товарів це зачепить.</p>`},
+attrParse(f){const name=f.name.value.trim().slice(0,40),vals=[];
+ String(f.values.value).split(/\n+/).map(x=>x.trim()).filter(Boolean).forEach(line=>{const m=line.match(/^(.*?)\s+(#[0-9a-f]{3,8}|conic-gradient\([#0-9a-f,\s]+\))$/i);const v=(m?m[1]:line).trim().slice(0,40),c=m?m[2]:"";
+  if(v&&!vals.some(o=>o.v.toLowerCase()===v.toLowerCase()))vals.push(c?{v,c}:{v})});
+ const all=f.all.checked,cats=all?[]:[...f.querySelectorAll('[name=cat]:checked')].map(x=>x.value);
+ return{name,values:vals.slice(0,60),cats,filter:f.filter.checked}},
+attrSubmit(f){const id=f.dataset.id,d=this.attrParse(f);
+ if(!d.name){f.name.focus();return toast("Вкажіть назву характеристики")}
+ if(!d.values.length){f.values.focus();return toast("Додайте хоча б одне значення")}
+ if(!f.all.checked&&!d.cats.length)return toast("Виберіть категорії або «Усі категорії»");
+ const F=FILTERS().slice();
+ if(F.some(x=>x.id!==id&&x.name.toLowerCase()===d.name.toLowerCase()))return toast("Характеристика з такою назвою вже є");
+ if(id==="new"){let nid=translit(d.name)||uid();while(F.some(x=>x.id===nid))nid+="-"+uid().slice(0,3);
+  if(!confirm(`Створити характеристику «${d.name}» (${d.values.length} значень)?`))return;
+  F.push({id:nid,...d});S.settings.filters=F;save();toast("Характеристику створено ✓");render();return}
+ const old=F.find(x=>x.id===id);if(!old)return;
+ const removed=(old.values||[]).map(o=>o.v).filter(v=>!d.values.some(o=>o.v===v)),hit=S.products.filter(p=>pAttr(p,id).some(v=>removed.includes(v)));
+ const lines=[];if(old.name!==d.name)lines.push(`Назва: ${old.name} → ${d.name}`);
+ const added=d.values.map(o=>o.v).filter(v=>!(old.values||[]).some(o=>o.v===v));if(added.length)lines.push("Нові значення: "+added.join(", "));if(removed.length)lines.push("Прибрано значення: "+removed.join(", ")+(hit.length?` (зникнуть із ${hit.length} товарів)`:""));
+ if(JSON.stringify(old.cats||[])!==JSON.stringify(d.cats))lines.push("Змінено категорії");if((old.filter!==false)!==d.filter)lines.push(d.filter?"Показувати як фільтр: так":"Показувати як фільтр: ні");
+ if(JSON.stringify((old.values||[]).map(o=>o.c||""))!==JSON.stringify(d.values.map(o=>o.c||""))&&!added.length&&!removed.length)lines.push("Змінено кольори або порядок значень");
+ if(!lines.length)return toast("Змін немає — нічого не збережено");
+ if(!confirm(`Зберегти зміни в «${old.name}»?\n\n${lines.map(x=>"• "+x).join("\n")}`))return;
+ hit.forEach(p=>{p.attrs={...p.attrs,[id]:pAttr(p,id).filter(v=>!removed.includes(v))};if(!p.attrs[id].length)delete p.attrs[id]});
+ Object.assign(old,d);S.settings.filters=F;save();toast("Збережено ✓");render()},
+attrDelete(id){const F=FILTERS(),f=F.find(x=>x.id===id);if(!f)return;const hit=S.products.filter(p=>pAttr(p,id).length);
+ if(!confirm(`Видалити характеристику «${f.name}»?${hit.length?`\nЇї значення зникнуть із ${hit.length} товарів.`:""}\nЦе не можна скасувати.`))return;
+ hit.forEach(p=>{const a={...p.attrs};delete a[id];p.attrs=a});S.settings.filters=F.filter(x=>x.id!==id);save();toast("Характеристику видалено");render()},
+/* product editor: checkboxes for the characteristics of the chosen category */
+attrBlock(catId,attrs){const L=filtFor(catId);if(!L.length)return `<p class="help" style="margin:0">Для цієї категорії ще немає характеристик. Додайте їх у розділі <a class="textlink" href="#/admin/attrs">Характеристики</a>.</p>`;
+ return L.map(f=>{const cur=Array.isArray(attrs[f.id])?attrs[f.id]:[];return `<div class="attrpick"><b>${esc(f.name)}${f.filter===false?` <span class="muted small">(не фільтр)</span>`:""}</b><div>${(f.values||[]).map(o=>`<label class="chip2 ${cur.includes(o.v)?"on":""}"><input type="checkbox" name="fa_${f.id}" value="${esc(o.v)}" ${cur.includes(o.v)?"checked":""}>${o.c&&swColor(o.c)?`<span class="swatch" style="background:${swColor(o.c)}"></span>`:""}${esc(o.v)}</label>`).join("")}</div></div>`}).join("")+`<p class="help" style="margin:4px 0 0">Можна вибрати кілька значень. Нове значення додається в розділі <a class="textlink" href="#/admin/attrs">Характеристики</a>.</p>`},
+attrCollect(form){const cat=form.cat.value,o={};filtFor(cat).forEach(f=>{const v=[...form.querySelectorAll(`[name="fa_${f.id}"]:checked`)].map(x=>x.value);if(v.length)o[f.id]=v});return o},
+});
+document.addEventListener("change",e=>{const t=e.target;if(!t.closest)return;
+ if(t.matches('[data-form="product"] [name=cat]')){const box=$("#attrBox");if(box){const keep=Admin.attrCollect(t.form);box.innerHTML=Admin.attrBlock(t.value,keep)}}
+ if(t.matches('.attrpick input[type=checkbox]'))t.closest("label").classList.toggle("on",t.checked);
+ if(t.matches('[data-ach="attrall"]')){t.closest(".attrcats").querySelectorAll('[name=cat]').forEach(c=>{if(t.checked)c.checked=false})}
+ if(t.matches('.attrcats [name=cat]')&&t.checked){const a=t.closest(".attrcats").querySelector('[name=all]');if(a)a.checked=false}});
 
 /* ===== Seller Central · Покупці ===== */
 Object.assign(Admin,{

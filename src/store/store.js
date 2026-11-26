@@ -245,7 +245,11 @@ function viewShop(q){
  const key=[...q.entries()].filter(([k])=>k!=="sort").join("&");if(key!==shopKey){shopKey=key;shopShown=12}
  const base=raw?searchProducts(raw,""):visible();
  const fPrice=p=>(min===null||p.price>=min)&&(max===null||p.price<=max),fStock=p=>!stock||p.stock>0,fCat=p=>inCat(p,cat);
- let list=base.filter(p=>fCat(p)&&fPrice(p)&&fStock(p));
+ /* characteristics filters: ?f_<id>=Value1,Value2 — OR inside one characteristic, AND between characteristics */
+ const FL=(cat?filtFor(cat):FILTERS().filter(f=>!(f.cats||[]).length)).filter(f=>f.filter!==false);
+ const fsel={};FL.forEach(f=>{const r=q.get("f_"+f.id);if(r)fsel[f.id]=r.split(",").map(x=>x.trim()).filter(x=>(f.values||[]).some(o=>o.v===x))});
+ const fAttr=(p,skip)=>FL.every(f=>f.id===skip||!(fsel[f.id]||[]).length||pAttr(p,f.id).some(v=>fsel[f.id].includes(v)));
+ let list=base.filter(p=>fCat(p)&&fPrice(p)&&fStock(p)&&fAttr(p));
  if(raw)Trk.search(raw,base.length);
  const mpos=p=>p.position>0?p.position:1e9;const by={pop:(a,b)=>(mpos(a)-mpos(b))||((b.stock>0)-(a.stock>0))||(b.featured-a.featured)||((b.created||0)-(a.created||0)),new:(a,b)=>(b.created||0)-(a.created||0),cheap:(a,b)=>a.price-b.price,exp:(a,b)=>b.price-a.price,name:(a,b)=>a.name.localeCompare(b.name)};
  if(sort!=="rel"||!raw)list.sort(by[sort]||by.pop);
@@ -255,23 +259,27 @@ function viewShop(q){
  const title=raw?`${t("resultsFor")} “${esc(raw)}”`:esc(c?c.name:t("shop"));
  const popular=visible().filter(p=>p.featured&&p.stock>0).slice(0,4);
  // facet counts (each ignores its own filter)
- const catCount=id=>base.filter(p=>inCat(p,id)&&fPrice(p)&&fStock(p)).length;
- const stockCount=base.filter(p=>fCat(p)&&fPrice(p)&&p.stock>0).length;
+ const catCount=id=>base.filter(p=>inCat(p,id)&&fPrice(p)&&fStock(p)&&fAttr(p)).length;
+ const stockCount=base.filter(p=>fCat(p)&&fPrice(p)&&fAttr(p)&&p.stock>0).length;
  const prices=visible().map(p=>p.price),top=Math.max(0,...prices);
  const step=top>400?100:top>150?50:top>60?20:10;const bands=[[null,step],[step,step*2],[step*2,step*4],[step*4,null]].filter(([a,b])=>visible().some(p=>(a===null||p.price>=a)&&(b===null||p.price<=b)));
  const bandLabel=([a,b])=>a===null?`${t("under")} ${money(b)}`:b===null?`${t("over")} ${money(a)}`:`${money(a)} – ${money(b)}`;
- const bandCount=([a,b])=>base.filter(p=>fCat(p)&&fStock(p)&&(a===null||p.price>=a)&&(b===null||p.price<=b)).length;
+ const bandCount=([a,b])=>base.filter(p=>fCat(p)&&fStock(p)&&fAttr(p)&&(a===null||p.price>=a)&&(b===null||p.price<=b)).length;
  const active=[];
  if(raw)active.push([`“${esc(raw)}”`,link({q:""})]);if(c)active.push([esc(catLabel(c)),link({cat:""})]);
  if(min!==null||max!==null)active.push([min!==null&&max!==null?`${money(min)} – ${money(max)}`:min!==null?`${t("over")} ${money(min)}`:`${t("under")} ${money(max)}`,link({min:"",max:""})]);
  if(stock)active.push([t("inStockOnly"),link({stock:""})]);
+ FL.forEach(f=>(fsel[f.id]||[]).forEach(v=>active.push([esc(v),link({["f_"+f.id]:fsel[f.id].filter(x=>x!==v).join(",")})])));
+ const pool=base.filter(fCat),attrGroups=FL.filter(f=>pool.some(p=>pAttr(p,f.id).length)).map(f=>{const cur=fsel[f.id]||[];
+  return `<div class="fgroup"><h4>${esc(f.name)}</h4>${(f.values||[]).map(o=>{const n=base.filter(p=>fCat(p)&&fPrice(p)&&fStock(p)&&fAttr(p,f.id)&&pAttr(p,f.id).includes(o.v)).length,on=cur.includes(o.v);if(!n&&!on&&!pool.some(p=>pAttr(p,f.id).includes(o.v)))return"";
+   const nx=on?cur.filter(x=>x!==o.v):[...cur,o.v];return `<a class="fopt fchk ${on?"on":""} ${n||on?"":"dim"}" href="${link({["f_"+f.id]:nx.join(",")})}" role="checkbox" aria-checked="${on}"><span><i class="fbox" aria-hidden="true"></i>${swatch(f,o.v)}${esc(o.v)}</span><small>${n}</small></a>`}).join("")}</div>`}).join("");
  const shown=list.slice(0,shopShown);
  return `<div class="page-head"><div class="shell"><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${par?` / <a href="${link({cat:par.id})}">${esc(par.name)}</a>`:""}${c?" / "+esc(c.name):""}</div><h1>${title}</h1><p>${nItems(list.length)}${raw&&c?` ${t("inCat")} ${esc(c.name)}`:""}</p>
  ${subs.length?`<nav class="subchips" aria-label="${esc(topC.name)}: subcategories"><a class="subchip ${cat===topC.id?"on":""}" href="${link({cat:topC.id})}">All</a>${subs.map(x=>{const n=catCount(x.id);return `<a class="subchip ${cat===x.id?"on":""} ${n?"":"dim"}" href="${link({cat:x.id})}">${esc(x.name)} <small>${n}</small></a>`}).join("")}</nav>`:""}</div></div>
  <div class="shell shoplayout"><aside class="filters" id="filters" aria-label="${t("filters")}"><div class="fhead"><h3>${t("filters")}</h3><button class="iconbtn mob" data-act="closeall" aria-label="${t("close")}">${X}</button></div>
  <div class="fgroup"><h4>${t("category")}</h4><a class="fopt ${!cat?"on":""}" href="${link({cat:""})}"><span>${t("allCats")}</span><small>${catCount("")}</small></a>${topCats().map(x=>{const n=catCount(x.id),row=(y,sub,n)=>`<a class="fopt ${sub?"fsub":""} ${cat===y.id?"on":""} ${n?"":"dim"}" href="${link({cat:y.id})}"><span>${esc(y.name)}</span><small>${n}</small></a>`;
   return row(x,false,n)+(topC&&topC.id===x.id?subCats(x.id).map(y=>row(y,true,catCount(y.id))).join(""):"")}).join("")}</div>
- <div class="fgroup"><h4>${t("price")}</h4>${bands.map(bd=>{const on=min===bd[0]&&max===bd[1];return `<a class="fopt ${on?"on":""}" href="${on?link({min:"",max:""}):link({min:bd[0]??"",max:bd[1]??""})}"><span>${bandLabel(bd)}</span><small>${bandCount(bd)}</small></a>`}).join("")}
+ ${attrGroups}<div class="fgroup"><h4>${t("price")}</h4>${bands.map(bd=>{const on=min===bd[0]&&max===bd[1];return `<a class="fopt ${on?"on":""}" href="${on?link({min:"",max:""}):link({min:bd[0]??"",max:bd[1]??""})}"><span>${bandLabel(bd)}</span><small>${bandCount(bd)}</small></a>`}).join("")}
  <form class="prange" data-form="price"><input class="field" name="min" type="number" min="0" inputmode="decimal" placeholder="${t("min")}" value="${min??""}" aria-label="${t("min")}"><span>–</span><input class="field" name="max" type="number" min="0" inputmode="decimal" placeholder="${t("max")}" value="${max??""}" aria-label="${t("max")}"><button class="btn sm">${t("apply")}</button></form></div>
  <div class="fgroup"><h4>${t("availability")}</h4><label class="check"><input type="checkbox" data-act="fstock" ${stock?"checked":""}>${t("inStockOnly")} <small class="muted">(${stockCount})</small></label></div>
  ${active.length?`<a class="btn block" href="${raw?"#/shop?q="+encodeURIComponent(raw):"#/shop"}">${t("clearAll")}</a>`:""}
@@ -286,7 +294,7 @@ function viewProduct(id){
  const p=prod(id);if(!p||!p.active)return notFound();
  const c=catOf(p.cat),cp=catParent(c),st=stockState(p),imgs=p.images&&p.images.length?p.images:[img0(p)];
  const rel=visible().filter(x=>x.cat===p.cat&&x.id!==p.id).slice(0,4);
- const specs=(p.specs||[]).filter(s=>s[0]||s[1]);
+ const specs=[...filtFor(p.cat).filter(f=>pAttr(p,f.id).length).map(f=>[f.name,pAttr(p,f.id).join(", ")]),...(p.specs||[]).filter(s=>(s[0]||s[1])&&!filtFor(p.cat).some(f=>pAttr(p,f.id).length&&f.name.toLowerCase()===String(s[0]).trim().toLowerCase()))];
  return `<div class="shell"><div class="pdp"><div class="gallery">${carouselHtml(imgs,p.imgAlt||p.name,"pdp",{thumbs:true,zoom:true})}</div>
  <div><div class="crumbs"><a href="#/">${t("home")}</a> / <a href="#/shop">${t("shop")}</a>${cp?` / <a href="#/shop?cat=${cp.id}">${esc(cp.name)}</a>`:""}${c?` / <a href="#/shop?cat=${c.id}">${esc(c.name)}</a>`:""}</div>
  ${!p.active?`<div class="note">Hidden product — customers can’t see it.</div>`:""}

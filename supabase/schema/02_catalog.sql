@@ -107,3 +107,9 @@ create policy "Admins update product images" on storage.objects as permissive fo
   using (((bucket_id = 'product-images'::text) and ( select private.is_admin() as is_admin)));
 create policy "Admins delete product images" on storage.objects as permissive for delete to authenticated
   using (((bucket_id = 'product-images'::text) and ( select private.is_admin() as is_admin)));
+
+-- Product characteristics for catalog filters (migration products_filter_attrs, 26.11.2026).
+-- The list of characteristics lives in store_settings.data.filters: [{id,name,values:[{v,c?}],cats:[],filter?}]
+-- (edited in Seller Central → Характеристики); a product's values: products.attrs = {"color":["Beige"],...}
+alter table public.products add column if not exists attrs jsonb not null default '{}'::jsonb;
+alter table public.products add constraint products_attrs_check check (jsonb_typeof(attrs) = 'object' and char_length(attrs::text) <= 4000);

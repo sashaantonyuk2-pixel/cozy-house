@@ -1,11 +1,12 @@
 /* ===== Seller Central · Товари: список, порядок, редактор товару, фото ===== */
 Object.assign(Admin,{
 /* ---- product editor: list of changes shown before saving («Назва: A → B») ---- */
-prodDiff(p,d){const L={name:"Назва",sku:"Код (SKU)",price:"Ціна",oldPrice:"Стара ціна",stock:"Залишок",cat:"Категорія",active:"На сайті",featured:"Хіт",short:"Короткий опис",desc:"Опис",specs:"Характеристики",options:"Варіанти",images:"Фото",supplierId:"Постачальник",supplierSku:"SKU постачальника",cost:"Собівартість",supplierUrl:"Посилання постачальника"};
+prodDiff(p,d){const L={name:"Назва",sku:"Код (SKU)",price:"Ціна",oldPrice:"Стара ціна",stock:"Залишок",cat:"Категорія",active:"На сайті",featured:"Хіт",short:"Короткий опис",desc:"Опис",specs:"Характеристики",options:"Варіанти",images:"Фото",supplierId:"Постачальник",supplierSku:"SKU постачальника",cost:"Собівартість",supplierUrl:"Посилання постачальника",attrs:"Характеристики"};
  const show=(k,v)=>v==null||v===""?"—":k==="price"||k==="oldPrice"||k==="cost"?money(v):k==="cat"?(catLabel(catOf(v))||"без категорії"):k==="active"||k==="featured"?(v?"так":"ні"):k==="supplierId"?(this.supName(v)||"—"):String(v);
- const norm=(k,v)=>k==="price"||k==="oldPrice"||k==="cost"||k==="stock"?(v==null||v===""?null:+v):k==="images"||k==="specs"||k==="options"?JSON.stringify(v||[]):v==null?"":String(v);
+ const norm=(k,v)=>k==="price"||k==="oldPrice"||k==="cost"||k==="stock"?(v==null||v===""?null:+v):k==="attrs"?JSON.stringify(Object.keys(v||{}).sort().map(x=>[x,[...(v[x]||[])].sort()])):k==="images"||k==="specs"||k==="options"?JSON.stringify(v||[]):v==null?"":String(v);
  const out=[];Object.keys(L).forEach(k=>{if(!(k in d))return;if(norm(k,p[k])===norm(k,d[k]))return;
-  if(k==="images"){const a=(p.images||[]).length,b=(d.images||[]).length;out.push(`Фото: ${a===b?"змінено порядок або фото":a+" → "+b}`)}
+  if(k==="attrs"){const a=p.attrs||{},b=d.attrs||{};[...new Set([...Object.keys(a),...Object.keys(b)])].forEach(fid=>{const x=(a[fid]||[]).join(", "),y=(b[fid]||[]).join(", ");if(x!==y){const f=FILTERS().find(z=>z.id===fid);out.push(`${f?f.name:fid}: ${x||"—"} → ${y||"—"}`)}})}
+  else if(k==="images"){const a=(p.images||[]).length,b=(d.images||[]).length;out.push(`Фото: ${a===b?"змінено порядок або фото":a+" → "+b}`)}
   else if(["desc","short","specs","options","supplierUrl"].includes(k))out.push(L[k]+": змінено");
   else out.push(`${L[k]}: ${show(k,p[k])} → ${show(k,d[k])}`)});
  return out},
@@ -70,6 +71,7 @@ editor(id){
  <div><label class="lbl">Категорія</label><select class="field" name="cat"><option value="">— без категорії —</option>${this.catOptions(v.cat)}</select></div>
  <label class="check"><input type="checkbox" name="active" ${v.active?"checked":""}> Показувати на сайті</label>
  <label class="check"><input type="checkbox" name="featured" ${v.featured?"checked":""}> Хіт продажів (на головній)</label></div></div>
+ <div class="panel"><h2>🏷 Характеристики</h2><p class="help" style="margin-top:-8px">За ними покупці фільтрують каталог. Список залежить від категорії товару.</p><div id="attrBox">${this.attrBlock(v.cat,v.attrs||{})}</div></div>
  <div class="panel"><h2>🏭 Постачальник</h2><p class="help" style="margin-top:-8px">Бачите лише ви — покупцям не показується.</p><div class="stack">
  <div><label class="lbl" style="display:flex;justify-content:space-between">Постачальник <button type="button" class="linkbtn textlink small" data-act="a:supNewInline">＋ Новий</button></label><select class="field" name="supplierId" id="supSel"><option value="">— не вказано —</option>${(S.suppliers||[]).filter(x=>x.status!=="archived"||v.supplierId===x.id).map(x=>`<option value="${x.id}" ${v.supplierId===x.id?"selected":""}>${esc(x.name)}${x.status==="paused"?" (призупинено)":x.status==="archived"?" (архів)":""}</option>`).join("")}</select>${v.supplierId&&this.supById(v.supplierId)?`<div class="help"><a class="textlink" href="#/admin/supplier/${v.supplierId}">Картка постачальника →</a></div>`:""}</div>
  <div><label class="lbl">SKU постачальника</label><input class="field" name="supplierSku" maxlength="80" value="${esc(v.supplierSku||"")}" placeholder="Артикул у постачальника"></div>

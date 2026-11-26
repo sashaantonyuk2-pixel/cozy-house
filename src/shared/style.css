@@ -743,3 +743,26 @@ footer .copy{padding-bottom:84px}
 .pendbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(36,49,36,.18);padding:10px 12px 10px 16px;font-size:14px;max-width:calc(100vw - 24px)}
 .pendbar.shake{animation:pshake .5s}
 @keyframes pshake{20%,60%{transform:translateX(calc(-50% - 6px))}40%,80%{transform:translateX(calc(-50% + 6px))}}
+/* product characteristics: shop filter checkboxes + colour swatches */
+.swatch{display:inline-block;width:13px;height:13px;border-radius:50%;border:1px solid rgba(0,0,0,.15);vertical-align:-2px;margin-right:6px;flex:none}
+.fopt.fchk span{display:flex;align-items:center}
+.fbox{width:15px;height:15px;border-radius:4px;border:1.5px solid #9aa19a;margin-right:8px;flex:none;position:relative;background:#fff}
+.fopt.fchk.on .fbox{background:var(--forest);border-color:var(--forest)}
+.fopt.fchk.on .fbox:after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+/* Seller · Характеристики */
+.attrlist{padding:6px 16px}
+.attrrow{border-top:1px solid var(--line);padding:12px 0}.attrrow:first-child{border-top:0}
+.attrsum{display:grid;grid-template-columns:170px minmax(0,1fr) 200px auto;gap:12px;align-items:center}
+.attrsum[hidden]{display:none}
+.attrname b{display:block;font-size:15px}.attrname small{display:block;margin-top:2px}
+.tag{display:inline-flex;align-items:center;background:#f3f1ec;border-radius:999px;padding:3px 10px;margin:2px 4px 2px 0;font-size:12.5px}
+.tag.c{background:var(--sage2);color:var(--forest);font-weight:600}
+.attrgrid{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:16px;align-items:start}
+.attrcats{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff}
+.attrcats .attrsub{padding-left:16px}
+.attrpick{margin-bottom:10px}.attrpick b{display:block;font-size:13.5px;margin-bottom:6px}
+.chip2{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;margin:0 6px 6px 0;cursor:pointer;font-size:13px;background:#fff;user-select:none}
+.chip2 input{position:absolute;opacity:0;pointer-events:none}
+.chip2.on{border-color:var(--forest);background:var(--sage2);font-weight:600}
+.chip2:focus-within{outline:2px solid var(--terra);outline-offset:1px}
+@media (max-width:900px){.attrsum{grid-template-columns:1fr}.attrgrid{grid-template-columns:1fr}}

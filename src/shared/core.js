@@ -17,8 +17,8 @@ user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1
 menu:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>'};
 
 function normalize(st){const d=demoState().settings;st.settings={...d,...(st.settings||{}),lang:"en"};return st}
-const fromRow=r=>({id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,seoTitle:r.seo_title||"",seoDesc:r.seo_description||"",imgAlt:r.image_alt||"",created:Date.parse(r.created_at)||Date.now()});
-const toRow=p=>({id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0),seo_title:(p.seoTitle||"").trim()||null,seo_description:(p.seoDesc||"").trim()||null,image_alt:(p.imgAlt||"").trim()||null});
+const fromRow=r=>({attrs:r.attrs&&typeof r.attrs==="object"&&!Array.isArray(r.attrs)?r.attrs:{},id:r.id,name:r.name,sku:r.sku||"",cat:r.category_id||"",price:+r.price,oldPrice:r.old_price==null?null:+r.old_price,stock:r.stock,active:r.active,featured:r.featured,short:r.short_description||"",desc:r.description||"",specs:Array.isArray(r.specs)?r.specs:[],images:Array.isArray(r.images)?r.images:[],options:Array.isArray(r.options)?r.options:[],position:+r.position||0,seoTitle:r.seo_title||"",seoDesc:r.seo_description||"",imgAlt:r.image_alt||"",created:Date.parse(r.created_at)||Date.now()});
+const toRow=p=>({attrs:p.attrs&&typeof p.attrs==="object"?p.attrs:{},id:p.id,name:p.name,sku:p.sku||null,category_id:p.cat||null,price:+p.price||0,old_price:p.oldPrice==null||p.oldPrice===""?null:+p.oldPrice,stock:Math.max(0,parseInt(p.stock)||0),active:!!p.active,featured:!!p.featured,short_description:p.short||null,description:p.desc||null,specs:p.specs||[],images:p.images||[],options:p.options||[],position:Math.max(0,parseInt(p.position)||0),seo_title:(p.seoTitle||"").trim()||null,seo_description:(p.seoDesc||"").trim()||null,image_alt:(p.imgAlt||"").trim()||null});
 async function fetchCatalog(){
  const[c,p,s,rv]=await Promise.all([sb.from("categories").select("*").order("position"),sb.from("products").select("*").order("created_at",{ascending:false}),sb.from("store_settings").select("data").eq("id",1).maybeSingle(),sb.from("reviews").select("id,product_id,name,rating,title,body,verified,created_at").eq("status","approved").order("created_at",{ascending:false}).limit(1000)]);
  const err=c.error||p.error||s.error;if(err)throw err;
@@ -31,6 +31,13 @@ const catParent=c=>c&&c.parent&&catOf(c.parent)?catOf(c.parent):null;
 const topCats=()=>S.categories.filter(c=>!catParent(c));
 const subCats=id=>S.categories.filter(c=>c.parent===id&&id);
 const inCat=(p,id)=>!id||p.cat===id||((catOf(p.cat)||{}).parent===id&&!!id);
+/* product characteristics (S.settings.filters): {id,name,values:[{v,c?}],cats:[category ids, empty = all],filter:false to hide from the shop filters}
+   product.attrs = {filterId:[values]} */
+const FILTERS=()=>Array.isArray(S.settings.filters)?S.settings.filters:[];
+const filtFor=catId=>{const c=catOf(catId),ids=c?[c.id,c.parent].filter(Boolean):[];return FILTERS().filter(f=>!f.cats||!f.cats.length||f.cats.some(x=>ids.includes(x)))};
+const pAttr=(p,fid)=>p&&p.attrs&&Array.isArray(p.attrs[fid])?p.attrs[fid]:[];
+const swColor=c=>/^#[0-9a-f]{3,8}$/i.test(c||"")||/^conic-gradient\([#0-9a-f,\s]+\)$/i.test(c||"")?c:"";
+const swatch=(f,v)=>{const x=(f.values||[]).find(o=>o.v===v),c=x&&swColor(x.c);return c?`<span class="swatch" style="background:${c}"></span>`:""};
 const catLabel=c=>c?(catParent(c)?catParent(c).name+" › ":"")+c.name:"";
 const visible=()=>S.products.filter(p=>p.active);
 
