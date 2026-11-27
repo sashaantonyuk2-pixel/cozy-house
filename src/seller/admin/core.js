@@ -47,6 +47,8 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
  else if(k==="ostatus"){const v=el.value;el.disabled=true;sb.from("orders").update({status:v}).eq("id",+id).then(({error})=>{el.disabled=false;toast(error?"⚠️ "+error.message:"Статус: "+Admin.ST[v]+(v==="cancelled"?" · товари повернено на склад":""));if(!error){const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.status=v;refreshAdminCatalog();if($("#ordPage"))Admin.fillOrder(+id)}})}
  else if(k==="ordper"){const c=el.form.querySelector(".ordcustom");if(el.value==="custom"){c.hidden=false;el.form.from.focus();return}c.hidden=true;location.hash=this.ordHref({period:el.value==="all"?"":el.value,from:"",to:"",page:""})}
  else if(k==="ordsort"){location.hash=this.ordHref({sort:el.value==="new"?"":el.value,page:""})}
+ else if(k==="oact"){const act=el.value;el.value="";if(!act)return;if(act==="open"){location.hash="#/admin/order/"+id;return}
+  this.click(act,{dataset:{id},closest:()=>null,parentNode:el.parentNode},{preventDefault(){},stopPropagation(){}})}
  else if(k==="carrierpick"){const o=el.form.carrier_other;o.hidden=el.value!=="Other";if(!o.hidden)o.focus()}
  else if(k==="delayreason"){const o=el.form.reason_other;o.hidden=el.value!=="__other";if(!o.hidden)o.focus()}
  else if(k==="oeta"){const v=el.value||null;el.disabled=true;sb.from("orders").update({delivery_eta:v}).eq("id",+id).then(({error})=>{el.disabled=false;if(error)return toast("⚠️ "+error.message);const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.delivery_eta=v;toast(v?"Очікувана доставка: "+Admin.day(v):"Дату доставки прибрано")})}

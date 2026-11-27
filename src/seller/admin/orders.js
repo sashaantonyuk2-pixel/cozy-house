@@ -129,6 +129,11 @@ delivNote(o,ic){if(o.status!=="shipped")return"";const t=this.nyToday();let h=""
  else if(o.delivery_eta<t)h+=`<div class="small owarn" title="Найближчого ранку замовлення стане «Доставлене». Якщо посилка запізнюється — натисніть «⏰ Затримка».">⚠ Дата доставки минула</div>`;
  else if(o.delivery_eta===t)h+=`<div class="small owarn" title="Перевірте трекінг. Якщо посилка запізнюється — натисніть «⏰ Затримка».">📦 Доставка сьогодні</div>`;
  return ic?h.replace(/<div class="small (owarn)" title="([^"]*)">(\S+)[^<]*<\/div>/g,'<span class="oicon $1" title="$3 $2">$3</span>'):h},
+/* orders list: one dropdown «Виберіть дію…» — the chosen action asks for confirmation (or opens its form) */
+OACTS:{oconfirm:"✓ Підтвердити замовлення",shipForm:"📦 Відправити",odeliver:"✓ Позначити доставленим",delayForm:"⏰ Затримка доставки",retForm:"↩ Оформити повернення",ocancel:"✕ Скасувати замовлення",slip:"🖨 Пакувальний лист",open:"Відкрити замовлення →"},
+actSelect(o){const s=o.status,L=[];
+ if(s==="new")L.push("oconfirm");if(s==="confirmed")L.push("shipForm");if(s==="shipped")L.push("odeliver","delayForm");if(s==="shipped"||s==="completed")L.push("retForm");if(s==="new"||s==="confirmed")L.push("ocancel");L.push("slip","open");
+ return `<select class="field actsel" data-ach="oact" data-id="${o.id}" aria-label="Дія із замовленням ${esc(o.order_no)}"><option value="">Виберіть дію…</option>${L.map(k=>`<option value="${k}">${this.OACTS[k]}</option>`).join("")}</select>`},
 /* orders list: one main button + «Дії ▾» menu with every action allowed for this status */
 mainAct(o){return o.status==="new"?`<button class="btn sm primary" data-act="a:oconfirm" data-id="${o.id}">✓ Підтвердити</button>`:o.status==="confirmed"?`<button class="btn sm primary" data-act="a:shipForm" data-id="${o.id}">📦 Відправити</button>`:o.status==="shipped"?`<button class="btn sm" data-act="a:odeliver" data-id="${o.id}">✓ Доставлено</button>`:""},
 actMenu(o){const it=[],s=o.status,a=(act,l,cls)=>it.push(`<button type="button" class="${cls||""}" data-act="a:${act}" data-id="${o.id}">${l}</button>`);
@@ -184,7 +189,7 @@ renderOrders(){const box=$("#ordList");if(!box)return;
  <td>${Admin.statusBadge(o)}${o.status==="returned"&&o.return_reason?`<div class="small" style="margin-top:4px;color:#9a3d2a">↩ ${esc(o.return_reason)}</div>`:""}${o.tracking_number||o.carrier?`<div class="small" style="margin-top:4px">${esc(o.carrier||"")}${o.tracking_number?` · ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)}</a>`:esc(o.tracking_number)+' <span class="muted">(не відстежується)</span>'}`:""}</div>`:""}
  ${o.status==="completed"&&o.delivered_at?`<div class="small" style="margin-top:4px;color:#3f7a4d">✓ Доставлено ${Admin.day(o.delivered_at)}</div>`:""}${Admin.delivNote(o,true)}
  ${["confirmed","shipped"].includes(o.status)?`<span class="oeta" title="Очікувана доставка${o.delivery_eta?"":" не вказана — вкажіть на сторінці замовлення або при відправці"}">📅 ${o.delivery_eta?Admin.day(o.delivery_eta):"—"}</span>`:""}</td>
- <td><div class="acts">${Admin.mainAct(o)}${Admin.actMenu(o)}</div></td></tr>
+ <td><div class="acts">${Admin.actSelect(o)}</div></td></tr>
  <tr class="shiprow" id="ship-${o.id}" hidden><td colspan="7"><form class="shipform" data-form="ship" data-id="${o.id}"><b>Відправлення ${esc(o.order_no)}</b>
  <select class="field" name="carrier" data-ach="carrierpick">${Admin.CARRIERS.map(x=>`<option value="${x}" ${o.carrier===x||(x==="Other"&&o.carrier&&!Admin.CARRIERS.includes(o.carrier))?"selected":""}>${x==="Other"?"Інший":x}</option>`).join("")}</select>
  <input class="field" name="carrier_other" placeholder="Назва служби англійською (її бачить покупець)" value="${esc(o.carrier&&!Admin.CARRIERS.includes(o.carrier)?o.carrier:"")}" maxlength="40" autocomplete="off" ${o.carrier&&!Admin.CARRIERS.includes(o.carrier)?"":"hidden"}>

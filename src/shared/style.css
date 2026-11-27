@@ -992,3 +992,5 @@ footer .copy{padding-bottom:84px}
 .actlist .danger{color:#b0442c}
 .actlist a{border-top:1px solid #eee;margin-top:4px;padding-top:10px;color:var(--forest);font-weight:600}
 .tablewrap:has(.actmenu[open]){overflow:visible}
+.t tr.ordrow select.actsel{width:auto;min-width:190px;padding:5px 28px 5px 10px;font-size:12.5px;border-color:#cfd3cc}
+.t tr.ordrow select.actsel:focus{border-color:var(--forest)}
