@@ -1065,3 +1065,16 @@ footer .copy{padding-bottom:84px}
 .teamlink{margin-top:12px;display:flex;flex-direction:column;gap:8px}.teamlink .field{font-size:12.5px}
 .teamtable select.field{width:auto;padding:5px 26px 5px 8px}.teaminvrow td{background:#fbfaf6}
 .teamroles{margin:0;padding-left:18px;line-height:1.8;font-size:14px}
+
+/* Seller Central · Налаштування: згорнуті розділи з коротким підсумком */
+.setnav{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}.setnav .chip2{text-decoration:none}
+.setlist{display:flex;flex-direction:column;gap:10px}
+details.setsec{padding:0}details.setsec>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:inherit}
+details.setsec>summary::-webkit-details-marker{display:none}
+details.setsec>summary:before{content:"▸";color:#8a8a82;font-size:12px;transition:transform .15s}
+details.setsec[open]>summary:before{transform:rotate(90deg)}
+details.setsec>summary:hover{background:#fafaf7}
+.setttl{font-weight:700;font-size:15px;white-space:nowrap}.setsum{color:#8a8a82;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+details.setsec[open]>summary{border-bottom:1px solid var(--line)}
+details.setsec>:not(summary){margin-left:18px;margin-right:18px}details.setsec>:last-child{margin-bottom:18px}details.setsec>summary+*{margin-top:14px}
+form.setlist.stack{gap:10px}
