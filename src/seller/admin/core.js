@@ -148,8 +148,10 @@ submit(k,f){
   sb.from("chat_messages").insert({thread_id:tid,sender:"seller",body:text.slice(0,2000)}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Надіслано в чат ✓");f.body.value=""});return}
  if(k==="ocmail"){const o=this.ordersData.find(x=>x.id===+f.dataset.id),c=(o||{}).customer||{};if(!c.email)return toast("У замовленні немає email");if(!f.body.value.trim())return toast("Напишіть текст листа");location.href=`mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(f.subject.value.trim())}&body=${encodeURIComponent(f.body.value)}`;return}
  if(k==="opay"||k==="orefund"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
- if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
-  sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
+ if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id,P=this.chatPend[id]||[];if(!body&&!P.length)return;const b=f.querySelector("button.primary");b.disabled=true;
+  (async()=>{let files=[];try{if(P.length){b.textContent="Завантаження…";files=await this.chatAdmUpload(id)}}catch(e){b.disabled=false;b.textContent="Надіслати";return toast("⚠️ "+(e.message||e))}b.textContent="Надіслати";
+   const{error}=await sb.from("chat_messages").insert({thread_id:id,sender:"seller",body,...(files.length?{files}:{})});b.disabled=false;if(error)return toast("⚠️ "+error.message);
+   P.forEach(x=>x.thumb&&URL.revokeObjectURL(x.thumb));this.chatPend[id]=[];f.body.value="";this.chatSig="";this.fillChat(id)})();return}
  if(k==="ret"){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);if(!o)return;const reason=f.reason.value+(f.note.value.trim()?": "+f.note.value.trim():"");
   const amt=f.rmode?this.refundAmt(f,o):0;if(amt===null)return;const stripe=amt&&String(o.payment_ref||"").startsWith("pi_"),note=(f.rnote&&f.rnote.value.trim())||"";
   if(!confirm(`Оформити повернення ${o.order_no}?\nПричина: ${reason}\nТовари повернуться на склад.${amt?`\n\nПовернути покупцю ${money(amt)}${amt<this.payLeft(o)?" (часткове)":" (повне)"}${stripe?" на картку через Stripe":""}.`:this.isPaidO(o)?"\n\nКошти зараз не повертаються.":""}`))return;

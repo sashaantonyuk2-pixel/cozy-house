@@ -1078,3 +1078,12 @@ details.setsec>summary:hover{background:#fafaf7}
 details.setsec[open]>summary{border-bottom:1px solid var(--line)}
 details.setsec>:not(summary){margin-left:18px;margin-right:18px}details.setsec>:last-child{margin-bottom:18px}details.setsec>summary+*{margin-top:14px}
 form.setlist.stack{gap:10px}
+
+/* chat attachments */
+.cattach{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;color:var(--muted);cursor:pointer;flex:none}.cattach:hover{background:#f3f1ec;color:var(--ink)}
+.cpends{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.cpend{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;padding:3px 4px 3px 3px;font-size:12px;max-width:180px;background:#fff}
+.cpend img{width:32px;height:32px;border-radius:7px;object-fit:cover}.cpend span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cpend button{border:0;background:none;font-size:16px;line-height:1;cursor:pointer;color:var(--muted);padding:0 4px}
+.cfiles{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}.cmsg.me .cfiles{justify-content:flex-end}
+.cfimg{display:inline-flex;align-items:center;justify-content:center;width:120px;height:120px;border-radius:12px;overflow:hidden;background:#f3f1ec;border:1px solid var(--line)}.cfimg img{width:100%;height:100%;object-fit:cover}
+.cfdoc{display:inline-flex;gap:6px;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:13px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
+.chatreply{flex-wrap:wrap}.chatreply .cpends{flex-basis:100%;margin:0}

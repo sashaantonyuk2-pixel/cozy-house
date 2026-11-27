@@ -65,3 +65,17 @@ const enVal=v=>{v=String(v??"");return EN_VAL[v]||(/[А-Яа-яІіЇїЄєҐґ]
 function trackUrl(c,n){n=encodeURIComponent(String(n||"").trim());if(!n)return"";c=String(c||"").toLowerCase();
  if(c.includes("usps"))return"https://tools.usps.com/go/TrackConfirmAction?tLabels="+n;if(c.includes("ups"))return"https://www.ups.com/track?tracknum="+n;
  if(c.includes("fedex"))return"https://www.fedex.com/fedextrack/?trknbr="+n;if(c.includes("dhl"))return"https://www.dhl.com/us-en/home/tracking/tracking-express.html?submit=1&tracking-id="+n;return""}
+
+/* ===== chat attachments (storefront + Seller Central) ===== */
+const CHAT_TYPES=["image/jpeg","image/png","image/webp","image/gif","image/heic","image/heif","application/pdf"],CHAT_MAX=10*1024*1024,CHAT_FILES=5;
+/* big photos → JPEG up to 1600 px (smaller, faster); GIF, PDF and anything the browser can't draw are sent as is */
+async function shrinkImage(file,max=1600){if(!/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type))return{blob:file,type:file.type};
+ try{const bm=await createImageBitmap(file),k=Math.min(1,max/Math.max(bm.width,bm.height));if(k===1&&file.size<1.5e6&&file.type!=="image/heic"&&file.type!=="image/heif")return{blob:file,type:file.type};
+  const c=document.createElement("canvas");c.width=Math.round(bm.width*k);c.height=Math.round(bm.height*k);c.getContext("2d").drawImage(bm,0,0,c.width,c.height);
+  const b=await new Promise(r=>c.toBlob(r,"image/jpeg",.85));return b?{blob:b,type:"image/jpeg"}:{blob:file,type:file.type}}catch(e){return{blob:file,type:file.type}}}
+function chatFilesHtml(files,urls){if(!files||!files.length)return"";
+ return `<div class="cfiles">${files.map(f=>{const u=urls&&urls[f.path];return /^image\//.test(f.type)&&!/hei[cf]/.test(f.type)
+  ?(u?`<a href="${esc(u)}" target="_blank" rel="noopener" class="cfimg"><img src="${esc(u)}" alt="${esc(f.name||"Photo")}" loading="lazy"></a>`:`<span class="cfimg cfwait" data-path="${esc(f.path)}">📷</span>`)
+  :`<a class="cfdoc" ${u?`href="${esc(u)}" target="_blank" rel="noopener"`:""} data-path="${esc(f.path)}">${f.type==="application/pdf"?"📄":"📎"} ${esc(f.name||"File")}</a>`}).join("")}</div>`}
+function chatPickCheck(list,have){const ok=[],bad=[];[...list].forEach(f=>{if(!CHAT_TYPES.includes(f.type)&&!/\.(heic|heif)$/i.test(f.name))bad.push(f.name+" — only photos or PDF");else if(f.size>CHAT_MAX*3)bad.push(f.name+" — too large");else ok.push(f)});
+ return{ok:ok.slice(0,Math.max(0,CHAT_FILES-have)),bad,over:ok.length>CHAT_FILES-have}}

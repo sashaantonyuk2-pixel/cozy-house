@@ -21,6 +21,21 @@ async msgBadge(){this.badgeTick();const{count}=await sb.from("messages").select(
 chatUnread:t=>!!t.last_customer_at&&(!t.admin_seen_at||Date.parse(t.last_customer_at)>Date.parse(t.admin_seen_at)),
 async chatBadge(){const{data}=await sb.from("chat_threads").select("id,last_customer_at,admin_seen_at").order("last_at",{ascending:false}).limit(300);const b=$("#chatBadge");if(b&&data){const n=data.filter(this.chatUnread).length;b.textContent=n||"";b.title=n?`Непрочитаних чатів: ${n}`:""}},
 /* ---- live chat inbox ---- */
+chatUrls:{},chatPend:{},
+chatMsgsHtml(ms){const tm=d=>new Date(d).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+ return ms.map(m=>`<div class="cmsg ${m.sender==="seller"?"them":"me"}">${String(m.body||"").trim()?`<div class="cb">${esc(m.body)}</div>`:""}${chatFilesHtml(m.files,this.chatUrls)}<small>${m.sender==="seller"?"Ви · ":""}${tm(m.created_at)}</small></div>`).join("")},
+async chatLoadUrls(ms){const need=[...new Set(ms.flatMap(m=>(m.files||[]).map(f=>f.path)))].filter(p=>!this.chatUrls[p]);if(!need.length)return;
+ const{data}=await sb.storage.from("chat-media").createSignedUrls(need,3600);(data||[]).forEach(x=>{if(x.signedUrl)this.chatUrls[x.path]=x.signedUrl});
+ const M=$("#chatMsgs");if(M&&this.chatMs===ms){const at=M.scrollHeight-M.scrollTop-M.clientHeight<40;M.innerHTML=this.chatMsgsHtml(ms);if(at){M.scrollTop=M.scrollHeight;M.querySelectorAll("img").forEach(i=>i.addEventListener("load",()=>{M.scrollTop=M.scrollHeight},{once:true}))}}},
+chatAdmDrawPend(tid){const b=$("#chatAdmPend"),P=this.chatPend[tid]||[];if(!b)return;b.hidden=!P.length;
+ b.innerHTML=P.map((x,i)=>`<span class="cpend">${x.thumb?`<img src="${esc(x.thumb)}" alt="">`:"📄"}<span>${esc(x.file.name)}</span><button type="button" data-chatadmrm="${i}" aria-label="Прибрати">×</button></span>`).join("")},
+chatAdmPick(input){const f=input.closest("form"),tid=f.dataset.id,P=this.chatPend[tid]=this.chatPend[tid]||[],c=chatPickCheck(input.files,P.length);input.value="";
+ c.ok.forEach(x=>P.push({file:x,thumb:/^image\/(jpeg|png|webp|gif)$/.test(x.type)?URL.createObjectURL(x):""}));
+ if(c.bad.length)toast("Не додано: "+c.bad.join("; "));else if(c.over)toast("Не більше "+CHAT_FILES+" файлів в одному повідомленні");this.chatAdmDrawPend(tid)},
+async chatAdmUpload(tid){const out=[];for(const x of this.chatPend[tid]||[]){const{blob,type}=await shrinkImage(x.file);if(blob.size>CHAT_MAX)throw new Error("Файл завеликий (до 10 МБ): "+x.file.name);
+  const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif","image/heic":"heic","image/heif":"heif","application/pdf":"pdf"}[type];if(!ext)throw new Error("Лише фото або PDF: "+x.file.name);
+  const path=`s/${tid}/${crypto.randomUUID()}.${ext}`;const{error}=await sb.storage.from("chat-media").upload(path,blob,{contentType:type,upsert:false});if(error)throw error;
+  out.push({path,name:x.file.name.slice(0,120),type,size:blob.size})}return out},
 chat(q){const tid=q.get("t")||"";this.chatSig="";setTimeout(()=>this.fillChat(tid),0);clearInterval(this.chatTimer);
  this.chatTimer=setInterval(()=>{if(!location.hash.startsWith("#/admin/chat")){clearInterval(this.chatTimer);return}if(document.visibilityState==="visible")this.fillChat(new URLSearchParams(location.hash.split("?")[1]||"").get("t")||"",true)},8000);
  return `<div class="ahead"><h1>Чат</h1></div><p class="muted" style="margin-top:-8px">Розмови з чату на сайті. Якщо покупець ще на сайті, він побачить вашу відповідь одразу. Якщо вже пішов, відповідайте листом (кнопка «✉️ Відповісти листом»). Нові повідомлення приходять і в Telegram, якщо сповіщення підключено. Пишіть покупцям англійською.</p>
@@ -32,14 +47,18 @@ async fillChat(tid,silent){
  L.innerHTML=th.length?th.map(t=>`<a class="chatitem ${t.id===tid?"on":""} ${this.chatUnread(t)?"unread":""}" href="#/admin/chat?t=${t.id}"><b>${esc(t.name||t.email||"Відвідувач")}</b><span class="small muted">${esc(t.last_preview||"")}</span><small>${when(t.last_at)}${t.status==="closed"?" · закрито":""}</small></a>`).join(""):`<div class="empty" style="border:0">Ще немає розмов</div>`;
  const b=$("#chatBadge");if(b)b.textContent=th.filter(this.chatUnread).length||"";
  if(!tid)return;const t=th.find(x=>x.id===tid),C=$("#chatConv");if(!C)return;if(!t){C.innerHTML='<div class="empty" style="border:0;margin:auto">Розмову не знайдено</div>';return}
- const{data:ms,error:e2}=await sb.from("chat_messages").select("id,sender,body,created_at").eq("thread_id",tid).order("id").limit(500);if(e2){C.innerHTML=`<div class="note" style="margin:12px">${esc(e2.message)}</div>`;return}
+ const{data:ms,error:e2}=await sb.from("chat_messages").select("id,sender,body,files,created_at").eq("thread_id",tid).order("id").limit(500);if(e2){C.innerHTML=`<div class="note" style="margin:12px">${esc(e2.message)}</div>`;return}
  const sig=tid+":"+ms.length+":"+t.status;if(silent&&this.chatSig===sig)return;this.chatSig=sig;
  const old=C.querySelector("textarea"),draft=old&&old.dataset.t===tid?old.value:"";
  const tm=d=>new Date(d).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
  C.innerHTML=`<div class="chathd"><div><b>${esc(t.name||"Відвідувач")}</b><div class="small muted">${t.email?esc(t.email):"email не вказано"}${t.page?` · був на сторінці <a class="textlink" href="${SITE_URL}${esc(t.page)}" target="_blank" rel="noopener">${esc(t.page)}</a>`:""}</div></div>
  <div class="acts">${t.email?`<a class="btn sm" href="mailto:${esc(t.email)}?subject=${encodeURIComponent("Re: your message to "+S.settings.name)}">✉️ Відповісти листом</a>`:""}<button class="btn sm" data-act="a:chatstatus" data-id="${t.id}" data-v="${t.status==="open"?"closed":"open"}">${t.status==="open"?"✓ Закрити":"Відкрити знову"}</button><button class="btn sm danger" data-act="a:chatdel" data-id="${t.id}">Видалити</button></div></div>
- <div class="chatmsgs" id="chatMsgs">${ms.map(m=>`<div class="cmsg ${m.sender==="seller"?"them":"me"}"><div class="cb">${esc(m.body)}</div><small>${m.sender==="seller"?"Ви · ":""}${tm(m.created_at)}</small></div>`).join("")}</div>
- <form class="chatreply" data-form="chatreply" data-id="${t.id}"><textarea class="field" name="body" maxlength="2000" data-t="${t.id}" placeholder="Відповідь англійською… (Enter — надіслати, Shift+Enter — новий рядок)"></textarea><button class="btn primary">Надіслати</button></form>`;
+ <div class="chatmsgs" id="chatMsgs">${this.chatMsgsHtml(ms)}</div>
+ <form class="chatreply" data-form="chatreply" data-id="${t.id}"><div class="cpends" id="chatAdmPend" hidden></div><label class="cattach" title="Додати фото або PDF"><input type="file" accept="image/*,application/pdf" multiple hidden data-chatadmfile>📎</label><textarea class="field" name="body" maxlength="2000" data-t="${t.id}" placeholder="Відповідь англійською… (Enter — надіслати, Shift+Enter — новий рядок)"></textarea><button class="btn primary">Надіслати</button></form>`;
+ this.chatMs=ms;this.chatAdmDrawPend(tid);this.chatLoadUrls(ms);
  const ta=C.querySelector("textarea");ta.value=draft;if(!silent)ta.focus({preventScroll:true});const M=$("#chatMsgs");M.scrollTop=M.scrollHeight;
  if(this.chatUnread(t)){const{error:e3}=await sb.from("chat_threads").update({admin_seen_at:t.last_customer_at}).eq("id",tid);if(!e3){t.admin_seen_at=t.last_customer_at;const it=L.querySelector(`[href$="${tid}"]`);it&&it.classList.remove("unread");if(b)b.textContent=th.filter(this.chatUnread).length||""}}},
 });
+document.addEventListener("change",e=>{if(e.target.matches&&e.target.matches("[data-chatadmfile]"))Admin.chatAdmPick(e.target)});
+document.addEventListener("click",e=>{const rm=e.target.closest&&e.target.closest("[data-chatadmrm]");if(!rm)return;const tid=rm.closest("form").dataset.id,P=Admin.chatPend[tid]||[],x=P.splice(+rm.dataset.chatadmrm,1)[0];if(x&&x.thumb)URL.revokeObjectURL(x.thumb);Admin.chatAdmDrawPend(tid)});
+document.addEventListener("paste",e=>{const f=e.target.closest&&e.target.closest('[data-form="chatreply"]'),fs=[...(e.clipboardData&&e.clipboardData.files||[])];if(f&&fs.length){e.preventDefault();Admin.chatAdmPick({files:fs,closest:()=>f,set value(v){}})}});

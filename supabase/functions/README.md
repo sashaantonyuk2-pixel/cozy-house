@@ -14,3 +14,11 @@ Secrets: `STRIPE_SECRET_KEY` (sk_test_… first), `STRIPE_WEBHOOK_SECRET` (whsec
 Webhook URL: `https://wkbrbrykqjdyovtdxflo.supabase.co/functions/v1/payments-webhook` — events: checkout.session.completed,
 checkout.session.async_payment_succeeded, checkout.session.expired, charge.refunded.
 Note: when deploying, the import path `../_shared/pay.ts` was packaged as `./_shared/pay.ts`.
+
+## Chat attachments
+
+| Function | JWT | What it does |
+|---|---|---|
+| `chat-files` | no (checks the visitor's secret chat key) | `upload` → one-time signed upload URL into `chat-media/c/<key>/`; `read` → signed URLs (1 h) for files of that visitor's own conversation |
+
+Bucket `chat-media` is private; the seller reads/uploads directly (admin policies). See `supabase/schema/15_chat_files.sql`.
