@@ -1715,7 +1715,6 @@ delivNote(o,ic){if(o.status!=="shipped")return"";const t=this.nyToday();let h=""
 contactPanel(o){const c=o.customer||{},ph=String(c.phone||"").replace(/[^+\d]/g,""),tpl=[["blank","Свій текст"],["confirm","Оплату отримано"],["ship","Відправлено"],...(o.delayed_at?[["delay","Затримка доставки"]]:[]),["pay","Посилання на оплату"],["review","Попросити відгук"]];
  return `<div class="panel ocontact" id="ocontact" hidden><div class="occh">
   ${c.email?`<a class="btn sm" href="mailto:${esc(c.email)}">✉️ ${esc(c.email)}</a>`:`<span class="muted small">Email не вказано</span>`}
-  ${ph?`<a class="btn sm" href="tel:${esc(ph)}">📞 Зателефонувати</a><a class="btn sm" href="sms:${esc(ph)}">💬 SMS</a>`:""}
   <span id="ocChat" class="muted small">Чат на сайті: перевіряю…</span><span id="ocMsgs"></span></div>
   <form class="ocform" data-form="ocmail" data-id="${o.id}">
   <div class="ocvia" role="radiogroup" aria-label="Як написати"><label class="chip2 ocv-chat" title="Перевіряю, чи є чат…"><input type="radio" name="via" value="chat" disabled> 💬 Чат на сайті</label><label class="chip2 ${c.email?"on":""}"><input type="radio" name="via" value="email" ${c.email?"checked":"disabled"}> ✉️ Email</label><span class="muted small ocvianote"></span></div>
@@ -1733,7 +1732,7 @@ async contactExtras(o){const c=o.customer||{},em=String(c.email||"").trim().toLo
  const t=(th.data||[])[0],f=document.querySelector('[data-form="ocmail"]');
  if(f){const r=f.querySelector('[name=via][value=chat]'),lab=r.closest("label"),note=f.querySelector(".ocvianote");
   if(t){r.disabled=false;f.dataset.thread=t.id;lab.title="Написати в чат покупця на сайті";if(!c.email){r.checked=true}note.textContent=""}
-  else{lab.title="Покупець ще не писав у чат на сайті";note.textContent=c.email?"Чат недоступний — покупець ще не писав у «Chat with us». Можна написати поштою.":"Немає ні чату, ні email — зателефонуйте покупцю."}
+  else{lab.title="Покупець ще не писав у чат на сайті";note.textContent=c.email?"Чат недоступний — покупець ще не писав у «Chat with us». Можна написати поштою.":"Немає ні чату, ні email покупця."}
   this.ocVia(f)}
  if(box)box.innerHTML=t?`<a class="btn sm" href="#/admin/chat?t=${esc(String(t.id))}">💬 Відкрити чат з покупцем</a>`:`<span class="muted small" title="Чат з’явиться, коли покупець напише в «Chat with us» на сайті">Чату на сайті ще немає</span>`;
  if(mb)mb.innerHTML=ms&&ms.count?`<a class="btn sm" href="#/admin/messages">✉️ Повідомлення з форми: ${ms.count}</a>`:""},
