@@ -4,7 +4,7 @@ Object.assign(Admin,{
 RR:{better_price:"Краща ціна",poor_condition:"Товар у поганому стані",defective:"Бракований товар",not_as_expected:"Товарний вигляд (не як на фото)"},
 RST:{requested:"Нова заявка",approved:"Схвалено",rejected:"Відхилено",received:"Товар отримано",refunded:"Кошти повернено"},
 retData:[],
-async retBadge(){const{count}=await sb.from("return_requests").select("id",{count:"exact",head:true}).eq("status","requested");const b=$("#retBadge");if(b)b.textContent=count||""},
+async retBadge(){const{count}=await sb.from("return_requests").select("id",{count:"exact",head:true}).eq("status","requested");const b=$("#retBadge");if(b){b.textContent=count||"";b.title=count?`Нових заявок на повернення: ${count}`:""}},
 returns(q){const st=q.get("status")||"requested";setTimeout(()=>this.fillReturns(st),0);
  const chips=[["requested","🆕 Нові"],["approved","✓ Схвалені"],["received","📦 Отримані"],["refunded","💳 Кошти повернено"],["rejected","Відхилені"],["all","Усі"]];
  return `<div class="ahead"><h1>Повернення</h1><button class="btn sm" data-act="a:reloadReturns">↻ Оновити</button></div>

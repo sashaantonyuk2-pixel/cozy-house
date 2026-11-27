@@ -1,6 +1,6 @@
 /* ===== Seller Central · Відгуки: модерація ===== */
 Object.assign(Admin,{
-async revBadge(){const{count}=await sb.from("reviews").select("id",{count:"exact",head:true}).eq("status","pending");const b=$("#revBadge");if(b)b.textContent=count||""},
+async revBadge(){const{count}=await sb.from("reviews").select("id",{count:"exact",head:true}).eq("status","pending");const b=$("#revBadge");if(b){b.textContent=count||"";b.title=count?`Відгуків на перевірці: ${count}`:""}},
 /* ---- reviews moderation ---- */
 reviews(q){const st=q.get("status")||"pending";setTimeout(()=>this.fillRevs(st),0);
  return `<div class="ahead"><h1>Відгуки</h1></div><p class="muted" style="margin-top:-8px">Покупці з акаунтом пишуть відгуки на сторінці товару. На сайті відгук з’являється лише після того, як ви його опублікуєте. Позначка «✓ Verified purchase» ставиться автоматично, якщо покупець замовляв цей товар.</p>
