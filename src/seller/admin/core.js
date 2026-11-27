@@ -82,7 +82,6 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  chatdel:()=>{if(!confirm("Видалити розмову разом з усіма повідомленнями? Це не можна скасувати."))return;sb.from("chat_threads").delete().eq("id",id).then(({error})=>{if(error)return toast("⚠️ "+error.message);toast("Розмову видалено");location.hash="#/admin/chat"})},
  opaid:()=>{const o=this.ordersData.find(x=>x.id===+id);if(!o)return;this.orderUpdate(+id,{...(o.status==="new"?{status:"confirmed"}:{}),payment_status:"paid",paid_amount:+o.total,paid_at:new Date().toISOString(),payment_method:o.payment_method||null},"Позначено оплаченим ✓")},
  oaddrEdit:()=>{const f=$('[data-form="oaddr"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
- orefundOpen:()=>{const f=$('[data-form="orefund"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
  ocopy:()=>copy(el.dataset.text||""),
  ocontact:()=>{const p=$("#ocontact");if(!p)return;p.hidden=!p.hidden;el.setAttribute("aria-expanded",!p.hidden);if(!p.hidden){const o=this.ordersData.find(x=>x.id===+id);if(o)this.contactExtras(o);p.scrollIntoView({block:"nearest",behavior:"smooth"})}},
  octpl:()=>{const o=this.ordersData.find(x=>x.id===+id),f=el.closest("form");if(!o||!f)return;const[sj,b]=this.mailText(o,el.dataset.t);f.subject.value=sj;f.body.value=b;f.querySelectorAll(".octpl .chip2").forEach(x=>x.classList.toggle("on",x===el))},
@@ -146,8 +145,12 @@ submit(k,f){
  if(k==="opay"||k==="orefund"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
- if(k==="ret"){const id=+f.dataset.id,reason=f.reason.value+(f.note.value.trim()?": "+f.note.value.trim():"");const b=f.querySelector("button.primary");b.disabled=true;
-  sb.from("orders").update({status:"returned",return_reason:reason}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Повернення оформлено · товари повернено на склад");refreshAdminCatalog();this.afterOrderChange(id)});return}
+ if(k==="ret"){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);if(!o)return;const reason=f.reason.value+(f.note.value.trim()?": "+f.note.value.trim():"");
+  const amt=f.rmode?this.refundAmt(f,o):0;if(amt===null)return;const stripe=amt&&String(o.payment_ref||"").startsWith("pi_"),note=(f.rnote&&f.rnote.value.trim())||"";
+  if(!confirm(`Оформити повернення ${o.order_no}?\nПричина: ${reason}\nТовари повернуться на склад.${amt?`\n\nПовернути покупцю ${money(amt)}${amt<this.payLeft(o)?" (часткове)":" (повне)"}${stripe?" на картку через Stripe":""}.`:this.isPaidO(o)?"\n\nКошти зараз не повертаються.":""}`))return;
+  const b=f.querySelector("button.primary");b.disabled=true;
+  sb.from("orders").update({status:"returned",return_reason:reason,...(amt&&!stripe?this.refundPatch(o,amt,note):{})}).eq("id",id).then(async({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);
+   toast("Повернення оформлено · товари повернено на склад"+(amt&&!stripe?" · кошти "+money(amt):""));refreshAdminCatalog();if(stripe)await this.stripeRefund(id,amt);else this.afterOrderChange(id)});return}
  if(k==="ship")return this.shipSubmit(f);
  if(k==="ocitems")return this.ocitemsSubmit(f);
  if(k==="oetamove")return this.etaMoveSubmit(f);

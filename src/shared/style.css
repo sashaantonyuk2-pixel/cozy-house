@@ -1045,3 +1045,12 @@ footer .copy{padding-bottom:84px}
 .shipform.stack{align-items:flex-start}.shipform.stack .shiplines,.shipform.stack .shipmode{align-self:stretch}
 .otopbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;margin-bottom:16px}.otopbar>form,.otopbar>div[id^=delay-]{flex-basis:100%}
 .otopinfo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
+.refchoice{border:1px solid var(--line);border-radius:10px;padding:8px 12px;display:flex;flex-direction:column;gap:6px;margin:0;background:#fff;align-self:stretch}.refchoice legend{padding:0 4px}
+.refchoice .check input.field{display:inline-block;width:96px;min-width:0;padding:3px 6px;margin-left:4px}.refchoice>input.field{min-width:0;width:100%}
+/* orders list: clear lines between orders (Amazon-like) */
+.admin .tablewrap .t tr.ordrow>td{border-bottom:1px solid #c8cdcd}
+.t tr.ordrow:first-child>td{border-top:0}
+#ordList .t thead th{border-bottom:2px solid #c9cdcd}
+#ordList .tablewrap{border:1px solid #d5d9d9;border-radius:10px;overflow:hidden}
+.admin .tablewrap .t tr.odetrow>td{border-bottom:1px solid #c8cdcd}
+.admin .tablewrap .t tr.ordrow.expanded>td{border-bottom-color:#eeeee9}

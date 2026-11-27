@@ -78,6 +78,29 @@ ordTopBar(o){const s=o.status,t=this.nyToday();if(!["new","confirmed","shipped",
 etaMoveSubmit(f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id),v=f.eta.value;if(!o)return;if(!v)return toast("Вкажіть дату");if(v<=this.nyToday())return toast("Дата має бути пізніше сьогоднішньої");
  if(!confirm(`Перенести очікувану доставку ${o.order_no} на ${this.day(v)}?`))return;return this.orderUpdate(id,{delivery_eta:v},"Дату доставки змінено ✓")},
 async ordBadge(){const{count}=await sb.from("orders").select("id",{count:"exact",head:true}).eq("status","new");const b=$("#ordBadge");if(b){b.textContent=count||"";b.title=count?`Нових непідтверджених замовлень: ${count}`:""}},
+/* «Оплата»: information only (orders will be created after a successful payment). Money goes back only with a return
+   (full or partial), or for a paid order that was cancelled / had items cancelled. */
+payLeft(o){return Math.round(((+(o.paid_amount??o.total))-(+o.refund_amount||0))*100)/100},
+isPaidO(o){return ["paid","partially_refunded"].includes(o.payment_status)},
+refundChoice(o,inRet){if(!this.isPaidO(o))return"";const left=this.payLeft(o);if(left<=0.004)return"";
+ const diff=Math.round((left-(+o.total))*100)/100,part=!inRet&&o.status!=="cancelled"&&o.status!=="returned"&&diff>0.004,def=part?diff:left,n="rm"+o.id+(inRet?"r":"p");
+ return `<fieldset class="refchoice"><legend class="small"><b>Повернення коштів</b> <span class="muted">· можна повернути до ${money(left)}</span></legend>
+  <label class="check small"><input type="radio" name="rmode" value="full" data-ach="refmode" ${part?"":"checked"}> Повне — ${money(left)}</label>
+  <label class="check small"><input type="radio" name="rmode" value="part" data-ach="refmode" ${part?"checked":""}> Часткове — <input class="field" name="amount" type="number" min="0.01" step="0.01" max="${left}" value="${def}" data-left="${left}" ${part?"":"disabled"} aria-label="Сума часткового повернення"> $</label>
+  ${inRet?`<label class="check small"><input type="radio" name="rmode" value="none" data-ach="refmode"> Без повернення коштів зараз</label>`:""}
+  <input class="field" name="rnote" maxlength="120" placeholder="Примітка до повернення коштів (необов’язково)"></fieldset>`},
+payPanel(o){const ps=o.payment_status||"unpaid",dt=d=>new Date(d).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}),left=this.payLeft(o),diff=Math.round((left-(+o.total))*100)/100;
+ const info=ps==="unpaid"?`<div class="note">Очікує оплати.${o.status!=="cancelled"?` <button type="button" class="linkbtn textlink" data-act="a:opaid" data-id="${o.id}">Позначити оплаченим вручну</button> <span class="muted small">(тимчасово, поки не підключено оплату на сайті)</span>`:""}</div>`
+  :`<div class="okbox">${this.PAY[ps]}${o.paid_amount!=null?`: ${money(o.paid_amount)}`:""}${o.payment_method?` · ${esc(o.payment_method)}`:""}${o.paid_at?` · ${dt(o.paid_at)}`:""}${o.payment_ref?`<br><span class="small">ID платежу: ${esc(o.payment_ref)}</span>`:""}${o.refund_amount?`<br><span class="small">Повернено: ${money(o.refund_amount)}${o.refunded_at?" · "+dt(o.refunded_at):""}</span>`:""}</div>`;
+ const can=this.isPaidO(o)&&left>0.004&&(o.status==="returned"||o.status==="cancelled"||diff>0.004);
+ const why=o.status==="returned"?"Замовлення повернено — поверніть покупцю кошти (повністю або частково).":o.status==="cancelled"?"Замовлення скасовано — поверніть покупцю кошти.":`Частину товарів скасовано — сума замовлення тепер ${money(o.total)}, поверніть різницю <b>${money(diff)}</b>.`;
+ return `<div class="panel"><h2>💳 Оплата</h2>${info}
+  ${can?`<form class="refundform stack" data-form="orefund" data-id="${o.id}" style="margin-top:12px"><div class="note">⚠️ ${why}</div>${this.refundChoice(o,false)}<div class="acts"><button class="btn sm danger">↩ Повернути кошти</button><span class="help" style="margin:0">${String(o.payment_ref||"").startsWith("pi_")?"Кошти повернуться на картку покупця через Stripe.":"Самі гроші повертаєте в платіжній системі — тут лише позначка."}</span></div></form>`
+  :this.isPaidO(o)&&left>0.004?`<p class="help" style="margin:10px 0 0">Повернення коштів стане доступним, коли оформите повернення товару («Виберіть дію…» → «↩ Оформити повернення») — повне або часткове.</p>`:""}</div>`},
+refundPatch(o,amt,note){const paid=+(o.paid_amount??o.total),total=Math.round(((+o.refund_amount||0)+amt)*100)/100;
+ return{payment_status:total>=paid-0.004?"refunded":"partially_refunded",refund_amount:total,refunded_at:new Date().toISOString(),payment_ref:note?((o.payment_ref?o.payment_ref+" · ":"")+"Refund: "+note).slice(0,120):o.payment_ref}},
+refundAmt(f,o){const m=(f.querySelector("[name=rmode]:checked")||{}).value;if(!m||m==="none")return 0;const left=this.payLeft(o);
+ const a=m==="full"?left:Math.round(+f.amount.value*100)/100;if(!(a>0)){f.amount.focus();toast("Вкажіть суму повернення");return null}if(a>left+0.004){f.amount.focus();toast("Сума більша за оплачену ("+money(left)+")");return null}return a},
 /* parcels list (order page «Доставка», list expand row) */
 pkgList(o,compact){const P=o.shipments||[];if(!P.length)return"";
  return `<div class="pkglist">${P.map(s=>{const tu=trackUrl(s.carrier,s.tracking);return `<div class="pkg"><b>📦 Посилка ${s.n}</b> <span class="muted small">${s.shipped_at?"відпр. "+this.day(s.shipped_at):""}</span>
@@ -88,3 +111,4 @@ pkgList(o,compact){const P=o.shipments||[];if(!P.length)return"";
 document.addEventListener("change",e=>{const t=e.target;if(!t.closest)return;
  if(t.matches('[data-ach="ocisel"]')){const f=t.form,b=f&&f.querySelector("button.danger");if(b)b.disabled=!f.querySelector("[name=ci]:checked")}
  if(t.matches('[data-ach="shipmode"]')){const f=t.form,pick=t.value==="pick";f.querySelectorAll(".shipmode .chip2").forEach(l=>l.classList.toggle("on",l.querySelector("input").checked));const L=f.querySelector(".shiplines");if(L)L.hidden=!pick}});
+document.addEventListener("change",e=>{const t=e.target;if(!t.matches||!t.matches('[data-ach="refmode"]'))return;const fs=t.closest(".refchoice"),a=fs&&fs.querySelector("[name=amount]");if(a){a.disabled=t.value!=="part";if(t.value==="part")a.focus()}});

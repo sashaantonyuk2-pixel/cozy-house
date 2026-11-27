@@ -30,15 +30,7 @@ async fillOrder(id){
  ${this.ordTopBar(o)}
  <div class="ordgrid"><div class="stack">
  ${this.itemsPanel(o)}
- <div class="panel"><h2>💳 Оплата</h2>
-  ${ps==="unpaid"?`<div class="note" style="margin-bottom:12px">Оплату ще не отримано. Надішліть покупцю посилання на оплату й позначте замовлення оплаченим, коли гроші надійдуть.</div><div class="acts" style="margin-bottom:12px"><button class="btn primary sm" data-act="a:opaid" data-id="${o.id}">✓ Оплачено ${money(o.total)}</button><button class="btn sm" data-act="a:omail" data-t="pay" data-id="${o.id}">✉️ Лист із посиланням на оплату</button></div>`
-  :(["paid","partially_refunded"].includes(ps)&&(+o.paid_amount||0)-(+o.refund_amount||0)>+o.total+0.004?`<div class="note" style="margin-bottom:12px">⚠️ Частину товарів скасовано — сума замовлення тепер ${money(o.total)}. Поверніть покупцю різницю <b>${money((+o.paid_amount||0)-(+o.refund_amount||0)-(+o.total))}</b> («↩ Повернути кошти» нижче).</div>`:"")+`<div class="okbox" style="margin-bottom:12px">${this.PAY[ps]}${o.paid_amount!=null?`: ${money(o.paid_amount)}`:""}${o.payment_method?` · ${esc(o.payment_method)}`:""}${o.paid_at?` · ${dt(o.paid_at)}`:""}${o.payment_ref?`<br><span class="small">ID платежу: ${esc(o.payment_ref)}</span>`:""}${o.refund_amount?`<br><span class="small">Повернено: ${money(o.refund_amount)}${o.refunded_at?" · "+dt(o.refunded_at):""}</span>`:""}</div>`}
-  <form class="form" data-form="opay" data-id="${o.id}"><div><label>Статус оплати</label><select class="field" name="status">${Object.entries(this.PAY).map(([k,v])=>`<option value="${k}" ${ps===k?"selected":""}>${v}</option>`).join("")}</select></div>
-  <div><label>Спосіб</label><select class="field" name="method"><option value="">—</option>${this.PMETHODS.map(m=>`<option value="${m}" ${o.payment_method===m||o.payment_method===this.PMLABEL[m]?"selected":""}>${this.PMLABEL[m]||m}</option>`).join("")}</select></div>
-  <div><label>Отримано, $</label><input class="field" name="amount" type="number" min="0" step="0.01" value="${o.paid_amount??o.total}"></div><div><label>Дата оплати</label><input class="field" name="date" type="date" value="${(o.paid_at||"").slice(0,10)||today}" max="${today}"></div>
-  <div class="full"><label>ID платежу / примітка</label><input class="field" name="ref" maxlength="120" value="${esc(o.payment_ref||"")}" placeholder="Напр. номер транзакції Payoneer"></div>
-  <div class="full acts"><button class="btn sm primary">Зберегти оплату</button>${ps==="paid"||ps==="partially_refunded"?`<button type="button" class="btn sm" data-act="a:orefundOpen">↩ Повернути кошти</button>`:""}</div></form>
-  <form class="form refundform" data-form="orefund" data-id="${o.id}" hidden><div><label>Сума повернення, $</label><input class="field" name="amount" type="number" min="0.01" step="0.01" max="${o.paid_amount??o.total}" value="${(()=>{const left=(+(o.paid_amount??o.total))-(+o.refund_amount||0),d=Math.round((left-(+o.total))*100)/100;return d>0.004&&o.status!=="cancelled"?d:o.paid_amount??o.total})()}"></div><div><label>Причина / примітка</label><input class="field" name="note" maxlength="120" placeholder="Напр. пошкоджено при доставці"></div><div class="full acts"><button class="btn sm danger">Оформити повернення коштів</button><span class="help">Самі гроші повертаєте в платіжній системі — тут лише позначка.</span></div></form></div>
+ ${this.payPanel(o)}
  <div class="panel"><h2>Історія</h2><ol class="ohist">${ev.map(e=>`<li><span class="muted small">${dt(e.at)}</span><div>${e.t}</div></li>`).join("")}</ol></div></div>
  <div class="stack">
  <div class="panel"><h2>Покупець</h2><b>${esc(c.name||"—")}</b> <span class="muted small">${o.user_id?"· з акаунтом":"· гість"}</span>
@@ -53,7 +45,7 @@ async fillOrder(id){
   ${["confirmed","shipped"].includes(o.status)?`<label class="small etarow" style="margin-top:8px">📅 Очікувана доставка<input type="date" class="field" value="${esc(o.delivery_eta||"")}" min="${today}" data-ach="oeta" data-id="${o.id}"></label>`:""}
   <p class="small" style="margin:10px 0 0"><button type="button" class="linkbtn textlink" data-act="a:slip" data-id="${o.id}">🖨 Пакувальний лист</button> <span class="muted">— якщо постачальнику потрібен аркуш у посилку</span></p>
   <div id="ship-${o.id}" hidden>${this.shipFormHtml(o,false)}</div>
-  <div id="ret-${o.id}" hidden><form class="shipform stack" data-form="ret" data-id="${o.id}" style="margin-top:12px"><select class="field" name="reason">${this.RREASONS.map(x=>`<option>${x}</option>`).join("")}</select><input class="field" name="note" placeholder="Коментар (необов’язково)" maxlength="200"><button class="btn primary sm">Оформити повернення</button><span class="help">Товари повернуться на склад. Гроші — окремо, у блоці «Оплата».</span></form></div></div>
+  <div id="ret-${o.id}" hidden><form class="shipform stack" data-form="ret" data-id="${o.id}" style="margin-top:12px"><select class="field" name="reason">${this.RREASONS.map(x=>`<option>${x}</option>`).join("")}</select>${this.refundChoice(o,true)}<input class="field" name="note" placeholder="Коментар (необов’язково)" maxlength="200"><button class="btn primary sm">Оформити повернення</button><span class="help">Товари повернуться на склад. Гроші — окремо, у блоці «Оплата».</span></form></div></div>
 
  <div class="panel"><h2>✉️ Лист покупцю</h2><p class="help" style="margin-top:-6px">Відкриває вашу пошту з готовим текстом англійською — перевірте й надішліть.</p><div class="stack" style="gap:6px">${[["pay","Посилання на оплату"],["confirm","Оплату отримано, готуємо"],["ship","Замовлення відправлено"],...(o.delayed_at&&o.status==="shipped"?[["delay","Затримка доставки"]]:[]),["review","Попросити відгук"]].map(([k,l])=>`<button class="btn sm block" data-act="a:omail" data-t="${k}" data-id="${o.id}" ${!c.email?"disabled":""}>${l}</button>`).join("")}${!c.email?`<span class="help">У замовленні немає email.</span>`:""}</div></div>
  </div></div>`},
@@ -80,11 +72,10 @@ orderSubmit(k,f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);if(
   if(st==="paid"&&o.status==="new")patch.status="confirmed";
   if(st==="paid"&&amt!=null&&amt<+o.total&&!confirm(`Отримано ${money(amt)} — менше за суму замовлення ${money(o.total)}. Все одно позначити оплаченим?`))return;
   return this.orderUpdate(id,patch,"Оплату збережено ✓")}
- if(k==="orefund"){const amt=Math.round(+f.amount.value*100)/100,paid=+(o.paid_amount??o.total);if(!(amt>0))return toast("Вкажіть суму повернення");if(amt>paid)return toast("Сума більша за оплачену ("+money(paid)+")");
+ if(k==="orefund"){const amt=this.refundAmt(f,o);if(!amt)return;const note=(f.rnote&&f.rnote.value.trim())||"";
   if(String(o.payment_ref||"").startsWith("pi_")){if(!confirm(`Повернути ${money(amt)} покупцю на картку через Stripe?`))return;return this.stripeRefund(id,amt,f)}
-  const total=Math.round(((+o.refund_amount||0)+amt)*100)/100;if(total>paid)return toast("Разом повернень більше, ніж оплачено");
   if(!confirm(`Позначити повернення ${money(amt)} покупцю?`))return;
-  const note=f.note.value.trim();return this.orderUpdate(id,{payment_status:total>=paid?"refunded":"partially_refunded",refund_amount:total,refunded_at:new Date().toISOString(),payment_ref:note?((o.payment_ref?o.payment_ref+" · ":"")+"Refund: "+note).slice(0,120):o.payment_ref},"Повернення коштів позначено")}
+  return this.orderUpdate(id,this.refundPatch(o,amt,note),"Повернення коштів позначено")}
  if(k==="oaddr"){const fd=Object.fromEntries(new FormData(f));const st=String(fd.state||"").trim().toUpperCase(),zip=String(fd.zip||"").trim();
   if(st&&!/^[A-Z]{2}$/.test(st))return toast("Штат — 2 літери, напр. TX");if(zip&&!/^\d{5}(-\d{4})?$/.test(zip))return toast("ZIP — 5 цифр");
   const c={...(o.customer||{}),name:String(fd.name).trim(),email:String(fd.email).trim().toLowerCase(),phone:String(fd.phone).trim(),address:String(fd.address).trim(),city:String(fd.city).trim(),state:st,zip};
