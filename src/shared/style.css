@@ -1060,3 +1060,8 @@ footer .copy{padding-bottom:84px}
 #ordList .t tr.ordrow>td.oitemscell,#ordList .t thead th:nth-child(6){width:auto}
 #ordList .t tr.ordrow>td.oitemscell{max-width:0!important;overflow:hidden;text-overflow:ellipsis}
 #ordList .t thead th:last-child,#ordList .t tr.ordrow>td:last-child{padding-right:18px}
+/* Seller Central · Команда */
+.teamrow{display:flex;gap:8px;flex-wrap:wrap}.teamrow .field[name=email]{flex:1 1 260px}.teamrow select.field{width:auto}
+.teamlink{margin-top:12px;display:flex;flex-direction:column;gap:8px}.teamlink .field{font-size:12.5px}
+.teamtable select.field{width:auto;padding:5px 26px 5px 8px}.teaminvrow td{background:#fbfaf6}
+.teamroles{margin:0;padding-left:18px;line-height:1.8;font-size:14px}

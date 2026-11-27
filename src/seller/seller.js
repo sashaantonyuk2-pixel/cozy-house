@@ -2,6 +2,7 @@
 const IDLE_MIN=30;
 const Seller={state:"loading",email:"",factorId:null,enroll:null,synced:null,syncing:false,again:false,dirty:false,lastAct:Date.now(),
 boot(){
+ {const m=location.hash.match(/^#\/join\?code=([0-9a-f]{20,64})/i);if(m){sessionStorage.setItem("teamCode",m[1]);history.replaceState(null,"",location.pathname+location.search+"#/admin")}}
  ["mousemove","keydown","click","touchstart","scroll"].forEach(ev=>document.addEventListener(ev,()=>{this.lastAct=Date.now()},{passive:true}));
  setInterval(()=>{if(this.state!=="login"&&this.state!=="loading"&&Date.now()-this.lastAct>IDLE_MIN*60000){this.signOut("Ви вийшли автоматично після 30 хвилин бездіяльності.")}},30000);
  window.addEventListener("beforeunload",e=>{if(this.dirty||this.syncing){e.preventDefault();e.returnValue=""}});
@@ -12,8 +13,13 @@ async check(msg){
  const{data}=await sb.auth.getSession();const s=data.session;
  if(!s){this.state="login";this.msg=msg||"";return this.render0()}
  this.email=s.user.email;
- const{data:adm,error}=await sb.from("admins").select("user_id").eq("user_id",s.user.id).maybeSingle();
- if(error||!adm){this.state="noaccess";return this.render0()}
+ let{data:adm,error}=await sb.from("admins").select("user_id,role").eq("user_id",s.user.id).maybeSingle();
+ const code=sessionStorage.getItem("teamCode");
+ if(!error&&!adm&&code){const j=await sb.rpc("team_join",{p_code:code});sessionStorage.removeItem("teamCode");
+  if(j.error){this.state="noaccess";this.msg=/WRONG_EMAIL/.test(j.error.message)?"Запрошення створене для іншого email. Увійдіть тим email, на який вас запросили.":/EMAIL_NOT_CONFIRMED/.test(j.error.message)?"Спершу підтвердьте email (лист від магазину), потім знову відкрийте посилання із запрошення.":"Посилання-запрошення недійсне або застаріло (діє 7 днів і лише один раз). Попросіть нове.";return this.render0()}
+  ({data:adm,error}=await sb.from("admins").select("user_id,role").eq("user_id",s.user.id).maybeSingle())}
+ if(error||!adm){this.state="noaccess";this.msg="";return this.render0()}
+ sessionStorage.removeItem("teamCode");this.role=adm.role||"owner";
  const{data:aal}=await sb.auth.mfa.getAuthenticatorAssuranceLevel();
  if(aal&&aal.currentLevel==="aal2"){
   try{S=await this.loadSup(await fetchCatalog());this.snapshot();this.state="ready";LS.set("noTrack",true);this.chrome();if(!/^#\/admin/.test(location.hash))location.hash="#/admin";else render()}
@@ -36,11 +42,11 @@ render0(){this.chrome();let h="";
  if(this.state==="loading")h=this.box("Seller Central","",`<p class="muted" style="text-align:center">Перевірка…</p>`);
  else if(this.state==="nosb")h=this.box("Seller Central","",`<div class="note">Не вдалося підключитися до сервера. Перевірте інтернет і оновіть сторінку.</div>`);
  else if(this.state==="error")h=this.box("Помилка","",`<div class="note">${esc(this.msg||"")}</div><button class="btn block" style="margin-top:12px" onclick="location.reload()">Оновити</button>`);
- else if(this.state==="login")h=this.box("Seller Central","Вхід для власника магазину",`${this.msg?`<div class="okbox" style="margin-bottom:12px">${esc(this.msg)}</div>`:""}<form class="stack" data-form="s:login" novalidate>
+ else if(this.state==="login")h=this.box("Seller Central",sessionStorage.getItem("teamCode")?"Вас запросили в команду магазину. Увійдіть з email, на який прийшло запрошення.":"Вхід для команди магазину",`${this.msg?`<div class="okbox" style="margin-bottom:12px">${esc(this.msg)}</div>`:""}<form class="stack" data-form="s:login" novalidate>
   <div><label class="lbl">Email</label><input class="field" name="email" type="email" autocomplete="username" required></div>
   <div><label class="lbl">Пароль</label><div class="pw"><input class="field" name="password" type="password" autocomplete="current-password" required><button type="button" class="pwtoggle" data-act="pw">Show</button></div></div>
-  <div id="sMsg"></div><button class="btn primary block">Далі</button></form>`);
- else if(this.state==="noaccess")h=this.box("Немає доступу","",`<div class="note">Акаунт <b>${esc(this.email)}</b> не має доступу до кабінету продавця.</div><button class="btn block" style="margin-top:12px" data-act="a:signout">Вийти</button>`);
+  <div id="sMsg"></div><button class="btn primary block">Далі</button></form>${sessionStorage.getItem("teamCode")?`<p class="small muted" style="margin:12px 0 0">Немає акаунта? <a class="textlink" href="${esc(SITE_URL)}#/account" target="_blank" rel="noopener">Створіть його на сайті</a> цим email, підтвердьте email, а потім знову відкрийте посилання із запрошення.</p>`:""}`);
+ else if(this.state==="noaccess")h=this.box("Немає доступу","",`<div class="note">${this.msg?esc(this.msg):`Акаунт <b>${esc(this.email)}</b> не має доступу до кабінету продавця. Якщо вас запросили в команду — відкрийте посилання із запрошення.`}</div><button class="btn block" style="margin-top:12px" data-act="a:signout">Вийти</button>`);
  else if(this.state==="challenge")h=this.box("Код підтвердження","Відкрийте застосунок-автентифікатор і введіть 6-значний код для CozyHouseVibe.",`<form class="stack" data-form="s:verify" novalidate>
   <input class="field otp" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required autofocus>
   <div id="sMsg"></div><button class="btn primary block">Підтвердити</button><button type="button" class="btn ghost block" data-act="a:signout">Скасувати</button></form>`);
