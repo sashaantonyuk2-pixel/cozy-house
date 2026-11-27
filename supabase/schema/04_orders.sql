@@ -279,3 +279,132 @@ end $$;
 revoke execute on function private.auto_deliver_orders() from public;
 create extension if not exists pg_cron;
 select cron.schedule('auto-deliver-orders', '0 11 * * *', 'select private.auto_deliver_orders()');
+
+-- Partial orders: cancel out-of-stock items, ship in several packages, each with its own tracking number
+-- (migrations orders_cancel_items_and_packages, orders_cancel_items_fix_names, orders_insert_reset_new_fields,
+--  orders_block_cancel_partly_shipped, 27.11.2026)
+--   items[i].cancelled_qty / cancel_reason — items removed by the seller (stock goes back, totals are recalculated)
+--   shipments — [{n, items:[{i,qty}], carrier, tracking, eta, shipped_at}], written only by seller_ship_package()
+--   The order becomes «shipped» when the last package goes out; delivery_eta = the latest package ETA.
+--   An order with packages on the way can't be cancelled as a whole (ALREADY_SHIPPED) — only its remaining items.
+alter table public.orders add column if not exists shipments jsonb not null default '[]'::jsonb;
+alter table public.orders add constraint orders_shipments_check check (jsonb_typeof(shipments) = 'array' and jsonb_array_length(shipments) <= 20);
+
+create or replace function private.order_insert_reset() returns trigger
+language plpgsql set search_path to '' as $$
+begin
+  new.shipments := '[]'::jsonb; new.delay_reason := null; new.delayed_at := null;
+  return new;
+end $$;
+create trigger orders_reset_new before insert on public.orders for each row execute function private.order_insert_reset();
+
+create or replace function private.order_shipped_qty(p_ship jsonb, p_idx integer) returns integer
+language sql immutable set search_path to '' as $$
+  select coalesce(sum((l->>'qty')::int), 0)::int
+    from jsonb_array_elements(coalesce(p_ship, '[]'::jsonb)) s, jsonb_array_elements(s->'items') l
+   where (l->>'i')::int = p_idx;
+$$;
+
+-- order_status_change(): stock moves use qty - cancelled_qty; whole-order cancel blocked once a package shipped
+create or replace function private.order_status_change() returns trigger
+language plpgsql security definer set search_path to '' as $$
+declare it jsonb; was_out boolean; now_out boolean; q int;
+begin
+  if new.status is distinct from old.status then
+    if new.status = 'cancelled' and jsonb_array_length(coalesce(old.shipments, '[]'::jsonb)) > 0 then
+      raise exception 'ALREADY_SHIPPED';
+    end if;
+    perform set_config('app.order_ctx', '1', true);
+    was_out := old.status in ('cancelled','returned');
+    now_out := new.status in ('cancelled','returned');
+    if now_out and not was_out then
+      for it in select * from jsonb_array_elements(new.items) loop
+        q := greatest(coalesce((it->>'qty')::int, 0) - coalesce((it->>'cancelled_qty')::int, 0), 0);
+        update public.products set stock = stock + q where id = it->>'id';
+      end loop;
+    elsif was_out and not now_out then
+      for it in select * from jsonb_array_elements(new.items) loop
+        q := greatest(coalesce((it->>'qty')::int, 0) - coalesce((it->>'cancelled_qty')::int, 0), 0);
+        update public.products set stock = greatest(stock - q, 0) where id = it->>'id';
+      end loop;
+    end if;
+    if new.status = 'shipped' and new.shipped_at is null then new.shipped_at := now(); end if;
+    if new.status = 'completed' then new.delivered_at := coalesce(new.delivered_at, now());
+    elsif old.status = 'completed' then new.delivered_at := null; end if;
+    if new.status = 'returned' then new.returned_at := now(); elsif old.status = 'returned' then new.returned_at := null; new.return_reason := null; end if;
+  end if;
+  return new;
+end $$;
+
+-- Seller Central: cancel some items (new/confirmed orders). Recalculates subtotal/shipping/tax/total (tax_rate of the order,
+-- taxShipping setting); everything cancelled → order cancelled; the rest already shipped → «shipped». Returns {total, old_total, cancelled_all, refund_due}.
+create or replace function public.seller_cancel_items(p_order bigint, p_lines jsonb, p_reason text default 'Out of stock') returns jsonb
+language plpgsql security definer set search_path to '' as $$
+declare o record; v_items jsonb; l jsonb; idx int; q int; it jsonb; rem int; v_sub numeric := 0; v_ship numeric; v_taxable numeric; v_tax numeric; st jsonb; old_total numeric; all_gone boolean; v_done boolean;
+begin
+  if not private.is_admin() then raise exception 'NOT_ALLOWED'; end if;
+  select * into o from public.orders where id = p_order for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if o.status not in ('new','confirmed') then raise exception 'NOT_CANCELLABLE'; end if;
+  if jsonb_typeof(p_lines) <> 'array' or jsonb_array_length(p_lines) = 0 then raise exception 'NO_ITEMS'; end if;
+  v_items := o.items; old_total := o.total;
+  for l in select * from jsonb_array_elements(p_lines) loop
+    begin idx := (l->>'i')::int; q := (l->>'qty')::int; exception when others then raise exception 'BAD_ITEM'; end;
+    it := v_items->idx;
+    if it is null or q is null or q < 1 then raise exception 'BAD_ITEM'; end if;
+    rem := coalesce((it->>'qty')::int, 0) - coalesce((it->>'cancelled_qty')::int, 0) - private.order_shipped_qty(o.shipments, idx);
+    if q > rem then raise exception 'TOO_MANY:%', it->>'name'; end if;
+    it := it || jsonb_build_object('cancelled_qty', coalesce((it->>'cancelled_qty')::int, 0) + q, 'cancel_reason', left(coalesce(nullif(btrim(p_reason), ''), 'Out of stock'), 120));
+    v_items := jsonb_set(v_items, array[idx::text], it);
+    update public.products set stock = stock + q where id = it->>'id';
+  end loop;
+  select coalesce(sum((x->>'price')::numeric * greatest((x->>'qty')::int - coalesce((x->>'cancelled_qty')::int, 0), 0)), 0) into v_sub from jsonb_array_elements(v_items) x;
+  all_gone := v_sub = 0;
+  select coalesce(s.data, '{}'::jsonb) into st from public.store_settings s where s.id = 1;
+  v_ship := case when all_gone then 0 else coalesce(o.shipping, 0) end;
+  v_taxable := v_sub + case when coalesce(st->>'taxShipping', '') in ('true','1') then v_ship else 0 end;
+  v_tax := round(v_taxable * coalesce(o.tax_rate, 0) / 100, 2);
+  v_done := jsonb_array_length(o.shipments) > 0 and not exists (select 1 from jsonb_array_elements(v_items) with ordinality e(x, n)
+              where (x->>'qty')::int - coalesce((x->>'cancelled_qty')::int, 0) - private.order_shipped_qty(o.shipments, (n - 1)::int) > 0);
+  update public.orders as t set items = v_items, subtotal = v_sub, shipping = v_ship, tax = v_tax, total = v_sub + v_ship + v_tax,
+         status = case when all_gone then 'cancelled' when v_done then 'shipped' else t.status end
+   where t.id = p_order;
+  return jsonb_build_object('total', v_sub + v_ship + v_tax, 'old_total', old_total, 'cancelled_all', all_gone,
+    'refund_due', case when o.payment_status in ('paid','partially_refunded') then greatest(old_total - (v_sub + v_ship + v_tax), 0) else 0 end);
+end $$;
+revoke execute on function public.seller_cancel_items(bigint, jsonb, text) from public, anon;
+grant execute on function public.seller_cancel_items(bigint, jsonb, text) to authenticated;
+
+-- Seller Central: ship one package (confirmed orders). Tracking is required for USPS/UPS/FedEx/DHL.
+create or replace function public.seller_ship_package(p_order bigint, p_lines jsonb, p_carrier text, p_tracking text, p_eta date) returns jsonb
+language plpgsql security definer set search_path to '' as $$
+declare o record; l jsonb; idx int; q int; it jsonb; rem int; pkg jsonb := '[]'::jsonb; ships jsonb; done boolean; car text := left(btrim(coalesce(p_carrier, '')), 40); trk text := nullif(left(btrim(coalesce(p_tracking, '')), 80), '');
+begin
+  if not private.is_admin() then raise exception 'NOT_ALLOWED'; end if;
+  select * into o from public.orders where id = p_order for update;
+  if not found then raise exception 'NOT_FOUND'; end if;
+  if o.status <> 'confirmed' then raise exception 'NOT_SHIPPABLE'; end if;
+  if car = '' then raise exception 'NO_CARRIER'; end if;
+  if car in ('USPS','UPS','FedEx','DHL') and trk is null then raise exception 'TRACKING_REQUIRED'; end if;
+  if jsonb_typeof(p_lines) <> 'array' or jsonb_array_length(p_lines) = 0 then raise exception 'NO_ITEMS'; end if;
+  for l in select * from jsonb_array_elements(p_lines) loop
+    begin idx := (l->>'i')::int; q := (l->>'qty')::int; exception when others then raise exception 'BAD_ITEM'; end;
+    it := o.items->idx;
+    if it is null or q is null or q < 1 then raise exception 'BAD_ITEM'; end if;
+    rem := coalesce((it->>'qty')::int, 0) - coalesce((it->>'cancelled_qty')::int, 0) - private.order_shipped_qty(o.shipments, idx);
+    if q > rem then raise exception 'TOO_MANY:%', it->>'name'; end if;
+    pkg := pkg || jsonb_build_array(jsonb_build_object('i', idx, 'qty', q));
+  end loop;
+  ships := o.shipments || jsonb_build_array(jsonb_build_object('n', jsonb_array_length(o.shipments) + 1, 'items', pkg, 'carrier', car,
+             'tracking', trk, 'eta', p_eta, 'shipped_at', now()));
+  done := not exists (select 1 from jsonb_array_elements(o.items) with ordinality e(x, n)
+                       where (x->>'qty')::int - coalesce((x->>'cancelled_qty')::int, 0) - private.order_shipped_qty(ships, (n - 1)::int) > 0);
+  update public.orders set shipments = ships, carrier = car, tracking_number = trk,
+         delivery_eta = (select max((s->>'eta')::date) from jsonb_array_elements(ships) s),
+         status = case when done then 'shipped' else status end
+   where id = p_order;
+  return jsonb_build_object('package', jsonb_array_length(ships), 'all_shipped', done);
+end $$;
+revoke execute on function public.seller_ship_package(bigint, jsonb, text, text, date) from public, anon;
+grant execute on function public.seller_ship_package(bigint, jsonb, text, text, date) to authenticated;
+-- track_order() also returns 'shipments' and, per item, 'cancelled_qty' / 'cancel_reason'.

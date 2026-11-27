@@ -1027,3 +1027,19 @@ footer .copy{padding-bottom:84px}
 .odet .small{line-height:1.7}
 .t tr.ordrow.expanded>td{border-bottom-color:transparent}
 .oexp{font-size:17px;color:#3d4540;width:26px;height:26px;border:1px solid #dfe2dc;background:#fff}.oexp.open{border-color:var(--forest)}
+/* ===== partial orders: cancelled items, several parcels ===== */
+.s-partial{--sc:#7a5bb0;--sb:#f6f2fb}
+.oline.osel{grid-template-columns:20px 56px 1fr auto auto}.ocheck input{width:16px;height:16px}
+.oline.ocanc img{opacity:.45;filter:grayscale(1)}.oline.ocanc b a,.oline.ocanc>div>b{text-decoration:line-through;color:#8a8a82}
+.ocnote{color:#9a3d2a}.opkg{color:#2f6db0}
+.ociq{display:inline-flex;align-items:center;gap:6px;margin-top:4px}.ociq .field{width:64px;padding:3px 6px}
+.ocibar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;padding:10px 0 4px;border-bottom:1px solid var(--line)}.ocibar>span{flex:1 1 220px}.ocibar .field{width:auto;padding:6px 8px}
+.shipmode{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%}.shipmode .chip2 input{margin-right:4px}
+.shiplines{display:flex;flex-direction:column;gap:4px;flex-basis:100%;padding:8px 10px;background:#fff;border:1px solid var(--line);border-radius:10px}
+.shipline{display:flex;align-items:center;gap:8px;font-size:13px}.shipline>span:first-of-type{flex:1}.shipform .shipline input.field{min-width:0;width:64px;padding:3px 6px}
+.pkglist{display:flex;flex-direction:column;gap:8px;margin:8px 0}.pkg{border:1px solid var(--line);border-left:3px solid #2f6db0;border-radius:8px;padding:6px 10px;background:#fff;line-height:1.6}
+.odet .pkglist{margin:6px 0 0}.odet .pkg{padding:4px 8px}
+.ocancel{display:block;color:#9a3d2a;margin-top:2px}
+.oditem.odcanc img,.otrk-items .odcanc{opacity:.6}.oditem.odcanc .ocname,.otrk-items .odcanc>span:first-child{text-decoration:line-through}
+.otrk-pkgs{display:flex;flex-direction:column;gap:8px;margin-top:12px}.otrk-pkg{border:1px solid var(--line);border-left:3px solid #2f6db0;border-radius:10px;padding:8px 12px;background:#fff;line-height:1.6}
+.shipform.stack{align-items:flex-start}.shipform.stack .shiplines,.shipform.stack .shipmode{align-self:stretch}

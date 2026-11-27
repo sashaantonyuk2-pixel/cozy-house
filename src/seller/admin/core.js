@@ -147,12 +147,8 @@ submit(k,f){
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
  if(k==="ret"){const id=+f.dataset.id,reason=f.reason.value+(f.note.value.trim()?": "+f.note.value.trim():"");const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("orders").update({status:"returned",return_reason:reason}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Повернення оформлено · товари повернено на склад");refreshAdminCatalog();this.afterOrderChange(id)});return}
- if(k==="ship"){const id=+f.dataset.id,other=f.carrier.value==="Other",carrier=other?(f.carrier_other.value.trim()||"Other"):f.carrier.value,tracking=f.tracking.value.trim(),eta=f.eta.value||null;
-  if(other&&!f.carrier_other.value.trim()){f.carrier_other.focus();return toast("Вкажіть назву служби доставки")}
-  if(!other&&!tracking){f.tracking.classList.add("invalid");f.tracking.focus();return toast(`Вкажіть трек-номер ${carrier} — без нього покупець не зможе відстежити посилку`)}
-  if(/[А-Яа-яІіЇїЄєҐґ]/.test(carrier)){f.carrier_other.focus();return toast("Назву служби напишіть англійською — її бачить покупець")}
-  const b=f.querySelector("button.primary");b.disabled=true;
-  sb.from("orders").update({status:"shipped",carrier,tracking_number:tracking||null,delivery_eta:eta}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Позначено відправленим"+(tracking?" · трек "+tracking:"")+(eta?" · доставка "+Admin.day(eta):""));this.afterOrderChange(id)});return}
+ if(k==="ship")return this.shipSubmit(f);
+ if(k==="ocitems")return this.ocitemsSubmit(f);
  if(k==="tgToken"){const tok=f.token.value.trim();const b=f.querySelector("button");b.disabled=true;sb.rpc("seller_set_telegram_token",{token:tok}).then(({data,error})=>{b.disabled=false;if(!error&&data==="same"){f.reset();toast("Цей токен уже збережено — підключення не змінилось");Admin.tgStatus();return}if(error)return toast(/BAD_TOKEN/.test(error.message)?"⚠️ Це не схоже на токен бота. Скопіюйте його з @BotFather повністю.":"⚠️ "+error.message);f.reset();toast("Токен збережено. Тепер крок 3.");Admin.tgStatus()});return}
  if(k==="aprodfilter"){const fd=new FormData(f),n=new URLSearchParams();fd.get("q")&&n.set("q",fd.get("q"));fd.get("cat")&&n.set("cat",fd.get("cat"));fd.get("sup")&&n.set("sup",fd.get("sup"));const cs=new URLSearchParams(location.hash.split("?")[1]||"").get("stock");cs&&n.set("stock",cs);const so=fd.get("sort");so&&so!==(cs?"stock":"new")&&n.set("sort",so);location.hash="#/admin/products"+(n.toString()?"?"+n:"");return}
  if(k==="ordbar"){const fr=f.from.value,to=f.to.value;if(!fr&&!to)return toast("Вкажіть дати");location.hash=this.ordHref({period:"custom",from:fr&&to&&fr>to?to:fr,to:fr&&to&&fr>to?fr:to,page:""});return}
