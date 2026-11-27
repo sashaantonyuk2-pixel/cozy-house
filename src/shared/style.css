@@ -1054,3 +1054,9 @@ footer .copy{padding-bottom:84px}
 #ordList .tablewrap{border:1px solid #d5d9d9;border-radius:10px;overflow:hidden}
 .admin .tablewrap .t tr.odetrow>td{border-bottom:1px solid #c8cdcd}
 .admin .tablewrap .t tr.ordrow.expanded>td{border-bottom-color:#eeeee9}
+/* orders list: items column takes the free width, other columns hug their content — no big gaps on the right */
+#ordList .t{width:100%;table-layout:auto}
+#ordList .t tr.ordrow>td,#ordList .t thead th{width:1%;white-space:nowrap}
+#ordList .t tr.ordrow>td.oitemscell,#ordList .t thead th:nth-child(6){width:auto}
+#ordList .t tr.ordrow>td.oitemscell{max-width:0!important;overflow:hidden;text-overflow:ellipsis}
+#ordList .t thead th:last-child,#ordList .t tr.ordrow>td:last-child{padding-right:18px}
