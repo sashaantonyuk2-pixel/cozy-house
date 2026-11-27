@@ -75,7 +75,7 @@ create trigger orders_money_guard before update on public.orders for each row ex
 create or replace function public.am_i_admin() returns boolean
 language sql stable security definer set search_path to '' as $$ select private.is_owner(); $$;
 -- seller_telegram_status / seller_disable_telegram / seller_set_telegram_token / seller_link_telegram:
--- the check «private.is_admin()» was replaced with «private.is_owner()» (see 09 for their bodies).
+-- the check «private.is_admin()» was replaced with «private.is_owner()» (see 00_base.sql for their bodies).
 
 create or replace function public.my_team_role() returns text
 language sql stable security definer set search_path to '' as $$ select a.role from public.admins a where a.user_id = (select auth.uid()); $$;
