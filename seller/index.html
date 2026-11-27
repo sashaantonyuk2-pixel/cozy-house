@@ -1339,7 +1339,7 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  tgOff:async()=>{await sb.rpc("seller_disable_telegram");toast("Сповіщення вимкнено");this.tgStatus()},
  reloadMsgs:()=>{const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"inbox";this.fillMsgs(st)},
  custOrders:()=>{sessionStorage.setItem("ordQ",el.dataset.q);location.hash="#/admin/orders?status=all"},
- retForm:()=>{const r=$("#ret-"+id);if(r)r.hidden=!r.hidden},
+ retForm:()=>{const r=$("#ret-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.scrollIntoView({block:"center",behavior:"smooth"})}},
  retCancel:()=>{const r=$("#ret-"+id);if(r)r.hidden=true},
  navToggle:()=>{const w=el.closest(".admin");if(!w)return;const off=!w.classList.contains("navoff");w.classList.toggle("navoff",off);LS.set("navOff",off);const f=w.querySelector(off?".navrail button":".navhide");f&&f.focus({preventScroll:true})},
  moveStorage:()=>Admin.moveToStorage(el),
@@ -1356,7 +1356,7 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  odeliver:()=>{const o=this.ordersData.find(x=>x.id===+id);if(!o||!confirm(`Позначити замовлення ${o.order_no} доставленим сьогодні?\nУ покупця відкриється повернення на ${parseFloat(S.settings.returnDays)||14} днів.`))return;this.orderUpdate(+id,{status:"completed"},"Позначено доставленим ✓")},
  delayForm:()=>{const r=$("#delay-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden){r.scrollIntoView({block:"nearest",behavior:"smooth"});r.querySelector("[name=eta]").focus()}}},
  etaMove:()=>{const r=$("#etamove-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=eta]").focus()}},
- shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden)r.querySelector("[name=tracking]").focus()}},
+ shipForm:()=>{const r=$("#ship-"+id);if(r){r.hidden=!r.hidden;if(!r.hidden){r.scrollIntoView({block:"center",behavior:"smooth"});r.querySelector("[name=tracking]").focus({preventScroll:true})}}},
  shipCancel:()=>{const r=$("#ship-"+id);if(r)r.hidden=true},
  slip:()=>this.slip(id),
  print:()=>window.print(),
@@ -1671,7 +1671,6 @@ async fillOrder(id){
   ${this.delivNote(o)}
   ${["confirmed","shipped"].includes(o.status)?`<label class="small etarow" style="margin-top:8px">📅 Очікувана доставка<input type="date" class="field" value="${esc(o.delivery_eta||"")}" min="${today}" data-ach="oeta" data-id="${o.id}"></label>`:""}
   <p class="small" style="margin:10px 0 0"><button type="button" class="linkbtn textlink" data-act="a:slip" data-id="${o.id}">🖨 Пакувальний лист</button> <span class="muted">— якщо постачальнику потрібен аркуш у посилку</span></p>
-  <div class="acts" style="margin-top:12px">${o.status==="new"?this.flowBtns(o).split("</button>")[0]+"</button>":""}${canShip?`<button class="btn sm primary" data-act="a:shipForm" data-id="${o.id}">📦 ${this.isPartial(o)?"Відправити решту":this.multi(o)?"Відправити / посилками":"Відправити"}</button>`:""}${this.delivBtns(o)}${(o.status==="new"||o.status==="confirmed")&&!this.isPartial(o)?`<button class="btn sm" data-act="a:ocancel" data-id="${o.id}">✕ Скасувати</button>`:""}${canRet?`<button class="btn sm" data-act="a:retForm" data-id="${o.id}">↩ Повернення товару</button>`:""}</div>
   <div id="ship-${o.id}" hidden>${this.shipFormHtml(o,false)}</div>
   <div id="ret-${o.id}" hidden><form class="shipform stack" data-form="ret" data-id="${o.id}" style="margin-top:12px"><select class="field" name="reason">${this.RREASONS.map(x=>`<option>${x}</option>`).join("")}</select><input class="field" name="note" placeholder="Коментар (необов’язково)" maxlength="200"><button class="btn primary sm">Оформити повернення</button><span class="help">Товари повернуться на склад. Гроші — окремо, у блоці «Оплата».</span></form></div></div>
 
@@ -1791,9 +1790,9 @@ datesCell(o,noCb){const t=this.nyToday(),L=[];
  else if(["new","confirmed","shipped"].includes(o.status)){const e=this.estDelivery(o);L.push(`<span class="odl" title="${e.est?"Орієнтовно, за способом доставки — точну дату вкажіть при відправці":"Очікувана дата доставки"}">${e.est?"~":""}${this.day(e.d)}</span>`)}
  return L.join("")||`<span class="muted small">—</span>`},
 /* orders list: one dropdown «Виберіть дію…» — the chosen action asks for confirmation (or opens its form) */
-OACTS:{oconfirm:"✓ Підтвердити замовлення",shipForm:"📦 Відправити",odeliver:"✓ Позначити доставленим",delayForm:"⏰ Затримка доставки",retForm:"↩ Оформити повернення",ocancel:"✕ Скасувати замовлення",slip:"🖨 Пакувальний лист",open:"Відкрити замовлення →"},
-actSelect(o){const s=o.status,L=[];
- if(s==="new")L.push("oconfirm");if(s==="confirmed")L.push("shipForm");if(s==="shipped")L.push("odeliver","delayForm");if(s==="shipped"||s==="completed")L.push("retForm");if((s==="new"||s==="confirmed")&&!this.isPartial(o))L.push("ocancel");L.push("open");
+OACTS:{oconfirm:"✓ Підтвердити замовлення",shipForm:"📦 Відправити",odeliver:"✓ Позначити доставленим",delayForm:"⏰ Перенести дату доставки (затримка)",etaMove:"📅 Перенести дату доставки",retForm:"↩ Оформити повернення",ocancel:"✕ Скасувати замовлення",slip:"🖨 Пакувальний лист",open:"Відкрити замовлення →"},
+actSelect(o,page){const s=o.status,L=[];
+ if(s==="new")L.push("oconfirm");if(s==="confirmed")L.push("shipForm");if(page&&(s==="new"||s==="confirmed"))L.push("etaMove");if(s==="shipped")L.push("odeliver","delayForm");if(s==="shipped"||s==="completed")L.push("retForm");if((s==="new"||s==="confirmed")&&!this.isPartial(o))L.push("ocancel");if(page)L.push("slip");else L.push("open");
  return `<select class="field actsel" data-ach="oact" data-id="${o.id}" aria-label="Дія із замовленням ${esc(o.order_no)}"><option value="">Виберіть дію…</option>${L.map(k=>`<option value="${k}">${k==="shipForm"&&this.isPartial(o)?"📦 Відправити решту":this.OACTS[k]}</option>`).join("")}</select>`},
 /* orders list: one main button + «Дії ▾» menu with every action allowed for this status */
 mainAct(o){return o.status==="new"?`<button class="btn sm primary" data-act="a:oconfirm" data-id="${o.id}">✓ Підтвердити</button>`:o.status==="confirmed"?`<button class="btn sm primary" data-act="a:shipForm" data-id="${o.id}">📦 Відправити</button>`:o.status==="shipped"?`<button class="btn sm" data-act="a:odeliver" data-id="${o.id}">✓ Доставлено</button>`:""},
@@ -1841,7 +1840,7 @@ async fillOrders(){const box=$("#ordList");if(!box)return;const q=this.ordQ(),st
 renderOrders(){const box=$("#ordList");if(!box)return;
  const term=String(this.ordTerm||"").trim(),data=this.ordersData||[];
  if(!data.length){box.innerHTML=`<div class="empty"><b>${term?"Нічого не знайдено":"Тут порожньо"}</b>${term?"Спробуйте інший запит.":"Немає замовлень із таким статусом за цей період."}</div>`;return}
- box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th class="oexpth" aria-label="Розгорнути"></th><th>Номер</th><th>Дата</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th>Підтвердити до</th><th>Дата доставки</th><th></th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="confirmed",canRet=o.status==="shipped"||o.status==="completed";return `<tr class="ordrow s-${esc(o.status)}">
+ box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th class="oexpth" aria-label="Розгорнути"></th><th>Номер</th><th>Дата</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th>Підтвердити до</th><th>Дата доставки</th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="confirmed",canRet=o.status==="shipped"||o.status==="completed";return `<tr class="ordrow s-${esc(o.status)}">
  <td class="oexpcell"><button type="button" class="oexp" data-act="a:orowexp" data-id="${o.id}" aria-expanded="false" aria-controls="od-${o.id}" title="Розгорнути деталі">▸</button></td>
  <td class="onocell"><a class="textlink" href="#/admin/order/${o.id}" title="${o.user_id?"Покупець з акаунтом":"Гість (без акаунта)"}"><b>${esc(o.order_no)}</b></a>${o.user_id?' <span class="oacc" title="Покупець з акаунтом">👤</span>':""}<div class="opay">${Admin.payPill(o)}</div></td>
  <td class="small">${new Date(o.created_at).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td>
@@ -1851,18 +1850,10 @@ renderOrders(){const box=$("#ordList");if(!box)return;
  <td>${Admin.statusBadge(o)}${o.status==="returned"&&o.return_reason?`<div class="small" style="margin-top:4px;color:#9a3d2a">↩ ${esc(o.return_reason)}</div>`:""}
  ${Admin.delivNote(o,true)}</td>
  <td class="odates">${Admin.cbCell(o)}</td>
- <td class="odates">${Admin.datesCell(o,true)}</td>
- <td><div class="acts">${Admin.actSelect(o)}</div></td></tr>
- <tr class="odetrow s-${esc(o.status)}" id="od-${o.id}" hidden><td colspan="10"><div class="odet"><div><h4>Покупець</h4><div class="small">${c.phone?`📞 <a href="tel:${esc(String(c.phone).replace(/[^+\d]/g,""))}">${esc(c.phone)}</a><br>`:""}${c.email?`✉️ ${esc(c.email)}<br>`:""}🚚 ${esc(c.delivery||"")}<br>📍 ${esc([c.address,c.city,c.state,c.zip].filter(Boolean).join(", "))}<br>💳 ${esc(c.payment||"")}${(o.shipments||[]).length<2&&!Admin.isPartial(o)&&(o.tracking_number||o.carrier)?`<br>📦 ${esc(o.carrier||"")}${o.tracking_number?` · ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)}</a>`:esc(o.tracking_number)+' <span class="muted">(не відстежується)</span>'}`:""}`:""}${c.comment?`<br>💬 ${esc(c.comment)}`:""}</div></div>
+ <td class="odates">${Admin.datesCell(o,true)}</td></tr>
+ <tr class="odetrow s-${esc(o.status)}" id="od-${o.id}" hidden><td colspan="9"><div class="odet"><div><h4>Покупець</h4><div class="small">${c.phone?`📞 <a href="tel:${esc(String(c.phone).replace(/[^+\d]/g,""))}">${esc(c.phone)}</a><br>`:""}${c.email?`✉️ ${esc(c.email)}<br>`:""}🚚 ${esc(c.delivery||"")}<br>📍 ${esc([c.address,c.city,c.state,c.zip].filter(Boolean).join(", "))}<br>💳 ${esc(c.payment||"")}${(o.shipments||[]).length<2&&!Admin.isPartial(o)&&(o.tracking_number||o.carrier)?`<br>📦 ${esc(o.carrier||"")}${o.tracking_number?` · ${trackUrl(o.carrier,o.tracking_number)?`<a class="textlink" href="${esc(trackUrl(o.carrier,o.tracking_number))}" target="_blank" rel="noopener">${esc(o.tracking_number)}</a>`:esc(o.tracking_number)+' <span class="muted">(не відстежується)</span>'}`:""}`:""}${c.comment?`<br>💬 ${esc(c.comment)}`:""}</div></div>
   <div><h4>Товари</h4><div class="small">${(o.items||[]).map(i=>{const lv=Admin.liveQ(i);return `${lv?"":"<s>"}${esc(i.name)}${i.opt?` <span class="muted">(${esc(optStr(i.opt,prod(i.id)))})</span>`:""}${i.sku?` <span class="muted">· ${esc(i.sku)}</span>`:""} × ${lv||+i.qty||0} — ${money((+i.price||0)*lv)}${lv?"":"</s>"}${+i.cancelled_qty?` <span class="ocnote">✕ скасовано ${+i.cancelled_qty}</span>`:""}`}).join("<br>")}${(o.shipments||[]).length>1||Admin.isPartial(o)?Admin.pkgList(o,true):""}</div></div>
-  <div class="odetlink"><a class="btn sm" href="#/admin/order/${o.id}">Відкрити замовлення →</a></div></div></td></tr>
- <tr class="shiprow" id="ship-${o.id}" hidden><td colspan="10">${Admin.shipFormHtml(o,true)}</td></tr>
- ${o.status==="shipped"?`<tr class="shiprow" id="delay-${o.id}" hidden><td colspan="10">${Admin.delayForm(o)}</td></tr>`:""}
- <tr class="shiprow" id="ret-${o.id}" hidden><td colspan="10"><form class="shipform" data-form="ret" data-id="${o.id}"><b>Повернення ${esc(o.order_no)}</b>
- <select class="field" name="reason">${Admin.RREASONS.map(x=>`<option>${x}</option>`).join("")}</select>
- <input class="field" name="note" placeholder="Коментар (необов’язково)" maxlength="200" autocomplete="off">
- <button class="btn primary sm">Оформити повернення</button><button type="button" class="btn sm ghost" data-act="a:retCancel" data-id="${o.id}">Скасувати</button>
- <span class="help">Товари з цього замовлення автоматично повернуться на склад.</span></form></td></tr>`}).join("")}</tbody></table></div><p class="help">Натисніть на ім’я покупця, щоб побачити контакти й адресу. 🖨 — пакувальний лист.</p>`},
+  <div class="odetlink"><a class="btn sm" href="#/admin/order/${o.id}">Відкрити замовлення →</a></div></div></td></tr>`}).join("")}</tbody></table></div><p class="help">▸ — розгорнути деталі. Дії із замовленням (підтвердити, відправити, перенести дату, скасувати) — на сторінці замовлення: натисніть на його номер.</p>`},
 slip(id){const o=this.ordersData.find(x=>x.id===+id);if(!o)return;const c=o.customer||{},st=S.settings;
  let el=$("#printArea");if(!el){el=document.createElement("div");el.id="printArea";document.body.appendChild(el)}
  el.innerHTML=`<div class="slipwrap"><div class="slipbar noprint"><b>Пакувальний лист</b><span><button class="btn primary sm" data-act="a:print">🖨 Друкувати</button> <button class="btn sm" data-act="a:slipClose">Закрити</button></span></div>
@@ -1950,17 +1941,12 @@ async shipSubmit(f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);
  toast(data.all_shipped?"Відправлено"+(data.package>1?` · усі ${data.package} посилки`:"")+(tracking?" · трек "+tracking:""):`Посилку ${data.package} відправлено · решту відправте окремо`);
  this.afterOrderChange(id)},
 /* order page: action bar under the header — confirm (with the confirm-by deadline) and move the delivery date */
-ordTopBar(o){const s=o.status,t=this.nyToday();if(!["new","confirmed","shipped"].includes(s))return"";
- const e=this.estDelivery(o),B=[];let info="";
- if(s==="new"){const cb=this.confirmBy(o),late=cb<t;info=`<span class="odl ${late?"late":cb===t?"soon":""}">⏳ Підтвердіть до <b>${this.day(cb)}</b>${late?" · прострочено":cb===t?" · сьогодні":""}</span>`;
-  B.push(`<button class="btn sm primary" data-act="a:oconfirm" data-id="${o.id}">✓ Підтвердити замовлення</button>`)}
- else if(s==="confirmed")B.push(`<button class="btn sm primary" data-act="a:shipForm" data-id="${o.id}">📦 ${this.isPartial(o)?"Відправити решту":"Відправити"}</button>`);
- else B.push(`<button class="btn sm" data-act="a:odeliver" data-id="${o.id}">✓ Доставлено</button>`);
- B.push(s==="shipped"?`<button class="btn sm" data-act="a:delayForm" data-id="${o.id}">⏰ Перенести дату доставки</button>`:`<button class="btn sm" data-act="a:etaMove" data-id="${o.id}">📅 Перенести дату доставки</button>`);
- if((s==="new"||s==="confirmed")&&!this.isPartial(o))B.push(`<button class="btn sm ghost" data-act="a:ocancel" data-id="${o.id}">✕ Скасувати</button>`);
- const dl=`<span class="odl">🚚 Доставка: <b>${e.est?"~":""}${this.day(e.d)}</b>${e.est?` <span class="muted">(орієнтовно)</span>`:""}</span>`;
- return `<div class="panel otopbar"><div class="otopinfo">${info}${dl}</div><div class="acts">${B.join("")}</div>
-  ${s==="shipped"?`<div id="delay-${o.id}" hidden style="margin-top:12px">${this.delayForm(o)}</div>`:`<form class="shipform" id="etamove-${o.id}" data-form="oetamove" data-id="${o.id}" hidden style="margin-top:12px"><label class="small etarow">📅 Нова очікувана дата доставки<input class="field" type="date" name="eta" value="${esc(o.delivery_eta||e.d)}" min="${esc(this.addDays(t,1))}" required></label><button class="btn primary sm">Зберегти дату</button><button type="button" class="btn sm ghost" data-act="a:etaMove" data-id="${o.id}">Скасувати</button><span class="help">Покупець побачить нову дату в «My orders» і на «Track your order». Якщо посилка вже в дорозі й запізнюється — після відправки скористайтеся «⏰ Перенести дату доставки» з причиною.</span></form>`}</div>`},
+ordTopBar(o){const s=o.status,t=this.nyToday();if(!["new","confirmed","shipped","completed"].includes(s))return"";
+ const e=this.estDelivery(o);let info="";
+ if(s==="new"){const cb=this.confirmBy(o),late=cb<t;info=`<span class="odl ${late?"late":cb===t?"soon":""}">⏳ Підтвердіть до <b>${this.day(cb)}</b>${late?" · прострочено":cb===t?" · сьогодні":""}</span>`}
+ const dl=s==="completed"?(o.delivered_at?`<span class="odl ok">✓ Доставлено ${this.day(o.delivered_at)}</span>`:""):`<span class="odl">🚚 Доставка: <b>${e.est?"~":""}${this.day(e.d)}</b>${e.est?` <span class="muted">(орієнтовно)</span>`:""}</span>`;
+ return `<div class="panel otopbar"><div class="otopinfo">${info}${dl}</div><div class="acts">${this.actSelect(o,true)}</div>
+  ${s==="completed"?"":s==="shipped"?`<div id="delay-${o.id}" hidden style="margin-top:12px">${this.delayForm(o)}</div>`:`<form class="shipform" id="etamove-${o.id}" data-form="oetamove" data-id="${o.id}" hidden style="margin-top:12px"><label class="small etarow">📅 Нова очікувана дата доставки<input class="field" type="date" name="eta" value="${esc(o.delivery_eta||e.d)}" min="${esc(this.addDays(t,1))}" required></label><button class="btn primary sm">Зберегти дату</button><button type="button" class="btn sm ghost" data-act="a:etaMove" data-id="${o.id}">Скасувати</button><span class="help">Покупець побачить нову дату в «My orders» і на «Track your order». Якщо посилка вже в дорозі й запізнюється — після відправки скористайтеся «⏰ Перенести дату доставки» з причиною.</span></form>`}</div>`},
 etaMoveSubmit(f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id),v=f.eta.value;if(!o)return;if(!v)return toast("Вкажіть дату");if(v<=this.nyToday())return toast("Дата має бути пізніше сьогоднішньої");
  if(!confirm(`Перенести очікувану доставку ${o.order_no} на ${this.day(v)}?`))return;return this.orderUpdate(id,{delivery_eta:v},"Дату доставки змінено ✓")},
 async ordBadge(){const{count}=await sb.from("orders").select("id",{count:"exact",head:true}).eq("status","new");const b=$("#ordBadge");if(b){b.textContent=count||"";b.title=count?`Нових непідтверджених замовлень: ${count}`:""}},

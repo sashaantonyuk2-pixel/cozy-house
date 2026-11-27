@@ -69,17 +69,12 @@ async shipSubmit(f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id);
  toast(data.all_shipped?"Відправлено"+(data.package>1?` · усі ${data.package} посилки`:"")+(tracking?" · трек "+tracking:""):`Посилку ${data.package} відправлено · решту відправте окремо`);
  this.afterOrderChange(id)},
 /* order page: action bar under the header — confirm (with the confirm-by deadline) and move the delivery date */
-ordTopBar(o){const s=o.status,t=this.nyToday();if(!["new","confirmed","shipped"].includes(s))return"";
- const e=this.estDelivery(o),B=[];let info="";
- if(s==="new"){const cb=this.confirmBy(o),late=cb<t;info=`<span class="odl ${late?"late":cb===t?"soon":""}">⏳ Підтвердіть до <b>${this.day(cb)}</b>${late?" · прострочено":cb===t?" · сьогодні":""}</span>`;
-  B.push(`<button class="btn sm primary" data-act="a:oconfirm" data-id="${o.id}">✓ Підтвердити замовлення</button>`)}
- else if(s==="confirmed")B.push(`<button class="btn sm primary" data-act="a:shipForm" data-id="${o.id}">📦 ${this.isPartial(o)?"Відправити решту":"Відправити"}</button>`);
- else B.push(`<button class="btn sm" data-act="a:odeliver" data-id="${o.id}">✓ Доставлено</button>`);
- B.push(s==="shipped"?`<button class="btn sm" data-act="a:delayForm" data-id="${o.id}">⏰ Перенести дату доставки</button>`:`<button class="btn sm" data-act="a:etaMove" data-id="${o.id}">📅 Перенести дату доставки</button>`);
- if((s==="new"||s==="confirmed")&&!this.isPartial(o))B.push(`<button class="btn sm ghost" data-act="a:ocancel" data-id="${o.id}">✕ Скасувати</button>`);
- const dl=`<span class="odl">🚚 Доставка: <b>${e.est?"~":""}${this.day(e.d)}</b>${e.est?` <span class="muted">(орієнтовно)</span>`:""}</span>`;
- return `<div class="panel otopbar"><div class="otopinfo">${info}${dl}</div><div class="acts">${B.join("")}</div>
-  ${s==="shipped"?`<div id="delay-${o.id}" hidden style="margin-top:12px">${this.delayForm(o)}</div>`:`<form class="shipform" id="etamove-${o.id}" data-form="oetamove" data-id="${o.id}" hidden style="margin-top:12px"><label class="small etarow">📅 Нова очікувана дата доставки<input class="field" type="date" name="eta" value="${esc(o.delivery_eta||e.d)}" min="${esc(this.addDays(t,1))}" required></label><button class="btn primary sm">Зберегти дату</button><button type="button" class="btn sm ghost" data-act="a:etaMove" data-id="${o.id}">Скасувати</button><span class="help">Покупець побачить нову дату в «My orders» і на «Track your order». Якщо посилка вже в дорозі й запізнюється — після відправки скористайтеся «⏰ Перенести дату доставки» з причиною.</span></form>`}</div>`},
+ordTopBar(o){const s=o.status,t=this.nyToday();if(!["new","confirmed","shipped","completed"].includes(s))return"";
+ const e=this.estDelivery(o);let info="";
+ if(s==="new"){const cb=this.confirmBy(o),late=cb<t;info=`<span class="odl ${late?"late":cb===t?"soon":""}">⏳ Підтвердіть до <b>${this.day(cb)}</b>${late?" · прострочено":cb===t?" · сьогодні":""}</span>`}
+ const dl=s==="completed"?(o.delivered_at?`<span class="odl ok">✓ Доставлено ${this.day(o.delivered_at)}</span>`:""):`<span class="odl">🚚 Доставка: <b>${e.est?"~":""}${this.day(e.d)}</b>${e.est?` <span class="muted">(орієнтовно)</span>`:""}</span>`;
+ return `<div class="panel otopbar"><div class="otopinfo">${info}${dl}</div><div class="acts">${this.actSelect(o,true)}</div>
+  ${s==="completed"?"":s==="shipped"?`<div id="delay-${o.id}" hidden style="margin-top:12px">${this.delayForm(o)}</div>`:`<form class="shipform" id="etamove-${o.id}" data-form="oetamove" data-id="${o.id}" hidden style="margin-top:12px"><label class="small etarow">📅 Нова очікувана дата доставки<input class="field" type="date" name="eta" value="${esc(o.delivery_eta||e.d)}" min="${esc(this.addDays(t,1))}" required></label><button class="btn primary sm">Зберегти дату</button><button type="button" class="btn sm ghost" data-act="a:etaMove" data-id="${o.id}">Скасувати</button><span class="help">Покупець побачить нову дату в «My orders» і на «Track your order». Якщо посилка вже в дорозі й запізнюється — після відправки скористайтеся «⏰ Перенести дату доставки» з причиною.</span></form>`}</div>`},
 etaMoveSubmit(f){const id=+f.dataset.id,o=this.ordersData.find(x=>x.id===id),v=f.eta.value;if(!o)return;if(!v)return toast("Вкажіть дату");if(v<=this.nyToday())return toast("Дата має бути пізніше сьогоднішньої");
  if(!confirm(`Перенести очікувану доставку ${o.order_no} на ${this.day(v)}?`))return;return this.orderUpdate(id,{delivery_eta:v},"Дату доставки змінено ✓")},
 async ordBadge(){const{count}=await sb.from("orders").select("id",{count:"exact",head:true}).eq("status","new");const b=$("#ordBadge");if(b){b.textContent=count||"";b.title=count?`Нових непідтверджених замовлень: ${count}`:""}},
