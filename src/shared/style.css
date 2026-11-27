@@ -1007,3 +1007,11 @@ footer .copy{padding-bottom:84px}
 .ocvia .chip2:has(input:disabled){opacity:.45;cursor:not-allowed}
 .ocform input[name=subject][hidden]{display:none}
 .field.invalid{border-color:#c0563a!important;box-shadow:0 0 0 3px #fbe3dc}
+/* orders list: «Терміни» column */
+.t tr.ordrow td.odates{font-size:12px;line-height:1.35}
+.odl{display:block;color:#4a564c;white-space:nowrap}
+.odl.late{color:#b0442c;font-weight:700}.odl.soon{color:#a0620f;font-weight:600}.odl.ok{color:#5f7a62}
+.oddates{margin:6px 0 2px}.oddates .odl{font-size:13px}
+@media (min-width:1500px){.t tr.ordrow td.oitemscell{max-width:230px}}@media (min-width:1800px){.t tr.ordrow td.oitemscell{max-width:380px}}.t tr.ordrow td.oitemscell{max-width:120px}
+@media (min-width:1500px){.t tr.ordrow td.oitemscell{max-width:230px}}@media (min-width:1800px){.t tr.ordrow td.oitemscell{max-width:380px}}
+.t tr.ordrow select.actsel{min-width:0;width:150px}
