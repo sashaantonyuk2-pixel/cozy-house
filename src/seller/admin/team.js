@@ -8,12 +8,13 @@ Object.assign(Admin,{
 ROLES:{owner:"Власник",manager:"Менеджер",warehouse:"Склад"},
 ROLE_HELP:{owner:"усе, включно з командою, налаштуваннями та грошима",manager:"замовлення, повернення, чат, товари, категорії, відгуки, аналітика — без налаштувань магазину, команди й грошей",warehouse:"лише замовлення (підтвердити, відправити, трек-номер, пакувальний лист) і повернення товарів"},
 role(){return Seller.role||"owner"},
+setTabs(cur){return `<nav class="subtabs" aria-label="Розділ «Налаштування»"><a href="#/admin/settings" class="${cur==="shop"?"on":""}">🏪 Магазин</a><a href="#/admin/settings/users" class="${cur==="users"?"on":""}">👤 Користувачі</a></nav>`},
 isOwner(){return this.role()==="owner"},
 canPage(k){const r=this.role();if(r==="owner")return true;if(r==="warehouse")return ["orders","order","returns"].includes(k);return !["team","settings","backup"].includes(k)},
 noAccess(){return `<div class="empty"><b>Немає доступу</b>Цей розділ доступний іншій ролі. Ваша роль: ${esc(this.ROLES[this.role()]||this.role())}.</div>`},
 joinUrl(code){return SITE_URL.replace(/\/?$/,"/")+"seller/#/join?code="+encodeURIComponent(code)},
 team(){setTimeout(()=>this.fillTeam(),0);
- return `<div class="ahead"><div><h1>Команда</h1><p class="muted" style="margin:4px 0 0">Хто ще може входити в Seller Central і що їм дозволено.</p></div></div>
+ return `<div class="ahead"><div><h1>Користувачі</h1><p class="muted" style="margin:4px 0 0">Хто ще може входити в Seller Central і що їм дозволено.</p></div></div>
  <form class="panel teaminv" data-form="teaminv" novalidate><h2 style="margin-top:0">Запросити користувача</h2>
   <div class="teamrow"><input class="field" name="email" type="email" placeholder="email@example.com" maxlength="200" autocomplete="off" required aria-label="Email">
   <select class="field" name="role" aria-label="Роль">${Object.entries(this.ROLES).reverse().map(([k,v])=>`<option value="${k}" ${k==="manager"?"selected":""}>${v}</option>`).join("")}</select>

@@ -2,20 +2,21 @@
    Each section lives in its own file in this folder and adds its methods to Admin. */
 const Admin={draft:null,sel:new Set(),
 nav(cur){/* menu groups: daily work on top, analysis and system at the bottom; ["#","Name"] = group label (hidden on phones) */
- const L=[["","📊","Дашборд"],["#","Продажі"],["orders","🧾","Замовлення"],["returns","🔁","Повернення"],["#","Спілкування"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["reviews","⭐","Відгуки"],["#","Каталог"],["products","📦","Товари"],["categories","🗂","Категорії"],["suppliers","🏭","Постачальники"],["#","Аналіз і маркетинг"],["analytics","📈","Аналітика"],["customers","👥","Покупці"],["seo","🔎","SEO"],["#","Система"],["settings","⚙️","Налаштування"],["team","🔑","Команда"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
+ const L=[["","📊","Дашборд"],["#","Продажі"],["orders","🧾","Замовлення"],["returns","🔁","Повернення"],["#","Спілкування"],["chat","💬","Чат"],["messages","✉️","Повідомлення"],["reviews","⭐","Відгуки"],["#","Каталог"],["products","📦","Товари"],["categories","🗂","Категорії"],["suppliers","🏭","Постачальники"],["#","Аналіз і маркетинг"],["analytics","📈","Аналітика"],["customers","👥","Покупці"],["seo","🔎","SEO"],["#","Система"],["settings","⚙️","Налаштування"],["log","🛡","Журнал дій"],["backup","💾","Резервні копії"]];
  const V=L.filter(([k])=>k==="#"||this.canPage(k)&&(k!==""||this.role()!=="warehouse")&&(k!=="log"||this.role()!=="warehouse")).filter((x,i,a)=>x[0]!=="#"||(a[i+1]&&a[i+1][0]!=="#"));
  return `<nav class="aside" id="adminNav"><button type="button" class="navhide" data-act="a:navToggle" title="Сховати меню" aria-label="Сховати меню">«<span> Сховати меню</span></button>${V.map(([k,i,n])=>k==="#"?`<div class="navgrp">${i}</div>`:`<a href="#/admin${k?"/"+k:""}" class="${cur===k?"on":""}">${i} ${n}${k==="orders"?`<span class="navbadge warn" id="ordBadge"></span>`:k==="messages"?`<span class="navbadge warn" id="msgBadge"></span>`:k==="reviews"?`<span class="navbadge warn" id="revBadge"></span>`:k==="returns"?`<span class="navbadge warn" id="retBadge"></span>`:k==="chat"?`<span class="navbadge warn" id="chatBadge"></span>`:k==="products"?(()=>{const n=Admin.lowList().length;return n?`<span class="navbadge warn" title="Закінчуються або немає">${n}</span>`:""})():""}</a>`).join("")}<hr><a href="${SITE_URL}" target="_blank" rel="noopener">🏠 Відкрити магазин ↗</a><a href="#" data-act="a:signout">🚪 Вийти</a></nav>`},
 wrap(cur,html){return `<div class="shell admin ${LS.get("navOff",false)?"navoff":""}">${this.nav(cur)}<div class="navrail"><button type="button" data-act="a:navToggle" title="Показати меню" aria-label="Показати меню" aria-controls="adminNav">☰</button></div><div>${html}</div></div>`},
 view(parts,q){const k=parts[1]||"";
  if(this.role()==="warehouse"&&(!k||k==="log")){location.hash="#/admin/orders";return""}
  if(k&&!this.canPage(k))return this.wrap("",this.noAccess());
- if(k==="team")return this.wrap("team",this.team());
+ if(k==="team"){location.hash="#/admin/settings/users";return""}
+ if(k==="settings"&&parts[2]==="users")return this.wrap("settings",this.setTabs("users")+this.team());
  if(k!=="products"&&this.pendIds&&this.pendIds().length){const n=this.pendIds().length;if(confirm(`У таблиці товарів є незбережені зміни (${n}). Зберегти їх?\n\nOK — зберегти, «Скасувати» — відкинути зміни.`))this.pendSave();else{this.pendDiscard();toast("Незбережені зміни відкинуто")}}
  if(k==="products")return this.wrap("products",this.prodTabs("list")+this.products(q));
  if(k==="product")return this.wrap("products",this.editor(parts[2]));
  if(k==="categories")return this.wrap("categories",this.categories());
  if(k==="attrs")return this.wrap("products",this.prodTabs("attrs")+this.attrs());
- if(k==="settings")return this.wrap("settings",this.settings());
+ if(k==="settings")return this.wrap("settings",this.setTabs("shop")+this.settings());
  if(k==="backup")return this.wrap("backup",this.backup());
  if(k==="orders")return this.wrap("orders",this.orders(q));
  if(k==="order")return this.wrap("orders",this.orderPage(parts[2]));
