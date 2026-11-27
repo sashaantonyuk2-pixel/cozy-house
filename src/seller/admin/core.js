@@ -84,6 +84,8 @@ click(a,el,e){const id=el.dataset.id;const need=()=>{if(!this.sel.size){toast("�
  oaddrEdit:()=>{const f=$('[data-form="oaddr"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
  orefundOpen:()=>{const f=$('[data-form="orefund"]');if(f){f.hidden=!f.hidden;if(!f.hidden)f.querySelector("input").focus()}},
  ocopy:()=>copy(el.dataset.text||""),
+ ocontact:()=>{const p=$("#ocontact");if(!p)return;p.hidden=!p.hidden;el.setAttribute("aria-expanded",!p.hidden);if(!p.hidden){const o=this.ordersData.find(x=>x.id===+id);if(o)this.contactExtras(o);p.scrollIntoView({block:"nearest",behavior:"smooth"})}},
+ octpl:()=>{const o=this.ordersData.find(x=>x.id===+id),f=el.closest("form");if(!o||!f)return;const[sj,b]=this.mailText(o,el.dataset.t);f.subject.value=sj;f.body.value=b;f.querySelectorAll(".octpl .chip2").forEach(x=>x.classList.toggle("on",x===el))},
  omail:()=>{const o=this.ordersData.find(x=>x.id===+id);if(o)location.href=this.mailFor(o,el.dataset.t)},
  revset:()=>{const v=el.dataset.v;el.disabled=true;sb.from("reviews").update({status:v}).eq("id",+id).then(({error})=>{if(error){el.disabled=false;return toast("⚠️ "+error.message)}toast(v==="approved"?"Відгук опубліковано ✓":v==="rejected"?"Відгук відхилено":"Відгук знято з публікації");const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"pending";this.fillRevs(st);this.revBadge()})},
  revdel:()=>{if(!confirm("Видалити відгук назавжди? Це не можна скасувати."))return;sb.from("reviews").delete().eq("id",+id).then(({error})=>{if(error)return toast("⚠️ "+error.message);toast("Відгук видалено");const st=new URLSearchParams(location.hash.split("?")[1]||"").get("status")||"pending";this.fillRevs(st);this.revBadge()})},
@@ -135,6 +137,7 @@ submit(k,f){
  if(k==="dashrange")return this.dashRange(f);
  if(k==="supadd")return this.supAdd(f);
  if(k==="supplier")return this.supplierSave(f);
+ if(k==="ocmail"){const o=this.ordersData.find(x=>x.id===+f.dataset.id),c=(o||{}).customer||{};if(!c.email)return toast("У замовленні немає email");if(!f.body.value.trim())return toast("Напишіть текст листа");location.href=`mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(f.subject.value.trim())}&body=${encodeURIComponent(f.body.value)}`;return}
  if(k==="opay"||k==="orefund"||k==="onote"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}

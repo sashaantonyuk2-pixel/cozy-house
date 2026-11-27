@@ -994,3 +994,12 @@ footer .copy{padding-bottom:84px}
 .tablewrap:has(.actmenu[open]){overflow:visible}
 .t tr.ordrow select.actsel{width:auto;min-width:190px;padding:5px 28px 5px 10px;font-size:12.5px;border-color:#cfd3cc}
 .t tr.ordrow select.actsel:focus{border-color:var(--forest)}
+/* seller order page: contact the buyer */
+.ocontact{margin-bottom:16px}
+.occh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.ocform{display:grid;gap:8px}
+.octpl{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.octpl .chip2{margin:0;padding:4px 11px;font-size:12.5px}
+.ocform textarea{min-height:170px;font-family:inherit}
+.ocform .acts{align-items:center}
+.ocform .acts{gap:12px;flex-wrap:wrap}
