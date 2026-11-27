@@ -504,12 +504,12 @@ function stateCode(v){v=String(v||"").trim();if(!v)return"";const u=v.toUpperCas
 
 /* ===== order tracking ===== */
 const fmtDay=s=>{if(!s)return"";const[y,m,d]=String(s).slice(0,10).split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})};
-function payLine(o){const k=o.payment_status;if(!k||o.status==="cancelled")return"";return k==="unpaid"?`<div class="otrk-pay unpaid">💳 Awaiting payment — we’ll email you a secure payment link. Questions? <a class="textlink" href="#/contacts">Contact us</a>.</div>`:k==="paid"?`<div class="otrk-pay paid">💳 Payment received — thank you!</div>`:`<div class="otrk-pay">💳 ${k==="refunded"?"Refunded":"Partially refunded"}. Refunds can take 5–10 business days to appear.</div>`}
+function payLine(o){const k=o.payment_status;if(!k||o.status==="cancelled")return"";return k==="unpaid"?"":k==="paid"?`<div class="otrk-pay paid">💳 Payment received — thank you!</div>`:`<div class="otrk-pay">💳 ${k==="refunded"?"Refunded":"Partially refunded"}. Refunds can take 5–10 business days to appear.</div>`}
 function orderTracker(o){
  if(o.status==="cancelled"||o.status==="returned")return payLine(o)+ `<div class="otrk-off">${o.status==="cancelled"?"This order was cancelled."+(["paid","partially_refunded"].includes(o.payment_status)?" Your payment will be refunded to the original payment method within 5 business days.":""):"This order was returned."}${o.status==="returned"?" Your refund is being processed.":""}</div>`;
- const steps=[["new","Pending"],["confirmed","Unshipped"],["shipped","Shipped"],["completed","Delivered"]],paid=["paid","partially_refunded"].includes(o.payment_status);
+ const steps=[["new","Ordered"],["confirmed","Unshipped"],["shipped","Shipped"],["completed","Delivered"]],paid=["paid","partially_refunded"].includes(o.payment_status);
  const P=o.shipments||[],part=o.status==="confirmed"&&P.length>0;
- const idx=o.status==="completed"?3:o.status==="shipped"||part?2:o.status==="confirmed"||(o.status==="new"&&paid)?1:0;
+ const idx=o.status==="completed"?3:o.status==="shipped"||part?2:1;
  const tu=o.tracking_number?trackUrl(o.carrier,o.tracking_number):"";
  const pk=P.length>1||part?`<div class="otrk-pkgs">${P.map(s=>{const u=trackUrl(s.carrier,s.tracking);return `<div class="otrk-pkg"><div><b>Package ${s.n}${part?"":" of "+P.length}</b> <span class="muted small">· shipped ${fmtDate(s.shipped_at)}${s.eta&&o.status!=="completed"?` · arriving ${fmtDay(s.eta)}`:""}</span></div>
   <div class="small">${(s.items||[]).map(l=>{const it=(o.items||[])[l.i]||{};return `${esc(it.name||"Item")} × ${l.qty}`}).join(", ")}</div>

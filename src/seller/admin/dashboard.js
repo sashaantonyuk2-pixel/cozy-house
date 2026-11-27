@@ -76,7 +76,7 @@ async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISO
  const op=OP.data||[],cnt=s=>op.filter(o=>o.status===s).length;
  set("tOpen",String(cnt("new")+cnt("confirmed")),"",`<div class="dbrows"><a href="#/admin/orders?status=new"><span>Нові</span><b>${cnt("new")}</b></a><a href="#/admin/orders?status=confirmed"><span>Підтверджені</span><b>${cnt("confirmed")}</b></a><a href="#/admin/orders?status=shipped"><span>У дорозі</span><b>${cnt("shipped")}</b></a></div>`);
  const up=UP.data||[],paidCur=ord.filter(o=>live(o)&&inCur(o.created_at)&&["paid","partially_refunded"].includes(o.payment_status));
- set("tPay",money(sum(paidCur,"paid_amount")),"отримано за період",`<div class="dbrows"><a href="#/admin/orders?status=unpaid"><span>Очікує оплати</span><b>${up.length?money(sum(up)):"—"}</b></a></div>`);
+ set("tPay",money(sum(paidCur,"paid_amount")),"отримано за період","");
  const act=S.products.filter(p=>p.active),thr=this.lowN(),out=act.filter(p=>p.stock<=0).length,low=act.filter(p=>p.stock>0&&p.stock<=thr).length;
  set("tStock",String(act.length),"товарів на сайті",`<div class="dbrows"><a href="#/admin/products?stock=low"><span>Закінчуються</span><b class="${low?"warn":""}">${low}</b></a><a href="#/admin/products?stock=out"><span>Немає</span><b class="${out?"bad":""}">${out}</b></a></div>`);
  const rv=S.reviews||[],avg=rv.length?rv.reduce((s,r)=>s+(+r.rating||0),0)/rv.length:0,pend=(RV.data||[]).length;
@@ -101,7 +101,6 @@ async fillDash(){const R=this.dRange(),pf=R.prevFrom.toISOString(),to=R.to.toISO
  if(unread.length)A.push(["hot","Відповісти в чаті",`${unread.length} ${unread.length===1?"розмова":"розмов"} без відповіді`,"#/admin/chat"]);
  const rq=(RQ&&RQ.count)||0;if(rq)A.push(["hot","Заявки на повернення",`${rq} ${rq===1?"нова заявка":"нових заявок"} — перегляньте фото й вирішіть`,"#/admin/returns"]);
  if(nm)A.push(["","Нові повідомлення",`${nm} з форми «Contact us»`,"#/admin/messages"]);
- if(up.length)A.push(["warn","Очікує оплати",`${up.length} замовл. на ${money(sum(up))}`,"#/admin/orders?status=unpaid"]);
  if(pend)A.push(["","Відгуки на модерації",`${pend} ${pend===1?"новий відгук":"нових відгуків"}`,"#/admin/reviews"]);
  if(low+out)A.push(["warn","Поповнити склад",`${low} закінчуються · ${out} немає в наявності`,"#/admin/products?stock=low"]);
  $("#dbActN").textContent=A.length;

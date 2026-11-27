@@ -4,7 +4,7 @@ Object.assign(Admin,{
 PAY:{unpaid:"Не оплачено",paid:"Оплачено",partially_refunded:"Частково повернено",refunded:"Кошти повернено"},
 PMETHODS:["Payoneer (payment link)","Western Bid","PayPal","Bank transfer","Cash","Other"],/* saved in English — the customer sees it on the invoice */
 PMLABEL:{"Payoneer (payment link)":"Payoneer (посилання на оплату)","Bank transfer":"Банківський переказ","Cash":"Готівка","Other":"Інше"},
-payPill(o){const k=o.payment_status||"unpaid";return `<span class="paypill p-${k}">${k==="paid"?"💳 ":""}${this.PAY[k]}</span>`},
+payPill(o){const k=o.payment_status||"unpaid";if(k==="unpaid")return"";return `<span class="paypill p-${k}">${k==="paid"?"💳 ":""}${this.PAY[k]}</span>`},
 afterOrderChange(id){if($("#ordPage"))this.fillOrder(id);else this.fillOrders();this.ordBadge()},
 orderPage(id){setTimeout(()=>this.fillOrder(id),0);return `<div class="crumbs" style="margin-bottom:8px"><a href="#/admin/orders">← Замовлення</a></div><div id="ordPage"><p class="muted">Завантаження…</p></div>`},
 addrText(c){return [c.name,c.address,[c.city,[c.state,c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", "),"United States"].filter(Boolean).join("\n")},
@@ -47,7 +47,7 @@ async fillOrder(id){
   <div id="ship-${o.id}" hidden>${this.shipFormHtml(o,false)}</div>
   <div id="ret-${o.id}" hidden><form class="shipform stack" data-form="ret" data-id="${o.id}" style="margin-top:12px"><select class="field" name="reason">${this.RREASONS.map(x=>`<option>${x}</option>`).join("")}</select>${this.refundChoice(o,true)}<input class="field" name="note" placeholder="Коментар (необов’язково)" maxlength="200"><button class="btn primary sm">Оформити повернення</button><span class="help">Товари повернуться на склад. Гроші — окремо, у блоці «Оплата».</span></form></div></div>
 
- <div class="panel"><h2>✉️ Лист покупцю</h2><p class="help" style="margin-top:-6px">Відкриває вашу пошту з готовим текстом англійською — перевірте й надішліть.</p><div class="stack" style="gap:6px">${[["pay","Посилання на оплату"],["confirm","Оплату отримано, готуємо"],["ship","Замовлення відправлено"],...(o.delayed_at&&o.status==="shipped"?[["delay","Затримка доставки"]]:[]),["review","Попросити відгук"]].map(([k,l])=>`<button class="btn sm block" data-act="a:omail" data-t="${k}" data-id="${o.id}" ${!c.email?"disabled":""}>${l}</button>`).join("")}${!c.email?`<span class="help">У замовленні немає email.</span>`:""}</div></div>
+ <div class="panel"><h2>✉️ Лист покупцю</h2><p class="help" style="margin-top:-6px">Відкриває вашу пошту з готовим текстом англійською — перевірте й надішліть.</p><div class="stack" style="gap:6px">${[["confirm","Оплату отримано, готуємо"],["ship","Замовлення відправлено"],...(o.delayed_at&&o.status==="shipped"?[["delay","Затримка доставки"]]:[]),["review","Попросити відгук"]].map(([k,l])=>`<button class="btn sm block" data-act="a:omail" data-t="${k}" data-id="${o.id}" ${!c.email?"disabled":""}>${l}</button>`).join("")}${!c.email?`<span class="help">У замовленні немає email.</span>`:""}</div></div>
  </div></div>`},
 mailFor(o,t){const[sj,b]=this.mailText(o,t),c=o.customer||{};return `mailto:${encodeURIComponent(c.email||"")}?subject=${encodeURIComponent(sj)}&body=${encodeURIComponent(b)}`},
 mailText(o,t){const c=o.customer||{},st=S.settings,first=String(c.name||"").split(" ")[0]||"there",items=(o.items||[]).filter(x=>this.liveQ(x)>0).map(x=>`- ${x.name}${x.opt?" ("+optStr(x.opt,prod(x.id))+")":""} x ${this.liveQ(x)}`).join("\n"),track=SITE_URL+"#/track?no="+encodeURIComponent(o.order_no),tu=trackUrl(o.carrier,o.tracking_number),sig=`\n\nWarm regards,\n${st.name}\n${SITE_URL}`;
@@ -104,7 +104,7 @@ orders(q){const st=q.get("status")||"all",per=q.get("period")||"all",so=q.get("s
  const pers=[["all","Увесь час"],["today","Сьогодні"],["7d","Останні 7 днів"],["30d","Останні 30 днів"],["3m","Останні 3 місяці"],["6m","Останні 6 місяців"],...years.map(y=>[y,y+" рік"]),["custom","Свої дати…"]];
  return `<div class="ahead"><h1>Замовлення</h1><button class="btn sm" data-act="a:reloadOrders">↻ Оновити</button></div>
  <div class="ostchips" id="ostChips">${this.OSTAT.map(([k,l,c])=>`<a class="ostchip ${c} ${st===k?"on":""}" href="${this.ordHref({status:k==="all"?"":k,page:""})}">${l} <b data-cnt="${k}">·</b></a>`).join("")}
-  <span class="ostsep"></span><a class="ostchip ${st==="ship"?"on":""}" href="${this.ordHref({status:"ship",page:""})}">📦 Потребують відправлення <b data-cnt="ship">·</b></a><a class="ostchip ${st==="unpaid"?"on":""}" href="${this.ordHref({status:"unpaid",page:""})}">💳 Не оплачені <b data-cnt="unpaid">·</b></a></div>
+  <span class="ostsep"></span><a class="ostchip ${st==="ship"?"on":""}" href="${this.ordHref({status:"ship",page:""})}">📦 Потребують відправлення <b data-cnt="ship">·</b></a></div>
  <form class="shopbar ordbar" data-form="ordbar"><label class="search">${ICON.search}<input id="ordSearch" value="${esc(this.ordTerm)}" placeholder="Пошук: номер, ім’я, телефон або email" autocomplete="off"></label>
   <label class="ordsel"><span>Період</span><select class="field" name="period" data-ach="ordper">${pers.map(([v,l])=>`<option value="${v}" ${per===v?"selected":""}>${l}</option>`).join("")}</select></label>
   <span class="ordcustom" ${per==="custom"?"":"hidden"}><input class="field" type="date" name="from" value="${esc(q.get("from")||"")}" aria-label="Від"><span>–</span><input class="field" type="date" name="to" value="${esc(q.get("to")||"")}" aria-label="До"><button class="btn sm primary">Показати</button></span>
@@ -125,7 +125,7 @@ delivNote(o,ic){if(o.status!=="shipped")return"";const t=this.nyToday();let h=""
  else if(o.delivery_eta===t)h+=`<div class="small owarn" title="Перевірте трекінг. Якщо посилка запізнюється — натисніть «⏰ Затримка».">📦 Доставка сьогодні</div>`;
  return ic?h.replace(/<div class="small (owarn)" title="([^"]*)">(\S+)[^<]*<\/div>/g,'<span class="oicon $1" title="$3 $2">$3</span>'):h},
 /* order page: «Зв’язатися з покупцем» — email with a ready template, call / SMS, site chat and earlier messages */
-contactPanel(o){const c=o.customer||{},ph=String(c.phone||"").replace(/[^+\d]/g,""),tpl=[["blank","Свій текст"],["confirm","Оплату отримано"],["ship","Відправлено"],...(o.delayed_at?[["delay","Затримка доставки"]]:[]),...(this.hasCancelled(o)?[["cancel","Скасовані товари"]]:[]),["pay","Посилання на оплату"],["review","Попросити відгук"]];
+contactPanel(o){const c=o.customer||{},ph=String(c.phone||"").replace(/[^+\d]/g,""),tpl=[["blank","Свій текст"],["confirm","Оплату отримано"],["ship","Відправлено"],...(o.delayed_at?[["delay","Затримка доставки"]]:[]),...(this.hasCancelled(o)?[["cancel","Скасовані товари"]]:[]),["review","Попросити відгук"]];
  return `<div class="panel ocontact" id="ocontact" hidden><div class="occh">
   ${c.email?`<a class="btn sm" href="mailto:${esc(c.email)}">✉️ ${esc(c.email)}</a>`:`<span class="muted small">Email не вказано</span>`}
   <span id="ocChat" class="muted small">Чат на сайті: перевіряю…</span><span id="ocMsgs"></span></div>
@@ -199,7 +199,7 @@ ordersData:[],
 async fillOrders(){const box=$("#ordList");if(!box)return;const q=this.ordQ(),st=q.get("status")||"all",so=q.get("sort")||"new",page=Math.max(1,parseInt(q.get("page"))||1),seq=(this.ordSeq=(this.ordSeq||0)+1);
  const order=so==="old"?["created_at",true]:so==="sum"?["total",true]:so==="sumdesc"?["total",false]:["created_at",false];
  const list=this.ordFilter(sb.from("orders").select("*",{count:"exact"}),q,st).order(order[0],{ascending:order[1]}).order("id",{ascending:false}).range((page-1)*this.ORD_PER,page*this.ORD_PER-1);
- const keys=[...this.OSTAT.map(x=>x[0]),"ship","unpaid"],counts=keys.map(k=>this.ordFilter(sb.from("orders").select("id",{count:"exact",head:true}),q,k));
+ const keys=[...this.OSTAT.map(x=>x[0]),"ship"],counts=keys.map(k=>this.ordFilter(sb.from("orders").select("id",{count:"exact",head:true}),q,k));
  const[res,...cs]=await Promise.all([list,...counts]);if(seq!==this.ordSeq||!$("#ordList"))return;
  cs.forEach((r,i)=>{const b=document.querySelector(`#ostChips [data-cnt="${keys[i]}"]`);if(b)b.textContent=r&&r.count!=null?r.count:"·"});
  if(res.error){box.innerHTML=`<div class="note">Не вдалося завантажити: ${esc(res.error.message)}</div>`;$("#ordPager").innerHTML="";return}
