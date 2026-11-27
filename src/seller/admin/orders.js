@@ -137,15 +137,25 @@ contactPanel(o){const c=o.customer||{},ph=String(c.phone||"").replace(/[^+\d]/g,
   ${c.email?`<a class="btn sm" href="mailto:${esc(c.email)}">✉️ ${esc(c.email)}</a>`:`<span class="muted small">Email не вказано</span>`}
   ${ph?`<a class="btn sm" href="tel:${esc(ph)}">📞 Зателефонувати</a><a class="btn sm" href="sms:${esc(ph)}">💬 SMS</a>`:""}
   <span id="ocChat" class="muted small">Чат на сайті: перевіряю…</span><span id="ocMsgs"></span></div>
-  ${c.email?`<form class="ocform" data-form="ocmail" data-id="${o.id}"><div class="octpl"><span class="muted small">Шаблон:</span>${tpl.map(([k,l],i)=>`<button type="button" class="chip2 ${i?"":"on"}" data-act="a:octpl" data-t="${k}" data-id="${o.id}">${l}</button>`).join("")}</div>
+  <form class="ocform" data-form="ocmail" data-id="${o.id}">
+  <div class="ocvia" role="radiogroup" aria-label="Як написати"><label class="chip2 ocv-chat" title="Перевіряю, чи є чат…"><input type="radio" name="via" value="chat" disabled> 💬 Чат на сайті</label><label class="chip2 ${c.email?"on":""}"><input type="radio" name="via" value="email" ${c.email?"checked":"disabled"}> ✉️ Email</label><span class="muted small ocvianote"></span></div>
+  <div class="octpl"><span class="muted small">Шаблон:</span>${tpl.map(([k,l],i)=>`<button type="button" class="chip2 ${i?"":"on"}" data-act="a:octpl" data-t="${k}" data-id="${o.id}">${l}</button>`).join("")}</div>
   <input class="field" name="subject" maxlength="200" value="${esc(this.mailText(o,"blank")[0])}" aria-label="Тема листа">
   <textarea class="field" name="body" rows="8" aria-label="Текст листа">${esc(this.mailText(o,"blank")[1])}</textarea>
-  <div class="acts"><button class="btn primary sm">✉️ Відкрити лист у пошті</button><span class="help" style="margin:0">Пишіть англійською — покупець з США. Лист відкриється у вашій пошті з адресою покупця, номером замовлення й підписом магазину.</span></div></form>`:""}</div>`},
+  <div class="acts"><button class="btn primary sm ocsend">✉️ Відкрити лист у пошті</button><span class="help ochelp" style="margin:0">Пишіть англійською — покупець з США. Лист відкриється у вашій пошті з адресою покупця, номером замовлення й підписом магазину.</span></div></form></div>`},
+ocVia(f){const v=(f.querySelector("[name=via]:checked")||{}).value||"email";f.querySelectorAll(".ocvia .chip2").forEach(l=>l.classList.toggle("on",l.querySelector("input").checked));
+ f.subject.hidden=v==="chat";f.querySelector(".ocsend").textContent=v==="chat"?"💬 Надіслати в чат":"✉️ Відкрити лист у пошті";
+ f.querySelector(".ochelp").textContent=v==="chat"?"Повідомлення одразу з’явиться в чаті покупця на сайті (з номером замовлення) і в розділі «Чат». Пишіть англійською.":"Пишіть англійською — покупець з США. Лист відкриється у вашій пошті з адресою покупця, номером замовлення й підписом магазину."},
 async contactExtras(o){const c=o.customer||{},em=String(c.email||"").trim().toLowerCase(),box=$("#ocChat"),mb=$("#ocMsgs");if(!box)return;
  const ors=[];if(em)ors.push(`email.ilike.${em.replace(/[,()*]/g,"")}`);if(o.user_id)ors.push(`user_id.eq.${o.user_id}`);
  const[th,ms]=await Promise.all([ors.length?sb.from("chat_threads").select("id,last_at").or(ors.join(",")).order("last_at",{ascending:false}).limit(1):Promise.resolve({data:[]}),
   sb.from("messages").select("id",{count:"exact",head:true}).or([...(em?[`email.ilike.${em.replace(/[,()*]/g,"")}`]:[]),`order_no.eq.${o.order_no}`].join(","))]);
- const t=(th.data||[])[0];if(box)box.innerHTML=t?`<a class="btn sm" href="#/admin/chat?t=${esc(String(t.id))}">💬 Відкрити чат з покупцем</a>`:`<span class="muted small" title="Чат з’явиться, коли покупець напише в «Chat with us» на сайті">Чату на сайті ще немає</span>`;
+ const t=(th.data||[])[0],f=document.querySelector('[data-form="ocmail"]');
+ if(f){const r=f.querySelector('[name=via][value=chat]'),lab=r.closest("label"),note=f.querySelector(".ocvianote");
+  if(t){r.disabled=false;f.dataset.thread=t.id;lab.title="Написати в чат покупця на сайті";if(!c.email){r.checked=true}note.textContent=""}
+  else{lab.title="Покупець ще не писав у чат на сайті";note.textContent=c.email?"Чат недоступний — покупець ще не писав у «Chat with us». Можна написати поштою.":"Немає ні чату, ні email — зателефонуйте покупцю."}
+  this.ocVia(f)}
+ if(box)box.innerHTML=t?`<a class="btn sm" href="#/admin/chat?t=${esc(String(t.id))}">💬 Відкрити чат з покупцем</a>`:`<span class="muted small" title="Чат з’явиться, коли покупець напише в «Chat with us» на сайті">Чату на сайті ще немає</span>`;
  if(mb)mb.innerHTML=ms&&ms.count?`<a class="btn sm" href="#/admin/messages">✉️ Повідомлення з форми: ${ms.count}</a>`:""},
 /* orders list: one dropdown «Виберіть дію…» — the chosen action asks for confirmation (or opens its form) */
 OACTS:{oconfirm:"✓ Підтвердити замовлення",shipForm:"📦 Відправити",odeliver:"✓ Позначити доставленим",delayForm:"⏰ Затримка доставки",retForm:"↩ Оформити повернення",ocancel:"✕ Скасувати замовлення",slip:"🖨 Пакувальний лист",open:"Відкрити замовлення →"},

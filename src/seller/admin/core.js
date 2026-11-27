@@ -137,6 +137,9 @@ submit(k,f){
  if(k==="dashrange")return this.dashRange(f);
  if(k==="supadd")return this.supAdd(f);
  if(k==="supplier")return this.supplierSave(f);
+ if(k==="ocmail"&&(f.querySelector("[name=via]:checked")||{}).value==="chat"){const o=this.ordersData.find(x=>x.id===+f.dataset.id),body=f.body.value.trim(),tid=f.dataset.thread;if(!tid)return toast("Чат недоступний");if(!body)return toast("Напишіть повідомлення");
+  const text=(o&&!body.includes(o.order_no)?`[Order ${o.order_no}] `:"")+body;if(!confirm("Надіслати повідомлення в чат покупця?"))return;const b=f.querySelector(".ocsend");b.disabled=true;
+  sb.from("chat_messages").insert({thread_id:tid,sender:"seller",body:text.slice(0,2000)}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Надіслано в чат ✓");f.body.value=""});return}
  if(k==="ocmail"){const o=this.ordersData.find(x=>x.id===+f.dataset.id),c=(o||{}).customer||{};if(!c.email)return toast("У замовленні немає email");if(!f.body.value.trim())return toast("Напишіть текст листа");location.href=`mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(f.subject.value.trim())}&body=${encodeURIComponent(f.body.value)}`;return}
  if(k==="opay"||k==="orefund"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
@@ -180,3 +183,5 @@ function translit(s){const m={а:"a",б:"b",в:"v",г:"h",ґ:"g",д:"d",е:"e",�
 document.addEventListener("keydown",e=>{const f=e.target.closest&&e.target.closest('[data-form="chatreply"]');if(f&&e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();f.requestSubmit()}});
 /* close an open «Дії ▾» menu when clicking elsewhere or after picking an item */
 document.addEventListener("click",e=>{document.querySelectorAll(".actmenu[open]").forEach(d=>{if(!d.contains(e.target)||e.target.closest(".actlist"))d.removeAttribute("open")})});
+/* contact panel: switching between chat and email */
+document.addEventListener("change",e=>{const t=e.target;if(t.matches&&t.matches('[data-form="ocmail"] [name=via]'))Admin.ocVia(t.form)});
