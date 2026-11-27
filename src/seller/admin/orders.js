@@ -151,13 +151,15 @@ async contactExtras(o){const c=o.customer||{},em=String(c.email||"").trim().toLo
  if(mb)mb.innerHTML=ms&&ms.count?`<a class="btn sm" href="#/admin/messages">✉️ Повідомлення з форми: ${ms.count}</a>`:""},
 /* deadlines: confirm by = 1 business day after the order (US Eastern); delivery = ETA, or an estimate from the shipping method */
 bizAdd(iso,n){const d=new Date(new Date(iso).toLocaleString("en-US",{timeZone:"America/New_York"}));let k=0;while(k<n){d.setDate(d.getDate()+1);if(d.getDay()%6)k++}const z=x=>String(x).padStart(2,"0");return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`},
-confirmBy(o){return this.bizAdd(o.created_at,1)},
-/* orders list «Підтвердити до»: deadline for new orders (red when overdue, amber today); others — a quiet tick */
-cbCell(o){if(o.status!=="new")return ["confirmed","shipped","completed"].includes(o.status)?`<span class="muted small" title="Підтверджено">✓</span>`:`<span class="muted small">—</span>`;
- const t=this.nyToday(),cb=this.confirmBy(o),late=cb<t;return `<span class="odl ${late?"late":cb===t?"soon":""}" title="1 робочий день після оформлення (час США, схід)">${this.day(cb)}${late?" · прострочено":cb===t?" · сьогодні":""}</span>`},
+confirmBy(o){return this.shipBy(o)},
+/* ship-by: 2 business days after the purchase (US Eastern), as promised on the site («ships within 1–2 business days») */
+shipBy(o){return this.bizAdd(o.created_at,2)},
+/* orders list «Відправити до»: 2 business days after the purchase — bold red until the order ships; then a quiet «✓ shipped date» */
+cbCell(o){const s=o.status;if(s==="shipped"||s==="completed")return `<span class="muted small" title="Відправлено">✓ ${o.shipped_at?this.day(o.shipped_at):""}</span>`;if(s!=="new"&&s!=="confirmed")return `<span class="muted small">—</span>`;
+ const t=this.nyToday(),d=this.shipBy(o),late=d<t;return `<span class="shipby" title="Відправте до кінця цього дня: 2 робочі дні після покупки (час США, схід)">${this.day(d)}${late?" · прострочено":d===t?" · сьогодні":""}</span>`},
 estDelivery(o){if(o.delivery_eta)return{d:o.delivery_eta,est:false};const exp=/express/i.test((o.customer||{}).delivery||"");return{d:this.bizAdd(o.created_at,(exp?2:5)+2),est:true}},
 datesCell(o,noCb){const t=this.nyToday(),L=[];
- if(o.status==="new"&&!noCb){const cb=this.confirmBy(o),late=cb<t;L.push(`<span class="odl ${late?"late":cb===t?"soon":""}" title="Підтвердіть замовлення до кінця цього дня (1 робочий день після оформлення)">Підтв. до ${this.day(cb)}${late?" · прострочено":""}</span>`)}
+ if((o.status==="new"||o.status==="confirmed")&&!noCb){const cb=this.shipBy(o),late=cb<t;L.push(`<span class="shipby" title="2 робочі дні після покупки">Відправити до ${this.day(cb)}${late?" · прострочено":""}</span>`)}
  if(o.status==="completed"&&o.delivered_at)L.push(`<span class="odl ok" title="Фактична дата доставки">${this.day(o.delivered_at)}</span>`);
  else if(["new","confirmed","shipped"].includes(o.status)){const e=this.estDelivery(o);L.push(`<span class="odl" title="${e.est?"Орієнтовно, за способом доставки — точну дату вкажіть при відправці":"Очікувана дата доставки"}">${e.est?"~":""}${this.day(e.d)}</span>`)}
  return L.join("")||`<span class="muted small">—</span>`},
@@ -212,7 +214,7 @@ async fillOrders(){const box=$("#ordList");if(!box)return;const q=this.ordQ(),st
 renderOrders(){const box=$("#ordList");if(!box)return;
  const term=String(this.ordTerm||"").trim(),data=this.ordersData||[];
  if(!data.length){box.innerHTML=`<div class="empty"><b>${term?"Нічого не знайдено":"Тут порожньо"}</b>${term?"Спробуйте інший запит.":"Немає замовлень із таким статусом за цей період."}</div>`;return}
- box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th class="oexpth" aria-label="Розгорнути"></th><th>Номер</th><th>Дата</th><th>Підтвердити до</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th>Дата доставки</th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="confirmed",canRet=o.status==="shipped"||o.status==="completed";return `<tr class="ordrow s-${esc(o.status)}">
+ box.innerHTML=`<div class="tablewrap"><table class="t"><thead><tr><th class="oexpth" aria-label="Розгорнути"></th><th>Номер</th><th>Дата</th><th>Відправити до</th><th>Покупець</th><th>Товари</th><th>Сума</th><th>Статус</th><th>Дата доставки</th></tr></thead><tbody>${data.map(o=>{const c=o.customer||{};const canShip=o.status==="confirmed",canRet=o.status==="shipped"||o.status==="completed";return `<tr class="ordrow s-${esc(o.status)}">
  <td class="oexpcell"><button type="button" class="oexp" data-act="a:orowexp" data-id="${o.id}" aria-expanded="false" aria-controls="od-${o.id}" title="Розгорнути деталі">▸</button></td>
  <td class="onocell"><a class="textlink" href="#/admin/order/${o.id}" title="${o.user_id?"Покупець з акаунтом":"Гість (без акаунта)"}"><b>${esc(o.order_no)}</b></a>${o.user_id?' <span class="oacc" title="Покупець з акаунтом">👤</span>':""}<div class="opay">${Admin.payPill(o)}</div></td>
  <td class="small">${new Date(o.created_at).toLocaleString("uk-UA",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td>
