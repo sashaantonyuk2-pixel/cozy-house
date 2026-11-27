@@ -173,3 +173,5 @@ function download(name,text,type){const b=new Blob([text],{type});const a=docume
 function translit(s){const m={а:"a",б:"b",в:"v",г:"h",ґ:"g",д:"d",е:"e",є:"ie",ж:"zh",з:"z",и:"y",і:"i",ї:"i",й:"i",к:"k",л:"l",м:"m",н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"kh",ц:"ts",ч:"ch",ш:"sh",щ:"shch",ь:"",ю:"iu",я:"ia","'":"","’":""};return s.toLowerCase().split("").map(c=>m[c]??c).join("").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)}
 
 document.addEventListener("keydown",e=>{const f=e.target.closest&&e.target.closest('[data-form="chatreply"]');if(f&&e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();f.requestSubmit()}});
+/* close an open «Дії ▾» menu when clicking elsewhere or after picking an item */
+document.addEventListener("click",e=>{document.querySelectorAll(".actmenu[open]").forEach(d=>{if(!d.contains(e.target)||e.target.closest(".actlist"))d.removeAttribute("open")})});
