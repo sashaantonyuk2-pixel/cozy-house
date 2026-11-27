@@ -138,7 +138,7 @@ submit(k,f){
  if(k==="supadd")return this.supAdd(f);
  if(k==="supplier")return this.supplierSave(f);
  if(k==="ocmail"){const o=this.ordersData.find(x=>x.id===+f.dataset.id),c=(o||{}).customer||{};if(!c.email)return toast("У замовленні немає email");if(!f.body.value.trim())return toast("Напишіть текст листа");location.href=`mailto:${encodeURIComponent(c.email)}?subject=${encodeURIComponent(f.subject.value.trim())}&body=${encodeURIComponent(f.body.value)}`;return}
- if(k==="opay"||k==="orefund"||k==="onote"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
+ if(k==="opay"||k==="orefund"||k==="oaddr"||k==="odelay")return this.orderSubmit(k,f);
  if(k==="chatreply"){const body=f.body.value.trim(),id=f.dataset.id;if(!body)return;const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("chat_messages").insert({thread_id:id,sender:"seller",body}).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);f.body.value="";this.chatSig="";this.fillChat(id)});return}
  if(k==="ret"){const id=+f.dataset.id,reason=f.reason.value+(f.note.value.trim()?": "+f.note.value.trim():"");const b=f.querySelector("button.primary");b.disabled=true;
