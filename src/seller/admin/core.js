@@ -49,7 +49,7 @@ change(el){const k=el.dataset.ach,id=el.dataset.id,p=id&&prod(id);
  else if(k==="ordsort"){location.hash=this.ordHref({sort:el.value==="new"?"":el.value,page:""})}
  else if(k==="oact"){const act=el.value;el.value="";if(!act)return;if(act==="open"){location.hash="#/admin/order/"+id;return}
   this.click(act,{dataset:{id},closest:()=>null,parentNode:el.parentNode},{preventDefault(){},stopPropagation(){}})}
- else if(k==="carrierpick"){const o=el.form.carrier_other;o.hidden=el.value!=="Other";if(!o.hidden)o.focus()}
+ else if(k==="carrierpick"){const o=el.form.carrier_other,t=el.form.tracking,oth=el.value==="Other";o.hidden=!oth;t.placeholder=oth?"Номер відправлення (необов’язково)":"Трек-номер "+el.value+" (обов’язково)";t.required=!oth;t.classList.remove("invalid");if(oth)o.focus()}
  else if(k==="delayreason"){const o=el.form.reason_other;o.hidden=el.value!=="__other";if(!o.hidden)o.focus()}
  else if(k==="oeta"){const v=el.value||null;el.disabled=true;sb.from("orders").update({delivery_eta:v}).eq("id",+id).then(({error})=>{el.disabled=false;if(error)return toast("⚠️ "+error.message);const o=Admin.ordersData.find(x=>x.id===+id);if(o)o.delivery_eta=v;toast(v?"Очікувана доставка: "+Admin.day(v):"Дату доставки прибрано")})}
  else if(k==="catname"){const c=catOf(id);if(c&&el.value.trim()){c.name=el.value.trim();save();chrome();toast("Збережено ✓")}}},
@@ -148,6 +148,7 @@ submit(k,f){
   sb.from("orders").update({status:"returned",return_reason:reason}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Повернення оформлено · товари повернено на склад");refreshAdminCatalog();this.afterOrderChange(id)});return}
  if(k==="ship"){const id=+f.dataset.id,other=f.carrier.value==="Other",carrier=other?(f.carrier_other.value.trim()||"Other"):f.carrier.value,tracking=f.tracking.value.trim(),eta=f.eta.value||null;
   if(other&&!f.carrier_other.value.trim()){f.carrier_other.focus();return toast("Вкажіть назву служби доставки")}
+  if(!other&&!tracking){f.tracking.classList.add("invalid");f.tracking.focus();return toast(`Вкажіть трек-номер ${carrier} — без нього покупець не зможе відстежити посилку`)}
   if(/[А-Яа-яІіЇїЄєҐґ]/.test(carrier)){f.carrier_other.focus();return toast("Назву служби напишіть англійською — її бачить покупець")}
   const b=f.querySelector("button.primary");b.disabled=true;
   sb.from("orders").update({status:"shipped",carrier,tracking_number:tracking||null,delivery_eta:eta}).eq("id",id).then(({error})=>{b.disabled=false;if(error)return toast("⚠️ "+error.message);toast("Позначено відправленим"+(tracking?" · трек "+tracking:"")+(eta?" · доставка "+Admin.day(eta):""));this.afterOrderChange(id)});return}

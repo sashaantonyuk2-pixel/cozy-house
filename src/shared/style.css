@@ -1006,3 +1006,4 @@ footer .copy{padding-bottom:84px}
 .ocvia{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.ocvia .chip2{margin:0}
 .ocvia .chip2:has(input:disabled){opacity:.45;cursor:not-allowed}
 .ocform input[name=subject][hidden]{display:none}
+.field.invalid{border-color:#c0563a!important;box-shadow:0 0 0 3px #fbe3dc}
